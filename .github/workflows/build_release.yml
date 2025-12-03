@@ -87,12 +87,16 @@ jobs:
       - name: Commit version bump
         if: github.event_name == 'workflow_dispatch'
         run: |
-          if git diff --quiet --exit-code package.json; then
+          git add package.json
+          if git diff --cached --quiet; then
             echo "package.json already set to ${{ steps.semver.outputs.version }}, skipping commit."
           else
-            git add package.json
-            git commit -m "chore: release v${{ steps.semver.outputs.version }}" --no-verify
-            git push
+            git commit -m "chore: release v${{ steps.semver.outputs.version }}" --no-verify || echo "No commit created (likely already up to date)."
+            if ! git diff --cached --quiet; then
+              git push
+            else
+              echo "Nothing to push."
+            fi
           fi
 
           # For local build, needn't push, the tag will be created by `gh release create`
