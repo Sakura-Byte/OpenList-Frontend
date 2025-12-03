@@ -13,6 +13,8 @@ export interface User {
   permission: number
   sso_id: string
   disabled: boolean
+  download_rps?: number | null
+  list_rps?: number | null
   // otp: boolean;
 }
 

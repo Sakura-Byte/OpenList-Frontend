@@ -56,6 +56,8 @@ const AddOrEdit = () => {
     permission: 0,
     disabled: false,
     sso_id: "",
+    download_rps: null,
+    list_rps: null,
   })
   const [userLoading, loadUser] = useFetch(
     (): PResp<User> => r.get(`/admin/user/get?id=${id}`),
@@ -132,6 +134,41 @@ const AddOrEdit = () => {
               )}
             </For>
           </Flex>
+        </FormControl>
+        <FormControl w="$full" display="flex" flexDirection="column">
+          <FormLabel for="download_rps" display="flex" alignItems="center">
+            {t("users.download_rps")}
+          </FormLabel>
+          <Input
+            id="download_rps"
+            type="number"
+            step="0.1"
+            placeholder={t("users.rps_placeholder")}
+            value={user.download_rps ?? ""}
+            onInput={(e) => {
+              const val = e.currentTarget.value
+              setUser(
+                "download_rps",
+                val === "" ? null : parseFloat(e.currentTarget.value),
+              )
+            }}
+          />
+        </FormControl>
+        <FormControl w="$full" display="flex" flexDirection="column">
+          <FormLabel for="list_rps" display="flex" alignItems="center">
+            {t("users.list_rps")}
+          </FormLabel>
+          <Input
+            id="list_rps"
+            type="number"
+            step="0.1"
+            placeholder={t("users.rps_placeholder")}
+            value={user.list_rps ?? ""}
+            onInput={(e) => {
+              const val = e.currentTarget.value
+              setUser("list_rps", val === "" ? null : parseFloat(val))
+            }}
+          />
         </FormControl>
         <FormControl w="fit-content" display="flex">
           <Checkbox
