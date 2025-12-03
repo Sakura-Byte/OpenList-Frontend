@@ -27,6 +27,8 @@ Environment variables:
   OPENLIST_FRONTEND_BUILD_COMPRESS=true|false (default: false)
   OPENLIST_FRONTEND_BUILD_ENFORCE_TAG=true|false (default: false)
   OPENLIST_FRONTEND_BUILD_SKIP_I18N=true|false (default: false)
+
+The build script now downloads translations from GitHub releases instead of Crowdin. It fetches `i18n.tar.gz` from the tag-matching release of the repository defined by `OPENLIST_I18N_REPO` (default: `OpenListTeam/OpenList-Frontend`) and falls back to the latest available release that contains `i18n.tar.gz` if the tag is missing that asset. Use `--skip-i18n` or `OPENLIST_FRONTEND_BUILD_SKIP_I18N=true` to bypass the download.
 ```
 
 ## LICENSE

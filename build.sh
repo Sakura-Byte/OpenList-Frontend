@@ -141,11 +141,11 @@ build_project() {
     log_step "==== Installing dependencies ===="
     pnpm install
 
-    log_step "==== Building i18n ===="
+    log_step "==== Fetching i18n from GitHub release ===="
     if [[ "$SKIP_I18N" == "false" ]]; then
-        pnpm i18n:release
-    else
         fetch_i18n_from_release
+    else
+        log_warning "Skipping i18n fetch as requested."
     fi
 
     log_step "==== Building project ===="
@@ -158,31 +158,46 @@ build_project() {
 
 # Fetch i18n files from release if skip-i18n flag is set
 fetch_i18n_from_release() {
-    log_warning "Skipping i18n build step, try to fetch from GitHub release"
-    release_response=$(curl -s "https://api.github.com/repos/OpenListTeam/OpenList-Frontend/releases/tags/$git_version")
-    if echo -n "$release_response" | grep -q "Not Found"; then
-        log_warning "Failed to fetch release info. Skipping i18n fetch."
-    else
-        extract_i18n_tarball "$release_response"
+    i18n_repo=${OPENLIST_I18N_REPO:-OpenListTeam/OpenList-Frontend}
+    release_repo=${OPENLIST_RELEASE_REPO:-$i18n_repo}
+    log_info "Fetching i18n.tar.gz from https://api.github.com/repos/${release_repo}/releases/tags/$git_version"
+    release_response=$(github_api_get "repos/${release_repo}/releases/tags/${git_version}") || true
+
+    i18n_url=$(extract_i18n_url "$release_response")
+
+    if [[ -z "$i18n_url" ]]; then
+        log_warning "i18n.tar.gz not found for tag ${git_version}. Falling back to latest available release."
+        latest_release_response=$(github_api_get "repos/${i18n_repo}/releases?per_page=30") || true
+        fallback_info=$(extract_latest_i18n_from_list "$latest_release_response")
+        if [[ -z "$fallback_info" ]]; then
+            log_warning "No i18n.tar.gz found in the latest releases. Skipping i18n fetch."
+            return
+        fi
+        fallback_tag=${fallback_info%%|*}
+        i18n_url=${fallback_info#*|}
+        log_info "Using i18n.tar.gz from ${i18n_repo}@${fallback_tag}"
     fi
+
+    download_and_extract_i18n "$i18n_url"
 }
 
 # Extract i18n tarball
-extract_i18n_tarball() {
-    i18n_file_url=$(echo "$1" | grep -oP '"browser_download_url":\s*"\K[^"]*' | grep "i18n.tar.gz") || true
-    if [[ -z "$i18n_file_url" ]]; then
-        log_warning "i18n.tar.gz not found in release assets. Skipping i18n fetch."
-    else
-        log_info "Downloading i18n.tar.gz from GitHub..."
-        if curl -L -o "i18n.tar.gz" "$i18n_file_url"; then
-            if tar -xzvf i18n.tar.gz -C src/lang; then
-                log_info "i18n files extracted to src/lang/"
-            else
-                log_warning "Failed to extract i18n.tar.gz"
-            fi
+download_and_extract_i18n() {
+    local url="$1"
+    if [[ -z "$url" ]]; then
+        log_warning "i18n.tar.gz URL is empty. Skipping i18n fetch."
+        return
+    fi
+
+    log_info "Downloading i18n.tar.gz from GitHub release assets..."
+    if curl -L -o "i18n.tar.gz" "$url"; then
+        if tar -xzvf i18n.tar.gz -C src/lang; then
+            log_info "i18n files extracted to src/lang/"
         else
-            log_warning "Failed to download i18n.tar.gz"
+            log_warning "Failed to extract i18n.tar.gz"
         fi
+    else
+        log_warning "Failed to download i18n.tar.gz"
     fi
 }
 
@@ -191,6 +206,62 @@ create_version_file() {
     log_step "Writing version $version_tag to dist/VERSION..."
     echo -n "$version_tag" > dist/VERSION
     log_success "Version file created: dist/VERSION"
+}
+
+# Fetch GitHub API resource with optional token support
+github_api_get() {
+    local path="$1"
+    local token="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
+    local api_url="https://api.github.com/${path}"
+    local headers=(
+        -H "Accept: application/vnd.github+json"
+        -H "User-Agent: openlist-build-script"
+    )
+    if [[ -n "$token" ]]; then
+        headers+=(-H "Authorization: Bearer ${token}")
+    fi
+    curl -sSL -f "${headers[@]}" "$api_url" 2>/dev/null || true
+}
+
+# Extract i18n URL from a single release JSON
+extract_i18n_url() {
+    python - "$1" <<'PY'
+import json,sys
+data=sys.argv[1]
+if not data:
+    sys.exit(0)
+try:
+    release=json.loads(data)
+except Exception:
+    sys.exit(0)
+for asset in release.get("assets") or []:
+    if asset.get("name")=="i18n.tar.gz":
+        print(asset.get("browser_download_url",""))
+        break
+PY
+}
+
+# Extract the first i18n asset from a release list JSON; returns "tag|url"
+extract_latest_i18n_from_list() {
+    python - "$1" <<'PY'
+import json,sys
+raw=sys.argv[1]
+if not raw:
+    sys.exit(0)
+try:
+    releases=json.loads(raw)
+except Exception:
+    sys.exit(0)
+for rel in releases:
+    for asset in rel.get("assets") or []:
+        if asset.get("name")=="i18n.tar.gz":
+            tag=rel.get("tag_name","")
+            url=asset.get("browser_download_url","")
+            if tag and url:
+                print(f"{tag}|{url}")
+                sys.exit(0)
+sys.exit(0)
+PY
 }
 
 # Handle compression if requested

@@ -20,11 +20,6 @@
   ],
   "homepage": "https://openlist.team/",
   "scripts": {
-    "crowdin:upload": "crowdin upload sources --auto-update",
-    "crowdin:download": "crowdin download --verbose",
-    "crowdin": "pnpm crowdin:upload && pnpm crowdin:download",
-    "i18n:build": "pnpm crowdin && node ./scripts/i18n.mjs",
-    "i18n:release": "pnpm run crowdin:download && node ./scripts/i18n.mjs",
     "start": "vite",
     "dev": "vite --force",
     "build": "vite build",
@@ -35,7 +30,6 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@crowdin/cli": "^4.0.0",
     "@hrgui/libass-wasm-ts": "^1.0.3",
     "@types/bencode": "^2.0.4",
     "@types/crypto-js": "^4.2.2",
