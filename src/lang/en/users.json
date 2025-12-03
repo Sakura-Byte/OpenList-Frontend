@@ -23,6 +23,7 @@
   "permission": "Permission",
   "download_rps": "Download RPS",
   "list_rps": "List RPS",
+  "rate_limit": "Rate limits",
   "rps_placeholder": "Leave blank to follow defaults (0 means unlimited)",
   "disabled": "Disabled",
   "available": "Available",

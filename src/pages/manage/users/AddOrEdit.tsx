@@ -135,6 +135,7 @@ const AddOrEdit = () => {
             </For>
           </Flex>
         </FormControl>
+        <Heading size="md">{t("users.rate_limit")}</Heading>
         <FormControl w="$full" display="flex" flexDirection="column">
           <FormLabel for="download_rps" display="flex" alignItems="center">
             {t("users.download_rps")}
