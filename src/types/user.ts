@@ -15,6 +15,8 @@ export interface User {
   disabled: boolean
   download_rps?: number | null
   list_rps?: number | null
+  download_rps_effective?: number
+  list_rps_effective?: number
   // otp: boolean;
 }
 

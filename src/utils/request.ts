@@ -1,6 +1,29 @@
 import axios from "axios"
 import { api, log } from "."
 
+let apiRpsLimit = 0
+let nextAvailable = 0
+let throttleChain: Promise<void> = Promise.resolve()
+
+const setApiRpsLimit = (limit?: number | null) => {
+  apiRpsLimit = limit && limit > 0 ? limit : 0
+  nextAvailable = Date.now()
+}
+
+const throttleRequest = async () => {
+  if (apiRpsLimit <= 0) return
+  const now = Date.now()
+  if (nextAvailable < now) {
+    nextAvailable = now
+  }
+  const wait = Math.max(0, nextAvailable - now)
+  const interval = Math.max(1, Math.floor(1000 / apiRpsLimit))
+  nextAvailable += interval
+  if (wait > 0) {
+    await new Promise((resolve) => setTimeout(resolve, wait))
+  }
+}
+
 const instance = axios.create({
   baseURL: api + "/api",
   // timeout: 5000
@@ -12,8 +35,9 @@ const instance = axios.create({
 })
 
 instance.interceptors.request.use(
-  (config) => {
-    // do something before request is sent
+  async (config) => {
+    throttleChain = throttleChain.then(throttleRequest).catch(() => {})
+    await throttleChain
     return config
   },
   (error) => {
@@ -60,4 +84,4 @@ export const changeToken = (token?: string) => {
   localStorage.setItem("token", token ?? "")
 }
 
-export { instance as r }
+export { instance as r, setApiRpsLimit }
