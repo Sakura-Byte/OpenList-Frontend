@@ -58,6 +58,7 @@ const AddOrEdit = () => {
     sso_id: "",
     download_rps: null,
     list_rps: null,
+    search_rps: null,
   })
   const [userLoading, loadUser] = useFetch(
     (): PResp<User> => r.get(`/admin/user/get?id=${id}`),
@@ -168,6 +169,22 @@ const AddOrEdit = () => {
             onInput={(e) => {
               const val = e.currentTarget.value
               setUser("list_rps", val === "" ? null : parseFloat(val))
+            }}
+          />
+        </FormControl>
+        <FormControl w="$full" display="flex" flexDirection="column">
+          <FormLabel for="search_rps" display="flex" alignItems="center">
+            {t("users.search_rps")}
+          </FormLabel>
+          <Input
+            id="search_rps"
+            type="number"
+            step="0.1"
+            placeholder={t("users.rps_placeholder")}
+            value={user.search_rps ?? ""}
+            onInput={(e) => {
+              const val = e.currentTarget.value
+              setUser("search_rps", val === "" ? null : parseFloat(val))
             }}
           />
         </FormControl>
