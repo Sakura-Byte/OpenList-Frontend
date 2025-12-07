@@ -62,6 +62,7 @@
   "link_expiration": "Link expiration",
   "logo": "Logo",
   "main_color": "Main color",
+  "sign_bind_ip": "Bind IP in download sign",
   "max_client_download_speed": "Max client download speed",
   "max_client_upload_speed": "Max client upload speed",
   "max_index_depth": "Max index depth",

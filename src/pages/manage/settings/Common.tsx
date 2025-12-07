@@ -46,6 +46,7 @@ const CommonSettings = (props: CommonSettingsProps) => {
           {(item) => (
             <Item
               {...item()}
+              hideLabel={item().key === "sign_bind_ip"}
               onChange={(val) => {
                 setSettings((i) => item().key === i.key, "value", val)
               }}
