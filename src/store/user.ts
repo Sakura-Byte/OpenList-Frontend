@@ -8,7 +8,11 @@ const [me, _setMe] = createSignal<Me>({} as Me)
 const setMe = (value: Me | ((prev: Me) => Me)) => {
   const next = typeof value === "function" ? value(me()) : value
   _setMe(next)
-  setApiRpsLimit(next.list_rps_effective ?? 0)
+  setApiRpsLimit({
+    download: next.download_rps_effective ?? 0,
+    list: next.list_rps_effective ?? 0,
+    search: next.search_rps_effective ?? 0,
+  })
 }
 
 type Permission = (typeof UserPermissions)[number]

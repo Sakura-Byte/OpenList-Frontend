@@ -25,6 +25,7 @@ export const fsGet = (
     },
     {
       cancelToken: cancelToken,
+      rpsKind: "download",
     },
   )
 }
@@ -47,6 +48,7 @@ export const fsList = (
     },
     {
       cancelToken: cancelToken,
+      rpsKind: "list",
     },
   )
 }
@@ -159,6 +161,7 @@ export const fsArchiveMeta = (
     },
     {
       cancelToken: cancelToken,
+      rpsKind: "list",
     },
   )
 }
@@ -186,6 +189,7 @@ export const fsArchiveList = (
     },
     {
       cancelToken: cancelToken,
+      rpsKind: "list",
     },
   )
 }
@@ -258,14 +262,20 @@ export const fsSearch = async (
   page = 1,
   per_page = 100,
 ): Promise<FsSearchResp> => {
-  return r.post("/fs/search", {
-    parent,
-    keywords,
-    scope,
-    page,
-    per_page,
-    password,
-  })
+  return r.post(
+    "/fs/search",
+    {
+      parent,
+      keywords,
+      scope,
+      page,
+      per_page,
+      password,
+    },
+    {
+      rpsKind: "search",
+    },
+  )
 }
 
 export const buildIndex = async (paths = ["/"], max_depth = -1): PEmptyResp => {

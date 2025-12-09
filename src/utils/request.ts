@@ -1,27 +1,68 @@
-import axios from "axios"
+import axios, { InternalAxiosRequestConfig } from "axios"
 import { api, log } from "."
 
-let apiRpsLimit = 0
-let nextAvailable = 0
-let throttleChain: Promise<void> = Promise.resolve()
+type RpsKind = "download" | "list" | "search"
 
-const setApiRpsLimit = (limit?: number | null) => {
-  apiRpsLimit = limit && limit > 0 ? limit : 0
-  nextAvailable = Date.now()
+type ThrottleState = {
+  limit: number
+  nextAvailable: number
+  chain: Promise<void>
 }
 
-const throttleRequest = async () => {
-  if (apiRpsLimit <= 0) return
+const createThrottleState = (): ThrottleState => ({
+  limit: 0,
+  nextAvailable: Date.now(),
+  chain: Promise.resolve(),
+})
+
+const throttleStates: Record<RpsKind, ThrottleState> = {
+  download: createThrottleState(),
+  list: createThrottleState(),
+  search: createThrottleState(),
+}
+
+const setApiRpsLimit = (limits?: Partial<Record<RpsKind, number | null>>) => {
+  ;(["download", "list", "search"] as const).forEach((kind) => {
+    const limit = limits?.[kind]
+    const state = throttleStates[kind]
+    state.limit = limit && limit > 0 ? limit : 0
+    state.nextAvailable = Date.now()
+  })
+}
+
+const throttleRequest = async (state: ThrottleState) => {
+  if (state.limit <= 0) return
   const now = Date.now()
-  if (nextAvailable < now) {
-    nextAvailable = now
+  if (state.nextAvailable < now) {
+    state.nextAvailable = now
   }
-  const wait = Math.max(0, nextAvailable - now)
-  const interval = Math.max(1, Math.floor(1000 / apiRpsLimit))
-  nextAvailable += interval
+  const wait = Math.max(0, state.nextAvailable - now)
+  const interval = Math.max(1, Math.floor(1000 / state.limit))
+  state.nextAvailable += interval
   if (wait > 0) {
     await new Promise((resolve) => setTimeout(resolve, wait))
   }
+}
+
+const resolveKind = (config: InternalAxiosRequestConfig): RpsKind => {
+  if (config.rpsKind) {
+    return config.rpsKind
+  }
+  const url = config.url || ""
+  if (url.includes("/fs/search")) {
+    return "search"
+  }
+  if (url.includes("/fs/get")) {
+    return "download"
+  }
+  if (
+    url.includes("/fs/archive/list") ||
+    url.includes("/fs/archive/meta") ||
+    url.includes("/fs/list")
+  ) {
+    return "list"
+  }
+  return "list"
 }
 
 const instance = axios.create({
@@ -35,9 +76,11 @@ const instance = axios.create({
 })
 
 instance.interceptors.request.use(
-  async (config) => {
-    throttleChain = throttleChain.then(throttleRequest).catch(() => {})
-    await throttleChain
+  async (config: InternalAxiosRequestConfig) => {
+    const kind = resolveKind(config)
+    const state = throttleStates[kind]
+    state.chain = state.chain.then(() => throttleRequest(state)).catch(() => {})
+    await state.chain
     return config
   },
   (error) => {
