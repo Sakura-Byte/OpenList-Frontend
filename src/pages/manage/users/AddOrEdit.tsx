@@ -139,7 +139,11 @@ const AddOrEdit = () => {
         </FormControl>
         <Heading size="md">{t("users.rate_limit")}</Heading>
         <FormControl w="$full" display="flex" flexDirection="column">
-          <FormLabel for="download_concurrency" display="flex" alignItems="center">
+          <FormLabel
+            for="download_concurrency"
+            display="flex"
+            alignItems="center"
+          >
             {t("users.download_concurrency")}
           </FormLabel>
           <Input
