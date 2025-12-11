@@ -57,6 +57,7 @@ const AddOrEdit = () => {
     disabled: false,
     sso_id: "",
     download_rps: null,
+    download_concurrency: null,
     list_rps: null,
     search_rps: null,
   })
@@ -137,6 +138,25 @@ const AddOrEdit = () => {
           </Flex>
         </FormControl>
         <Heading size="md">{t("users.rate_limit")}</Heading>
+        <FormControl w="$full" display="flex" flexDirection="column">
+          <FormLabel for="download_concurrency" display="flex" alignItems="center">
+            {t("users.download_concurrency")}
+          </FormLabel>
+          <Input
+            id="download_concurrency"
+            type="number"
+            step="1"
+            placeholder={t("users.concurrency_placeholder")}
+            value={user.download_concurrency ?? ""}
+            onInput={(e) => {
+              const val = e.currentTarget.value
+              setUser(
+                "download_concurrency",
+                val === "" ? null : parseInt(e.currentTarget.value),
+              )
+            }}
+          />
+        </FormControl>
         <FormControl w="$full" display="flex" flexDirection="column">
           <FormLabel for="download_rps" display="flex" alignItems="center">
             {t("users.download_rps")}
