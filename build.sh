@@ -225,9 +225,16 @@ github_api_get() {
 
 # Extract i18n URL from a single release JSON
 extract_i18n_url() {
-    python - "$1" <<'PY'
+    local py="python3"
+    if ! command -v "$py" >/dev/null 2>&1; then
+        py="python"
+    fi
+    if ! command -v "$py" >/dev/null 2>&1; then
+        return 0
+    fi
+    "$py" -c '
 import json,sys
-data=sys.argv[1]
+data=sys.stdin.read()
 if not data:
     sys.exit(0)
 try:
@@ -238,14 +245,21 @@ for asset in release.get("assets") or []:
     if asset.get("name")=="i18n.tar.gz":
         print(asset.get("browser_download_url",""))
         break
-PY
+' <<<"$1" || true
 }
 
 # Extract the first i18n asset from a release list JSON; returns "tag|url"
 extract_latest_i18n_from_list() {
-    python - "$1" <<'PY'
+    local py="python3"
+    if ! command -v "$py" >/dev/null 2>&1; then
+        py="python"
+    fi
+    if ! command -v "$py" >/dev/null 2>&1; then
+        return 0
+    fi
+    "$py" -c '
 import json,sys
-raw=sys.argv[1]
+raw=sys.stdin.read()
 if not raw:
     sys.exit(0)
 try:
@@ -261,7 +275,7 @@ for rel in releases:
                 print(f"{tag}|{url}")
                 sys.exit(0)
 sys.exit(0)
-PY
+' <<<"$1" || true
 }
 
 # Handle compression if requested
