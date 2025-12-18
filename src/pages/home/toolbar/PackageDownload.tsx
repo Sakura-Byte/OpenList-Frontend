@@ -2,7 +2,7 @@ import "~/utils/zip-stream.js"
 import streamSaver from "streamsaver"
 import { getLinkByDirAndObj, useRouter, useT } from "~/hooks"
 import { fsList, pathBase, pathJoin } from "~/utils"
-import { password, selectedObjs as _selectedObjs } from "~/store"
+import { local, password, selectedObjs as _selectedObjs } from "~/store"
 import { createSignal, For, Show } from "solid-js"
 import {
   Button,
@@ -23,6 +23,65 @@ let totalSize = 0
 interface File {
   path: string
   url: string
+}
+
+type RetryOptions = {
+  retries: number
+  sleepMs: number
+  exponential: boolean
+}
+
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms))
+
+const formatError = (err: unknown) => {
+  if (err instanceof Error) return err.message
+  return String(err)
+}
+
+const clampNonNegativeInt = (value: string | undefined, fallback: number) => {
+  const parsed = Number.parseInt(value ?? "", 10)
+  if (!Number.isFinite(parsed)) return fallback
+  return Math.max(0, parsed)
+}
+
+const calcBackoffMs = (attempt: number, baseMs: number, exp: boolean) => {
+  if (baseMs <= 0) return 0
+  if (!exp) return baseMs
+  return baseMs * 2 ** Math.max(0, attempt - 1)
+}
+
+const fetchWithRetry = async (
+  url: string,
+  opts: RetryOptions,
+  nameForError?: string,
+) => {
+  let lastErr: unknown
+  for (let attempt = 0; attempt <= opts.retries; attempt++) {
+    try {
+      const resp = await fetch(url)
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status} ${resp.statusText}`)
+      }
+      if (!resp.body) {
+        throw new Error("Empty response body")
+      }
+      return resp
+    } catch (err) {
+      lastErr = err
+      if (attempt >= opts.retries) break
+      const backoff = calcBackoffMs(
+        attempt + 1,
+        Math.max(0, opts.sleepMs),
+        opts.exponential,
+      )
+      if (backoff > 0) {
+        await sleep(backoff)
+      }
+    }
+  }
+  const prefix = nameForError ? `${nameForError}: ` : ""
+  throw new Error(`${prefix}${formatError(lastErr)}`)
 }
 
 const PackageDownload = (props: { onClose: () => void }) => {
@@ -83,6 +142,11 @@ const PackageDownload = (props: { onClose: () => void }) => {
     if (!saveName) {
       saveName = t("manage.sidemenu.home")
     }
+    const retryOpts: RetryOptions = {
+      retries: clampNonNegativeInt(local["package_download_retry_times"], 3),
+      sleepMs: clampNonNegativeInt(local["package_download_retry_sleep_ms"], 0),
+      exponential: local["package_download_retry_exp"] === "true",
+    }
     let fileStream = streamSaver.createWriteStream(`${saveName}.zip`, {
       size: totalSize,
     })
@@ -114,8 +178,8 @@ const PackageDownload = (props: { onClose: () => void }) => {
           }
           const url = it.value.url
           // console.log(name, url);
-          return fetch(url).then((res) => {
-            setFetchings((prev) => [...prev, name])
+          setFetchings((prev) => [...prev, name])
+          return fetchWithRetry(url, retryOpts, name).then((res) => {
             ctrl.enqueue({
               name,
               stream: res.body,

@@ -9,7 +9,27 @@ const [local, setLocal, { remove, clear, toJSON }] = createLocalStorage()
 //   return key in object
 // }
 
-export const initialLocalSettings = [
+type LocalSettingBase = {
+  key: string
+  default: string
+  hidden?: boolean
+}
+
+export type LocalSetting =
+  | (LocalSettingBase & { type?: undefined })
+  | (LocalSettingBase & {
+      type: "select"
+      options: string[]
+    })
+  | (LocalSettingBase & {
+      type: "boolean"
+    })
+  | (LocalSettingBase & {
+      type: "number"
+      min?: number
+    })
+
+export const initialLocalSettings: LocalSetting[] = [
   {
     key: "aria2_rpc_url",
     default: "http://localhost:6800/jsonrpc",
@@ -17,6 +37,23 @@ export const initialLocalSettings = [
   {
     key: "aria2_rpc_secret",
     default: "",
+  },
+  {
+    key: "package_download_retry_times",
+    default: "3",
+    type: "number",
+    min: 0,
+  },
+  {
+    key: "package_download_retry_sleep_ms",
+    default: "1000",
+    type: "number",
+    min: 0,
+  },
+  {
+    key: "package_download_retry_exp",
+    default: "false",
+    type: "boolean",
   },
   {
     key: "global_default_layout",
@@ -72,7 +109,6 @@ export const initialLocalSettings = [
     type: "number",
   },
 ]
-export type LocalSetting = (typeof initialLocalSettings)[number]
 for (const setting of initialLocalSettings) {
   if (!local[setting.key]) {
     setLocal(setting.key, setting.default)

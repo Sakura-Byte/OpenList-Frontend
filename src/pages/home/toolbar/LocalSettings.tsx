@@ -88,14 +88,20 @@ function LocalSettingEdit(props: LocalSetting) {
               aria-label="decrease"
               icon={<FaSolidMinus />}
               onClick={() => {
-                setLocal(
-                  props.key,
-                  Math.max(1, parseInt(local[props.key]) - 1).toString(),
-                )
+                const min = (props as any).min ?? 1
+                const current = Number.parseInt(local[props.key], 10)
+                const fallback = Number.parseInt(props.default, 10)
+                const value = Number.isFinite(current)
+                  ? current
+                  : Number.isFinite(fallback)
+                    ? fallback
+                    : min
+                setLocal(props.key, Math.max(min, value - 1).toString())
               }}
             />
             <Input
               type="number"
+              min={(props as any).min ?? 1}
               value={local[props.key]}
               onInput={(e) => {
                 setLocal(props.key, e.currentTarget.value)
@@ -111,7 +117,14 @@ function LocalSettingEdit(props: LocalSetting) {
               aria-label="increase"
               icon={<FaSolidPlus />}
               onClick={() => {
-                setLocal(props.key, (parseInt(local[props.key]) + 1).toString())
+                const current = Number.parseInt(local[props.key], 10)
+                const fallback = Number.parseInt(props.default, 10)
+                const value = Number.isFinite(current)
+                  ? current
+                  : Number.isFinite(fallback)
+                    ? fallback
+                    : 0
+                setLocal(props.key, (value + 1).toString())
               }}
             />
           </HStack>
