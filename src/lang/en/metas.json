@@ -11,5 +11,11 @@
   "hide_help": "One regular expression per line",
   "grid_mode": "Grid Mode",
   "list_mode": "List Mode",
-  "save_all": "Save All"
+  "save_all": "Save All",
+  "batch_replace": "Batch Replace",
+  "find": "Find",
+  "replace": "Replace",
+  "use_regex": "Use regex",
+  "apply_replace": "Apply Replace",
+  "batch_replace_no_target": "Select at least one target"
 }
