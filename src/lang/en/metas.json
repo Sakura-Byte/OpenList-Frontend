@@ -8,5 +8,8 @@
   "header": "Header",
   "header_help": "Render a markdown at the top, support content or link",
   "apply_sub": "Apply to sub folder",
-  "hide_help": "One regular expression per line"
+  "hide_help": "One regular expression per line",
+  "grid_mode": "Grid Mode",
+  "list_mode": "List Mode",
+  "save_all": "Save All"
 }
