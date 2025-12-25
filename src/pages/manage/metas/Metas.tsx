@@ -71,9 +71,7 @@ const Metas = () => {
     value: Meta[K],
   ) => {
     setMetas((items) =>
-      items.map((item, i) =>
-        i === index ? { ...item, [key]: value } : item,
-      ),
+      items.map((item, i) => (i === index ? { ...item, [key]: value } : item)),
     )
   }
   const saveAll = async () => {
@@ -84,13 +82,9 @@ const Metas = () => {
       for (const meta of metas()) {
         try {
           const resp = await saveMeta(meta)
-          handleResp(
-            resp,
-            undefined,
-            () => {
-              hasError = true
-            },
-          )
+          handleResp(resp, undefined, () => {
+            hasError = true
+          })
         } catch (error) {
           hasError = true
           notify.error(String(error))
@@ -256,9 +250,7 @@ const Metas = () => {
                       <Td css={{ minWidth: "240px" }}>
                         <FolderChooseInput
                           value={meta.path}
-                          onChange={(path) =>
-                            updateMeta(index(), "path", path)
-                          }
+                          onChange={(path) => updateMeta(index(), "path", path)}
                         />
                       </Td>
                       <Td css={{ minWidth: "200px" }}>
@@ -424,9 +416,7 @@ const Metas = () => {
           <ModalBody>
             <VStack spacing="$3" alignItems="start">
               <FormControl w="$full" display="flex" flexDirection="column">
-                <FormLabel for="metas-batch-find">
-                  {t("metas.find")}
-                </FormLabel>
+                <FormLabel for="metas-batch-find">{t("metas.find")}</FormLabel>
                 <Textarea
                   id="metas-batch-find"
                   value={batchFind()}
@@ -445,9 +435,7 @@ const Metas = () => {
               </FormControl>
               <Checkbox
                 checked={batchUseRegex()}
-                onChange={(e: any) =>
-                  setBatchUseRegex(e.currentTarget.checked)
-                }
+                onChange={(e: any) => setBatchUseRegex(e.currentTarget.checked)}
               >
                 {t("metas.use_regex")}
               </Checkbox>
