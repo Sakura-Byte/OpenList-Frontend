@@ -55,9 +55,7 @@ const Metas = () => {
     value: Meta[K],
   ) => {
     setMetas((items) =>
-      items.map((item, i) =>
-        i === index ? { ...item, [key]: value } : item,
-      ),
+      items.map((item, i) => (i === index ? { ...item, [key]: value } : item)),
     )
   }
   const saveAll = async () => {
@@ -68,13 +66,9 @@ const Metas = () => {
       for (const meta of metas()) {
         try {
           const resp = await saveMeta(meta)
-          handleResp(
-            resp,
-            undefined,
-            () => {
-              hasError = true
-            },
-          )
+          handleResp(resp, undefined, () => {
+            hasError = true
+          })
         } catch (error) {
           hasError = true
           notify.error(String(error))
@@ -113,11 +107,7 @@ const Metas = () => {
           {t(gridMode() ? "metas.list_mode" : "metas.grid_mode")}
         </Button>
         <Show when={gridMode()}>
-          <Button
-            colorScheme="accent"
-            loading={savingAll()}
-            onClick={saveAll}
-          >
+          <Button colorScheme="accent" loading={savingAll()} onClick={saveAll}>
             {t("metas.save_all")}
           </Button>
         </Show>
@@ -179,7 +169,16 @@ const Metas = () => {
           <Table highlightOnHover dense>
             <Thead>
               <Tr>
-                <For each={["path", "password", "write", "hide", "header", "readme"]}>
+                <For
+                  each={[
+                    "path",
+                    "password",
+                    "write",
+                    "hide",
+                    "header",
+                    "readme",
+                  ]}
+                >
                   {(title) => <Th>{t(`metas.${title}`)}</Th>}
                 </For>
                 <Th>{t("global.operations")}</Th>
@@ -192,9 +191,7 @@ const Metas = () => {
                     <Td css={{ minWidth: "240px" }}>
                       <FolderChooseInput
                         value={meta.path}
-                        onChange={(path) =>
-                          updateMeta(index(), "path", path)
-                        }
+                        onChange={(path) => updateMeta(index(), "path", path)}
                       />
                     </Td>
                     <Td css={{ minWidth: "200px" }}>
