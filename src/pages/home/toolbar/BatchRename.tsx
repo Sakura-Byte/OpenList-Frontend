@@ -40,16 +40,30 @@ export const BatchRename = () => {
   const [type, setType] = createSignal("1")
   const [srcName, setSrcName] = createSignal("")
   const [newName, setNewName] = createSignal("")
+  const [paddingZeros, setPaddingZeros] = createSignal("")
   const [newNameType, setNewNameType] = createSignal("string")
   const [matchNames, setMatchNames] = createSignal<RenameObj[]>([])
   const [validationErrorSrc, setValidationErrorSrc] = createSignal<string>("")
   const [validationErrorNew, setValidationErrorNew] = createSignal<string>("")
   const t = useT()
 
+  const validateRegex = (pattern: string) => {
+    try {
+      // eslint-disable-next-line no-new
+      new RegExp(pattern)
+      return { valid: true as const }
+    } catch (e) {
+      return { valid: false as const, error: "invalid_regex" }
+    }
+  }
+
   const handleInputSrc = (newValue: string) => {
     setSrcName(newValue)
     if (type() === "2" || type() === "3") {
       const validation = validateFilename(newValue)
+      setValidationErrorSrc(validation.valid ? "" : validation.error || "")
+    } else if (type() === "1") {
+      const validation = validateRegex(newValue)
       setValidationErrorSrc(validation.valid ? "" : validation.error || "")
     } else {
       setValidationErrorSrc("")
@@ -91,6 +105,13 @@ export const BatchRename = () => {
       notify.warning(t("global.empty_input"))
       return
     }
+    if (type() === "1") {
+      const validationSrc = validateRegex(srcName())
+      if (!validationSrc.valid) {
+        notify.warning(t(`global.${validationSrc.error}`))
+        return
+      }
+    }
     if (type() === "2" || type() === "3") {
       const validationSrc = validateFilename(srcName())
       if (!validationSrc.valid) {
@@ -103,10 +124,10 @@ export const BatchRename = () => {
         return
       }
     }
-    const replaceRegexp = new RegExp(srcName(), "g")
-
     let matchNames: RenameObj[]
     if (type() === "1") {
+      const replaceRegexp = new RegExp(srcName(), "g")
+
       matchNames = selectedObjs()
         .filter((obj) => obj.name.match(srcName()))
         .map((obj) => {
@@ -169,16 +190,26 @@ export const BatchRename = () => {
         })
     } else if (type() === "2") {
       let tempNum = newName()
+      const hasNumberPlaceholder = srcName().includes("{number}")
+      const paddingLength = parseInt(paddingZeros()) || 0
+
       matchNames = selectedObjs().map((obj) => {
-        let suffix = ""
         const lastDotIndex = obj.name.lastIndexOf(".")
-        if (lastDotIndex !== -1) {
-          suffix = obj.name.substring(lastDotIndex + 1)
+        const suffix =
+          lastDotIndex !== -1 ? obj.name.substring(lastDotIndex) : ""
+        const paddedNum =
+          paddingLength > 0 ? tempNum.padStart(paddingLength, "0") : tempNum
+
+        let newFileName: string
+        if (hasNumberPlaceholder) {
+          newFileName = srcName().replace("{number}", paddedNum) + suffix
+        } else {
+          newFileName = srcName() + paddedNum + suffix
         }
 
         const renameObj: RenameObj = {
           src_name: obj.name,
-          new_name: srcName() + tempNum + "." + suffix,
+          new_name: newFileName,
         }
         tempNum = (parseInt(tempNum) + 1)
           .toString()
@@ -228,6 +259,9 @@ export const BatchRename = () => {
                 } else if (event === "2") {
                   setNewNameType("number")
                 }
+                // Clear validation errors when switching type
+                setValidationErrorSrc("")
+                setValidationErrorNew("")
               }}
             >
               <HStack spacing="$4">
@@ -286,6 +320,26 @@ export const BatchRename = () => {
                   {t(`global.${validationErrorNew()}`)}
                 </Text>
               </Show>
+              <Show when={type() === "2"}>
+                <Input
+                  id="modal-input3"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder={t(
+                    "home.toolbar.sequential_renaming_input3_placeholder",
+                  )}
+                  value={paddingZeros()}
+                  onInput={(e) => {
+                    setPaddingZeros(e.currentTarget.value)
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      submit()
+                    }
+                  }}
+                />
+              </Show>
             </VStack>
           </ModalBody>
           <ModalFooter display="flex" gap="$2">
@@ -293,6 +347,7 @@ export const BatchRename = () => {
               onClick={() => {
                 setType("1")
                 setNewNameType("string")
+                setPaddingZeros("")
                 setValidationErrorSrc("")
                 setValidationErrorNew("")
                 onClose()
@@ -349,6 +404,7 @@ export const BatchRename = () => {
                 setMatchNames([])
                 setType("1")
                 setNewNameType("string")
+                setPaddingZeros("")
                 setValidationErrorSrc("")
                 setValidationErrorNew("")
                 closePreviewModal()
@@ -376,6 +432,7 @@ export const BatchRename = () => {
                   setMatchNames([])
                   setSrcName("")
                   setNewName("")
+                  setPaddingZeros("")
                   setType("1")
                   setNewNameType("string")
                   setValidationErrorSrc("")

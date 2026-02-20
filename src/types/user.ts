@@ -20,6 +20,7 @@ export interface User {
   list_rps_effective?: number
   search_rps?: number | null
   search_rps_effective?: number
+  allow_ldap: boolean
   // otp: boolean;
 }
 

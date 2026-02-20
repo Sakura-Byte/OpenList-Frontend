@@ -29,6 +29,7 @@
   "rps_placeholder": "Leave blank to follow defaults (0 means unlimited)",
   "concurrency_placeholder": "Leave blank to follow defaults (0 means unlimited)",
   "disabled": "Disabled",
+  "allow_ldap": "Allow LDAP login",
   "available": "Available",
   "update_profile": "Update Profile",
   "update_profile_success": "Profile updated successfully, please log in again.",

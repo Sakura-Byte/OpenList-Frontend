@@ -108,6 +108,12 @@ export const initialLocalSettings: LocalSetting[] = [
     default: "14",
     type: "number",
   },
+  {
+    key: "show_gallery_thumbnails",
+    default: "visible",
+    type: "select",
+    options: ["none", "visible"],
+  },
 ]
 for (const setting of initialLocalSettings) {
   if (!local[setting.key]) {
