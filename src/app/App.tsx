@@ -16,6 +16,7 @@ import { setSettings } from "~/store"
 import { setArchiveExtensions } from "~/store/archive"
 import { Resp } from "~/types"
 import { base_path, bus, handleRespWithoutAuthAndNotify, r } from "~/utils"
+import { createMatomoSpaBridge } from "~/utils/matomo"
 import { MustUser, UserOrGuest } from "./MustUser"
 import "./index.css"
 import { globalStyles } from "./theme"
@@ -30,16 +31,19 @@ const App: Component = () => {
   globalStyles()
   const isRouting = useIsRouting()
   const { to, pathname } = useRouter()
+  const matomo = createMatomoSpaBridge()
   const onTo = (path: string) => {
     to(path)
   }
   bus.on("to", onTo)
   onCleanup(() => {
     bus.off("to", onTo)
+    matomo.cleanup()
   })
 
   createEffect(() => {
     bus.emit("pathname", pathname())
+    matomo.trackRouteChange()
   })
 
   const [err, setErr] = createSignal<string[]>([])
