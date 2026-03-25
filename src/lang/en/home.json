@@ -112,6 +112,7 @@
     "no_files_drag": "No files were dragged in.",
     "upload_files": "Choose Files",
     "upload_folder": "Choose Folder",
+    "hashing": "Hashing",
     "pending": "Pending",
     "uploading": "Uploading",
     "backending": "Uploading in the backend",

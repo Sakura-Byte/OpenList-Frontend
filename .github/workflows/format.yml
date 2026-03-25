@@ -13,12 +13,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24.14.0
 
       - name: Install dependencies
         run: pnpm install
@@ -27,6 +27,6 @@ jobs:
         run: pnpm run format
 
       - name: Commit and Push
-        uses: stefanzweifel/git-auto-commit-action@v6
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "[skip ci] style: format code with prettier"
