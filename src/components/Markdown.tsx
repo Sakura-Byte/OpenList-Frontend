@@ -220,6 +220,10 @@ export function Markdown(props: {
   ext?: string
   readme?: boolean
   toc?: boolean
+  trackContent?: boolean
+  contentName?: string
+  contentPiece?: string
+  contentTarget?: string
 }) {
   const [encoding, setEncoding] = createSignal<string>("utf-8")
   const [show, setShow] = createSignal(true)
@@ -290,6 +294,10 @@ export function Markdown(props: {
       class="markdown"
       pos="relative"
       w="$full"
+      data-track-content={props.trackContent ? "" : undefined}
+      data-content-name={props.contentName}
+      data-content-piece={props.contentPiece}
+      data-content-target={props.contentTarget}
     >
       <Show when={show()}>
         <Box

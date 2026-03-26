@@ -16,7 +16,14 @@ const Index = () => {
 
   onMount(() => {
     if (announcement && !announcementShown) {
-      notify.render(() => <Markdown children={announcement} />)
+      notify.render(() => (
+        <Markdown
+          children={announcement}
+          trackContent
+          contentName="Home Announcement"
+          contentPiece="home-announcement"
+        />
+      ))
       announcementShown = true
     }
   })

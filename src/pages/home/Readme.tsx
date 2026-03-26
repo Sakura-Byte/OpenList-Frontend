@@ -12,6 +12,17 @@ export function Readme(props: {
   const cardBg = useColorModeValue("white", "$neutral3")
   const { proxyLink } = useLink()
   const { pathname } = useRouter()
+  const trackingMeta = createMemo(() =>
+    props.fromMeta === "header"
+      ? {
+          name: "Home Top Description",
+          piece: "home-top-description",
+        }
+      : {
+          name: "Home Readme",
+          piece: "home-readme",
+        },
+  )
   const readme = createMemo(
     on(
       () => objStore.state,
@@ -61,6 +72,9 @@ export function Readme(props: {
             children={content()?.content}
             readme
             toc={props.fromMeta === "readme"}
+            trackContent
+            contentName={trackingMeta().name}
+            contentPiece={trackingMeta().piece}
           />
         </MaybeLoading>
       </Box>
