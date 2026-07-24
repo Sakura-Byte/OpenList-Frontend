@@ -95,13 +95,6 @@ instance.interceptors.response.use(
   (response) => {
     const resp = response.data
     log(resp)
-    // if (resp.code === 401) {
-    //   notify.error(resp.message);
-    //   bus.emit(
-    //     "to",
-    //     `/@login?redirect=${encodeURIComponent(window.location.pathname)}`
-    //   );
-    // }
     return resp
   },
   (error) => {

@@ -1,7 +1,7 @@
 import "~/utils/zip-stream.js"
 import streamSaver from "streamsaver"
 import { getLinkByDirAndObj, useRouter, useT } from "~/hooks"
-import { fsList, pathBase, pathJoin } from "~/utils"
+import { fsList, joinBase, pathBase, pathJoin } from "~/utils"
 import { local, password, selectedObjs as _selectedObjs } from "~/store"
 import { createSignal, For, Show } from "solid-js"
 import {
@@ -14,7 +14,7 @@ import {
 } from "@hope-ui/solid"
 import { Obj } from "~/types"
 
-streamSaver.mitm = "/streamer/mitm.html"
+streamSaver.mitm = joinBase("streamer", "mitm.html")
 const trimSlash = (str: string) => {
   return str.replace(/^\/+|\/+$/g, "")
 }
@@ -176,10 +176,10 @@ const PackageDownload = (props: { onClose: () => void }) => {
           if (selectedObjs.length === 1) {
             name = name.replace(`${saveName}/`, "")
           }
-          const url = it.value.url
-          // console.log(name, url);
-          setFetchings((prev) => [...prev, name])
-          return fetchWithRetry(url, retryOpts, name).then((res) => {
+			const url = it.value.url
+			// console.log(name, url);
+			setFetchings((prev) => [...prev, name])
+			return fetchWithRetry(url, retryOpts, name).then((res) => {
             ctrl.enqueue({
               name,
               stream: res.body,

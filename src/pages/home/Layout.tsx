@@ -11,22 +11,22 @@ import { onMount } from "solid-js"
 let announcementShown = false
 
 const Index = () => {
-  useTitle(getSetting("site_title"))
-  const announcement = getSetting("announcement")
+	useTitle(getSetting("site_title"))
+	const announcement = getSetting("announcement")
 
-  onMount(() => {
-    if (announcement && !announcementShown) {
-      notify.render(() => (
-        <Markdown
-          children={announcement}
-          trackContent
-          contentName="Home Announcement"
-          contentPiece="home-announcement"
-        />
-      ))
-      announcementShown = true
-    }
-  })
+	onMount(() => {
+		if (announcement && !announcementShown) {
+			notify.render(
+				<Markdown
+					children={announcement}
+					trackContent
+					contentName="Home Announcement"
+					contentPiece="home-announcement"
+				/>
+			)
+		announcementShown = true
+		}
+	})
   return (
     <>
       <Header />
