@@ -1,4 +1,5 @@
 name: Sync i18n to Crowdin
+description: Upload translated source files to Crowdin
 
 inputs:
   crowdin_project_id:
