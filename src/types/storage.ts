@@ -25,7 +25,13 @@ export enum WebdavPolicy {
   NativeProxy = "native_proxy",
 }
 
+export type ProxyMode = "disabled" | "system" | "manual"
+
 export interface Storage {
+  api_proxy_mode: ProxyMode
+  api_proxy_url: string
+  transfer_proxy_mode: ProxyMode
+  transfer_proxy_url: string
   id: number
   mount_path: string
   order: number

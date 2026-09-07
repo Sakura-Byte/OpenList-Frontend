@@ -1,5 +1,24 @@
 {
   "common": {
+    "api_proxy_mode": "Upstream API Proxy",
+    "api_proxy_mode-tips": "Controls this storage's HTTP/HTTPS API requests, including login, token refresh and file management. System uses OpenList proxy_address first, then HTTP_PROXY / HTTPS_PROXY / NO_PROXY environment variables. Disabled forces a direct connection.",
+    "api_proxy_modes": {
+      "disabled": "Disabled",
+      "system": "Follow system",
+      "manual": "Manual"
+    },
+    "api_proxy_url": "API Proxy URL",
+    "api_proxy_url-tips": "Manual proxy URL, for example http://127.0.0.1:7890 or socks5://user:password@host:1080. Supports HTTP, HTTPS, SOCKS5 and SOCKS5H.",
+    "transfer_proxy_mode": "Upstream File Transfer Proxy",
+    "transfer_proxy_mode-tips": "Controls HTTP/HTTPS file uploads and downloads made by OpenList. System uses proxy_address first, then proxy environment variables. Existing direct links, browser transfers and external download proxy servers keep their current behavior. Native FTP/SFTP/SMB connections are unaffected.",
+    "transfer_proxy_modes": {
+      "disabled": "Disabled",
+      "system": "Follow system",
+      "manual": "Manual"
+    },
+    "transfer_proxy_url": "File Transfer Proxy URL",
+    "transfer_proxy_url-tips": "Manual proxy URL, for example http://127.0.0.1:7890 or socks5://user:password@host:1080. Supports HTTP, HTTPS, SOCKS5 and SOCKS5H.",
+    "proxy_url_required": "Enter a proxy URL for each proxy set to Manual.",
     "export": "Export",
     "export_title": "Export Storage to JSON",
     "export_tips": "Please copy the storage JSON above.",

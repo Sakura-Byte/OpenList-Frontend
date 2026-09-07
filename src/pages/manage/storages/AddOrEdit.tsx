@@ -55,6 +55,14 @@ function GetDefaultValue(type: Type, value?: string) {
 
 type Drivers = Record<string, DriverInfo>
 
+const normalizeProxy = (storage: Storage): Storage => ({
+  ...storage,
+  api_proxy_mode: storage.api_proxy_mode || "system",
+  api_proxy_url: storage.api_proxy_url ?? "",
+  transfer_proxy_mode: storage.transfer_proxy_mode || "system",
+  transfer_proxy_url: storage.transfer_proxy_url ?? "",
+})
+
 const AddOrEdit = () => {
   const t = useT()
   const { params, back, to } = useRouter()
@@ -81,7 +89,7 @@ const AddOrEdit = () => {
   const initEdit = async () => {
     const storageResp = await loadStorage()
     handleResp(storageResp, async (storageData) => {
-      setStorage(storageData)
+      setStorage(normalizeProxy(storageData))
       setAddition(JSON.parse(storageData.addition))
       const driverResp = await loadDriver()
       handleResp(driverResp, (driverData) =>
@@ -162,20 +170,36 @@ const AddOrEdit = () => {
         <Show when={drivers()[storage.driver]}>
           <For each={drivers()[storage.driver].common}>
             {(item) => (
-              <Item
-                {...item}
-                driver="common"
-                value={(storage as any)[item.name]}
-                onChange={(val: any) => {
-                  setStorage(item.name as keyof Storage, val)
-                }}
-              />
+              <Show
+                when={
+                  (item.name !== "api_proxy_url" ||
+                    storage.api_proxy_mode === "manual") &&
+                  (item.name !== "transfer_proxy_url" ||
+                    storage.transfer_proxy_mode === "manual")
+                }
+              >
+                <Item
+                  {...item}
+                  type={item.type as any}
+                  required={
+                    item.required ||
+                    item.name === "api_proxy_url" ||
+                    item.name === "transfer_proxy_url"
+                  }
+                  driver="common"
+                  value={(storage as any)[item.name]}
+                  onChange={(val: any) => {
+                    setStorage(item.name as keyof Storage, val)
+                  }}
+                />
+              </Show>
             )}
           </For>
           <For each={drivers()[storage.driver].additional}>
             {(item) => (
               <Item
                 {...item}
+                type={item.type as any}
                 driver={storage.driver}
                 value={addition[item.name] as any}
                 onChange={(val: any) => {
@@ -199,6 +223,15 @@ const AddOrEdit = () => {
         <Button
           loading={okLoading()}
           onClick={async () => {
+            if (
+              (storage.api_proxy_mode === "manual" &&
+                !storage.api_proxy_url?.trim()) ||
+              (storage.transfer_proxy_mode === "manual" &&
+                !storage.transfer_proxy_url?.trim())
+            ) {
+              notify.error(t("storages.common.proxy_url_required"))
+              return
+            }
             if (drivers()[storage.driver].config.need_ms) {
               notify.info(t("manage.add_storage-tips"))
               window.open(joinBase("/@manage/messenger"), "_blank")
@@ -263,7 +296,7 @@ const AddOrEdit = () => {
           try {
             const { id, disabled, modified, status, ...obj }: Storage =
               JSON.parse(text)
-            setStorage(obj)
+            setStorage(normalizeProxy(obj as Storage))
             setAddition(JSON.parse(obj.addition))
             setImportOpened(false)
             notify.success(t("storages.common.import_success"))
