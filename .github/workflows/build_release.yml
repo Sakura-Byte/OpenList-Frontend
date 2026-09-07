@@ -191,6 +191,6 @@ jobs:
             pnpm publish --dry-run --no-git-checks --access public
           fi
 
-  permissions:
+permissions:
   contents: write
   id-token: write
