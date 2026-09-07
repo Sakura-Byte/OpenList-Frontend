@@ -209,13 +209,13 @@ export function Markdown(props: {
   children?: string | ArrayBuffer
   class?: string
   ext?: string
-	readme?: boolean
-	toc?: boolean
-	trackContent?: boolean
-	contentName?: string
-	contentPiece?: string
-	contentTarget?: string
-	sanitize?: boolean
+  readme?: boolean
+  toc?: boolean
+  trackContent?: boolean
+  contentName?: string
+  contentPiece?: string
+  contentTarget?: string
+  sanitize?: boolean
 }) {
   const [encoding, setEncoding] = createSignal<string>("utf-8")
   const [show, setShow] = createSignal(true)

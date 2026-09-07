@@ -176,10 +176,10 @@ const PackageDownload = (props: { onClose: () => void }) => {
           if (selectedObjs.length === 1) {
             name = name.replace(`${saveName}/`, "")
           }
-			const url = it.value.url
-			// console.log(name, url);
-			setFetchings((prev) => [...prev, name])
-			return fetchWithRetry(url, retryOpts, name).then((res) => {
+          const url = it.value.url
+          // console.log(name, url);
+          setFetchings((prev) => [...prev, name])
+          return fetchWithRetry(url, retryOpts, name).then((res) => {
             ctrl.enqueue({
               name,
               stream: res.body,
