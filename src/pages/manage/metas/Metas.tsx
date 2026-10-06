@@ -25,6 +25,8 @@ import {
   VStack,
 } from "@hope-ui/solid"
 import { createSignal, For, Show } from "solid-js"
+import { createStore, reconcile } from "solid-js/store"
+import { createStorageSignal } from "@solid-primitives/storage"
 import {
   useFetch,
   useListFetch,
@@ -33,7 +35,7 @@ import {
   useT,
 } from "~/hooks"
 import { handleResp, notify, r } from "~/utils"
-import { Meta, PEmptyResp, PPageResp } from "~/types"
+import { Meta, MetaGridUpdate, PEmptyResp, PPageResp } from "~/types"
 import { DeletePopover } from "../common/DeletePopover"
 import { FolderChooseInput, Wether } from "~/components"
 
@@ -44,8 +46,13 @@ const Metas = () => {
   const [getMetasLoading, getMetas] = useFetch(
     (): PPageResp<Meta> => r.get("/admin/meta/list"),
   )
-  const [metas, setMetas] = createSignal<Meta[]>([])
-  const [gridMode, setGridMode] = createSignal(false)
+  const [metaState, setMetaState] = createStore({ metas: [] as Meta[] })
+  const metas = () => metaState.metas
+  const [layout, setLayout] = createStorageSignal(
+    "metas-layout",
+    "list" as "grid" | "list",
+  )
+  const gridMode = () => layout() === "grid"
   const [savingAll, setSavingAll] = createSignal(false)
   const [batchFind, setBatchFind] = createSignal("")
   const [batchReplace, setBatchReplace] = createSignal("")
@@ -55,47 +62,56 @@ const Metas = () => {
   const { isOpen, onOpen, onClose } = createDisclosure()
   const refresh = async () => {
     const resp = await getMetas()
-    handleResp(resp, (data) => setMetas(data.content))
+    handleResp(resp, (data) =>
+      setMetaState("metas", reconcile(data.content, { key: "id" })),
+    )
   }
   refresh()
 
   const [deleting, deleteMeta] = useListFetch(
     (id: number): PEmptyResp => r.post(`/admin/meta/delete?id=${id}`),
   )
-  const [, saveMeta] = useFetch(
-    (meta: Meta): PEmptyResp => r.post(`/admin/meta/update`, meta),
-  )
   const updateMeta = <K extends keyof Meta>(
     index: number,
     key: K,
     value: Meta[K],
   ) => {
-    setMetas((items) =>
-      items.map((item, i) => (i === index ? { ...item, [key]: value } : item)),
-    )
+    setMetaState("metas", index, key, () => value)
   }
   const saveAll = async () => {
-    if (savingAll()) return
+    if (savingAll() || metas().length === 0) return
     setSavingAll(true)
-    let hasError = false
     try {
-      for (const meta of metas()) {
-        try {
-          const resp = await saveMeta(meta)
-          handleResp(resp, undefined, () => {
-            hasError = true
-          })
-        } catch (error) {
-          hasError = true
-          notify.error(String(error))
-        }
+      const updates: MetaGridUpdate[] = metas().map((meta) => ({
+        id: meta.id,
+        path: meta.path,
+        password: meta.password,
+        p_sub: meta.p_sub,
+        write: meta.write,
+        w_sub: meta.w_sub,
+        hide: meta.hide,
+        h_sub: meta.h_sub,
+        header: meta.header,
+        header_sub: meta.header_sub,
+        readme: meta.readme,
+        r_sub: meta.r_sub,
+      }))
+      const resp: Awaited<PEmptyResp> = await r.post(
+        "/admin/meta/update_grid",
+        {
+          metas: updates,
+        },
+      )
+      if (resp.code === 200) {
+        notify.success(t("global.save_success"))
+        await refresh()
+      } else {
+        handleResp(resp)
       }
+    } catch (error) {
+      notify.error(String(error))
     } finally {
       setSavingAll(false)
-    }
-    if (!hasError) {
-      notify.success(t("global.save_success"))
-      refresh()
     }
   }
   const applyBatchReplace = () => {
@@ -121,7 +137,7 @@ const Metas = () => {
     } else {
       replaceFn = (value) => value.split(findValue).join(batchReplace())
     }
-    setMetas((items) =>
+    setMetaState("metas", (items) =>
       items.map((item) => {
         const next = { ...item }
         if (batchApplyHeader()) {
@@ -142,11 +158,13 @@ const Metas = () => {
           <Button
             colorScheme="accent"
             loading={getMetasLoading()}
+            disabled={savingAll()}
             onClick={refresh}
           >
             {t("global.refresh")}
           </Button>
           <Button
+            disabled={savingAll()}
             onClick={() => {
               to("/@manage/metas/add")
             }}
@@ -154,17 +172,21 @@ const Metas = () => {
             {t("global.add")}
           </Button>
           <Button
+            disabled={savingAll()}
             onClick={() => {
-              setGridMode((prev) => !prev)
+              setLayout((prev) => (prev === "grid" ? "list" : "grid"))
             }}
           >
             {t(gridMode() ? "metas.list_mode" : "metas.grid_mode")}
           </Button>
           <Show when={gridMode()}>
-            <Button onClick={onOpen}>{t("metas.batch_replace")}</Button>
+            <Button disabled={savingAll()} onClick={onOpen}>
+              {t("metas.batch_replace")}
+            </Button>
             <Button
               colorScheme="accent"
               loading={savingAll()}
+              disabled={getMetasLoading() || metas().length === 0}
               onClick={saveAll}
             >
               {t("metas.save_all")}
@@ -224,7 +246,16 @@ const Metas = () => {
             </Box>
           }
         >
-          <Box w="$full" overflowX="auto">
+          <Box
+            as="fieldset"
+            disabled={savingAll()}
+            w="$full"
+            minW="0"
+            m="0"
+            p="0"
+            border="none"
+            overflowX="auto"
+          >
             <Table highlightOnHover dense>
               <Thead>
                 <Tr>
@@ -312,7 +343,7 @@ const Metas = () => {
                           <Textarea
                             rows={2}
                             value={meta.hide}
-                            onChange={(e) =>
+                            onInput={(e) =>
                               updateMeta(index(), "hide", e.currentTarget.value)
                             }
                           />
@@ -336,7 +367,7 @@ const Metas = () => {
                           <Textarea
                             rows={2}
                             value={meta.header}
-                            onChange={(e) =>
+                            onInput={(e) =>
                               updateMeta(
                                 index(),
                                 "header",
@@ -364,7 +395,7 @@ const Metas = () => {
                           <Textarea
                             rows={2}
                             value={meta.readme}
-                            onChange={(e) =>
+                            onInput={(e) =>
                               updateMeta(
                                 index(),
                                 "readme",
@@ -420,7 +451,7 @@ const Metas = () => {
                 <Textarea
                   id="metas-batch-find"
                   value={batchFind()}
-                  onChange={(e) => setBatchFind(e.currentTarget.value)}
+                  onInput={(e) => setBatchFind(e.currentTarget.value)}
                 />
               </FormControl>
               <FormControl w="$full" display="flex" flexDirection="column">
@@ -430,7 +461,7 @@ const Metas = () => {
                 <Textarea
                   id="metas-batch-replace"
                   value={batchReplace()}
-                  onChange={(e) => setBatchReplace(e.currentTarget.value)}
+                  onInput={(e) => setBatchReplace(e.currentTarget.value)}
                 />
               </FormControl>
               <Checkbox

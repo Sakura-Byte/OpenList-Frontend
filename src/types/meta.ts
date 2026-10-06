@@ -16,3 +16,8 @@ export interface Meta {
   header: string
   header_sub: boolean
 }
+
+export type MetaGridUpdate = Omit<
+  Meta,
+  "read_users" | "read_users_sub" | "write_users" | "write_users_sub"
+>
