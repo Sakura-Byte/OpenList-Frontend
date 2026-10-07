@@ -32,9 +32,9 @@ jobs:
           submodules: recursive
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: "24.18.0"
+          node-version: "24.21.0"
           registry-url: "https://registry.npmjs.org"
 
       - uses: pnpm/action-setup@v6
@@ -68,7 +68,8 @@ jobs:
             --prerelease \
             --draft=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.draft || false }} \
             ${{ steps.version.outputs.tag_name }} \
-            dist/openlist-frontend-dist-v*-*.tar.gz
+            dist/openlist-frontend-dist-v*-*.tar.gz \
+            dist/i18n.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

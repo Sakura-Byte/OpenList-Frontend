@@ -94,6 +94,7 @@ export const Obj = () => {
             <Error
               msg={objStore.err}
               disableColor
+              show404Face={isShare() && objStore.err === t("shares.share_gone")}
               actions={
                 shouldShowStorageButton() ? storageErrorActions() : undefined
               }

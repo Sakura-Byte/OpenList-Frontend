@@ -148,10 +148,17 @@ build_project() {
 
     log_step "==== Fetching i18n from GitHub release ===="
     if [[ "$SKIP_I18N" == "false" ]]; then
-        fetch_i18n_from_release
+        if ! pnpm i18n:release; then
+            log_warning "Crowdin download failed, falling back to the edge beta release"
+            fetch_i18n_from_release "edge" || true
+        fi
     else
         log_warning "Skipping i18n fetch as requested."
     fi
+
+    # Always generate entry.ts and fill missing translation files for all languages
+    log_info "Running i18n build script to generate entry.ts..."
+    node ./scripts/i18n.mjs
 
     log_step "==== Building project ===="
     if [[ "$LITE_FLAG" == "true" ]]; then
@@ -163,15 +170,16 @@ build_project() {
 
 # Fetch i18n files from release if skip-i18n flag is set
 fetch_i18n_from_release() {
+    local release_tag=${1:-edge}
     i18n_repo=${OPENLIST_I18N_REPO:-OpenListTeam/OpenList-Frontend}
     release_repo=${OPENLIST_RELEASE_REPO:-$i18n_repo}
-    log_info "Fetching i18n.tar.gz from https://api.github.com/repos/${release_repo}/releases/tags/$git_version"
-    release_response=$(github_api_get "repos/${release_repo}/releases/tags/${git_version}") || true
+    log_info "Fetching i18n.tar.gz from https://api.github.com/repos/${release_repo}/releases/tags/$release_tag"
+    release_response=$(github_api_get "repos/${release_repo}/releases/tags/${release_tag}") || true
 
     i18n_url=$(extract_i18n_url "$release_response")
 
     if [[ -z "$i18n_url" ]]; then
-        log_warning "i18n.tar.gz not found for tag ${git_version}. Falling back to latest available release."
+        log_warning "i18n.tar.gz not found for tag ${release_tag}. Falling back to latest available release."
         latest_release_response=$(github_api_get "repos/${i18n_repo}/releases?per_page=30") || true
         fallback_info=$(extract_latest_i18n_from_list "$latest_release_response")
         if [[ -z "$fallback_info" ]]; then
@@ -195,15 +203,17 @@ download_and_extract_i18n() {
     fi
 
     log_info "Downloading i18n.tar.gz from GitHub release assets..."
-    if curl -L -o "i18n.tar.gz" "$url"; then
+    if curl -fL -o "i18n.tar.gz" "$url"; then
         if tar -xzvf i18n.tar.gz -C src/lang; then
             log_info "i18n files extracted to src/lang/"
+            return 0
         else
             log_warning "Failed to extract i18n.tar.gz"
         fi
     else
         log_warning "Failed to download i18n.tar.gz"
     fi
+    return 1
 }
 
 # Create VERSION file in the dist directory

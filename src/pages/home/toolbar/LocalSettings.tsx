@@ -61,7 +61,7 @@ function LocalSettingEdit(props: LocalSetting) {
             </SelectTrigger>
             <SelectContent>
               <SelectListbox>
-                <For each={props.options}>
+                <For each={props.type === "select" ? props.options : []}>
                   {(item) => (
                     <SelectOption value={item}>
                       <SelectOptionText>

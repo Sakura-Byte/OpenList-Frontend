@@ -43,8 +43,8 @@ const Metas = () => {
   const t = useT()
   useManageTitle("manage.sidemenu.metas")
   const { to } = useRouter()
-  const [getMetasLoading, getMetas] = useFetch(
-    (): PPageResp<Meta> => r.get("/admin/meta/list"),
+  const [getMetasLoading, getMetas] = useFetch((): PPageResp<Meta> =>
+    r.get("/admin/meta/list"),
   )
   const [metaState, setMetaState] = createStore({ metas: [] as Meta[] })
   const metas = () => metaState.metas
@@ -68,8 +68,8 @@ const Metas = () => {
   }
   refresh()
 
-  const [deleting, deleteMeta] = useListFetch(
-    (id: number): PEmptyResp => r.post(`/admin/meta/delete?id=${id}`),
+  const [deleting, deleteMeta] = useListFetch((id: number): PEmptyResp =>
+    r.post(`/admin/meta/delete?id=${id}`),
   )
   const updateMeta = <K extends keyof Meta>(
     index: number,

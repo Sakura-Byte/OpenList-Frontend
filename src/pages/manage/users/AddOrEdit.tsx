@@ -45,7 +45,7 @@ const Permission = (props: {
 
 const AddOrEdit = () => {
   const t = useT()
-  const { params, back } = useRouter()
+  const { params, to } = useRouter()
   const { id } = params
   const [user, setUser] = createStore<User>({
     id: 0,
@@ -62,8 +62,8 @@ const AddOrEdit = () => {
     search_rps: null,
     allow_ldap: false,
   })
-  const [userLoading, loadUser] = useFetch(
-    (): PResp<User> => r.get(`/admin/user/get?id=${id}`),
+  const [userLoading, loadUser] = useFetch((): PResp<User> =>
+    r.get(`/admin/user/get?id=${id}`),
   )
 
   const initEdit = async () => {
@@ -138,7 +138,7 @@ const AddOrEdit = () => {
             </For>
           </Flex>
         </FormControl>
-        <Heading size="md">{t("users.rate_limit")}</Heading>
+        <Heading size="base">{t("users.rate_limit")}</Heading>
         <FormControl w="$full" display="flex" flexDirection="column">
           <FormLabel
             for="download_concurrency"
@@ -248,7 +248,7 @@ const AddOrEdit = () => {
               notify.success(t("global.save_success"))
               if (user.username === me().username)
                 handleResp(await (r.get("/me") as PResp<Me>), setMe)
-              back()
+              to("/@manage/users", false, { replace: true })
             })
           }}
         >
