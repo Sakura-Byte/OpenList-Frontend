@@ -73,7 +73,7 @@ const AddOrEdit = () => {
             <Textarea
               id={props.name}
               value={props.value}
-              onChange={(e) => props.onChange(e.currentTarget.value)}
+              onInput={(e) => props.onChange(e.currentTarget.value)}
             />
           ) : props.type === "users" ? (
             <Select
