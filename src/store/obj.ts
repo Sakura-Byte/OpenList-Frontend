@@ -7,6 +7,7 @@ import { bus, log } from "~/utils"
 import { keyPressed } from "./key-event"
 import { local } from "./local_settings"
 import { useT } from "~/hooks"
+import type { ReaderInfo } from "~/types/jmcomic"
 
 export enum State {
   Initial, // Initial state
@@ -28,6 +29,7 @@ const initialObjStore = {
   readme: "",
   header: "",
   provider: "",
+  reader: undefined as ReaderInfo | undefined,
   direct_upload_tools: <string[] | undefined>undefined,
   state: State.Initial,
   err: "",

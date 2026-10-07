@@ -21,6 +21,7 @@ import {
 import { createStore, produce } from "solid-js/store"
 import { Item } from "./Item"
 import { ASMRONESyncPanel, useASMRONETranslation } from "./ASMRONESyncPanel"
+import { JMComicSyncPanel, useJMComicTranslation } from "./JMComicSyncPanel"
 import { ResponsiveGrid } from "../common/ResponsiveGrid"
 
 interface DriverInfo {
@@ -66,6 +67,7 @@ const normalizeProxy = (storage: Storage): Storage => ({
 
 const AddOrEdit = () => {
   const asmroneT = useASMRONETranslation()
+  const jmcomicT = useJMComicTranslation()
   const t = useT()
   const { params, back, to } = useRouter()
   const { id } = params
@@ -160,6 +162,7 @@ const AddOrEdit = () => {
             }
             setStorage("driver", value)
             if (value === "ASMR.ONE") setStorage("mount_path", "/ASMR_DLSite")
+            if (value === "JMComic") setStorage("mount_path", "/JMComic")
           }}
         />
         <Show when={alert()}>
@@ -171,6 +174,9 @@ const AddOrEdit = () => {
       </VStack>
       <Show when={id && storage.driver === "ASMR.ONE"}>
         <ASMRONESyncPanel storageId={Number(id)} disabled={storage.disabled} />
+      </Show>
+      <Show when={id && storage.driver === "JMComic"}>
+        <JMComicSyncPanel storageId={Number(id)} disabled={storage.disabled} />
       </Show>
       <ResponsiveGrid>
         <Show when={drivers()[storage.driver]}>
@@ -210,6 +216,13 @@ const AddOrEdit = () => {
                 label={
                   storage.driver === "ASMR.ONE"
                     ? asmroneT(item.name)
+                    : storage.driver === "JMComic"
+                      ? jmcomicT(item.name)
+                      : undefined
+                }
+                option_labels={
+                  storage.driver === "JMComic" && item.name === "mode"
+                    ? { client: jmcomicT("client"), server: jmcomicT("server") }
                     : undefined
                 }
                 value={addition[item.name] as any}

@@ -11,7 +11,7 @@ export function Readme(props: {
 }) {
   const cardBg = useColorModeValue("white", "$neutral3")
   const { proxyLink } = useLink()
-  const { pathname } = useRouter()
+  const { pathname, searchParams } = useRouter()
   const trackingMeta = createMemo(() =>
     props.fromMeta === "header"
       ? {
@@ -25,7 +25,7 @@ export function Readme(props: {
   )
   const readme = createMemo(
     on(
-      () => objStore.state,
+      () => [objStore.state, objStore.reader, searchParams.view] as const,
       () => {
         if (
           ![State.FetchingMore, State.Folder, State.File].includes(
@@ -34,7 +34,10 @@ export function Readme(props: {
         ) {
           return ""
         }
-        if ([State.FetchingMore, State.Folder].includes(objStore.state)) {
+        if (
+          [State.FetchingMore, State.Folder].includes(objStore.state) &&
+          !(objStore.reader && searchParams.view !== "files")
+        ) {
           const obj = objStore.objs.find((item) =>
             props.files.find(
               (file) => file.toLowerCase() === item.name.toLowerCase(),

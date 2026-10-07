@@ -8,6 +8,7 @@ import {
   objStore,
   getHistoryKey,
   hasHistory,
+  HistoryMap,
   recoverHistory,
   clearHistory,
   me,
@@ -107,7 +108,14 @@ export const usePath = () => {
     cancelList?.()
     retry_pass = rp ?? false
     ObjStore.setErr("")
-    if (hasHistory(path, index)) {
+    // Reader mounts can change delivery mode while this page is in history.
+    // Reload their local listing; the work page restores its own scroll position.
+    const cachedReader = (
+      HistoryMap.get(getHistoryKey(path, index))?.obj as
+        | { reader?: unknown }
+        | undefined
+    )?.reader
+    if (hasHistory(path, index) && !cachedReader) {
       log(`handle [${getHistoryKey(path, index)}] from history`)
       return recoverHistory(path, index)
     } else if (IsDirRecord[path]) {
@@ -128,6 +136,7 @@ export const usePath = () => {
       (data) => {
         ObjStore.setObj(data)
         ObjStore.setProvider(data.provider)
+        ObjStore.set({ reader: data.reader })
         if (data.is_dir) {
           setPathAs(path)
           handleFolder(path, index)
@@ -180,6 +189,7 @@ export const usePath = () => {
         ObjStore.setWriteContentBypass(data.write_content_bypass)
         ObjStore.setProvider(data.provider)
         ObjStore.setDirectUploadTools(data.direct_upload_tools)
+        ObjStore.set({ reader: data.reader })
         shouldKeepState() || ObjStore.setState(State.Folder)
       },
       onlyList

@@ -16,6 +16,7 @@ import { SelectOptions } from "~/components"
 
 export type ItemProps = DriverItem & {
   label?: string
+  option_labels?: Record<string, string>
   readonly?: boolean
   full_name_path?: string
   options_prefix?: string
@@ -148,12 +149,15 @@ const Item = (props: ItemProps) => {
               searchable={props.type === Type.Select && props.searchable}
               options={props.options.split(",").map((key) => ({
                 key,
-                label: t(
-                  (props.options_prefix ??
-                    (props.driver === "common"
-                      ? `storages.common.${props.name}s`
-                      : `drivers.${props.driver}.${props.name}s`)) + `.${key}`,
-                ),
+                label:
+                  props.option_labels?.[key] ??
+                  t(
+                    (props.options_prefix ??
+                      (props.driver === "common"
+                        ? `storages.common.${props.name}s`
+                        : `drivers.${props.driver}.${props.name}s`)) +
+                      `.${key}`,
+                  ),
               }))}
             />
           </Select>

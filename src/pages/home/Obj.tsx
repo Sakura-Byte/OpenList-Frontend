@@ -24,6 +24,7 @@ import {
 import { UserMethods } from "~/types"
 
 const Folder = lazy(() => import("./folder/Folder"))
+const JMComicView = lazy(() => import("./jmcomic/JMComicView"))
 const File = lazy(() => import("./file/File"))
 const Password = lazy(() => import("./Password"))
 // const ListSkeleton = lazy(() => import("./Folder/ListSkeleton"));
@@ -132,6 +133,16 @@ export const Obj = () => {
                 </Text>
               </Show>
             </Password>
+          </Match>
+          <Match
+            when={
+              objStore.state === State.Folder &&
+              objStore.reader &&
+              (searchParams["view"] !== "files" ||
+                objStore.reader?.mode === "client")
+            }
+          >
+            <JMComicView />
           </Match>
           <Match
             when={[State.Folder, State.FetchingMore].includes(objStore.state)}

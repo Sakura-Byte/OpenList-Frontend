@@ -1,4 +1,5 @@
 import { PageResp } from "~/types/resp"
+import type { ReaderInfo } from "./jmcomic"
 
 export enum ObjType {
   UNKNOWN,
@@ -20,6 +21,7 @@ export interface Obj {
   thumb: string
   type: ObjType
   mount_details?: MountDetails
+  reader?: ReaderInfo
 }
 
 export type StoreObj = Obj & {

@@ -1,4 +1,5 @@
 import { Obj } from "."
+import type { ReaderInfo } from "./jmcomic"
 
 export interface Resp<T> {
   code: number
@@ -20,6 +21,7 @@ export type FsListResp = Resp<{
   write_content_bypass: boolean
   provider: string
   direct_upload_tools?: string[]
+  reader?: ReaderInfo
 }>
 
 export type SearchNode = {
