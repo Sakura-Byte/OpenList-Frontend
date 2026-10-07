@@ -6,3 +6,11 @@ dist
 .idea
 .test
 .codebuddy
+
+# Local build/test output and browser automation artifacts
+/artifacts/
+/.playwright-mcp/
+/playwright-report/
+/test-results/
+/coverage/
+.env*.local
