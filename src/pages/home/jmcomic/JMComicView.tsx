@@ -24,6 +24,9 @@ import type { Resp } from "~/types"
 import type { JMManifest, JMPage } from "~/types/jmcomic"
 import { useJMTranslation } from "./i18n"
 import { restoreMoves } from "./restore"
+import "./work-page.css"
+import { ExportControls } from "./ExportControls"
+import { LinkWithBase } from "~/components"
 
 interface Progress {
   chapter_id: string
@@ -349,6 +352,7 @@ function ChapterReader(props: { manifest: JMManifest; refresh: () => void }) {
         </Show>
       </HStack>
       <Show when={m.pages.length > 0} fallback={<Text>{t("empty")}</Text>}>
+        <ExportControls manifest={m} />
         <Box w="$full" maxW="1000px">
           <For each={m.pages}>
             {(page, index) => (
@@ -369,8 +373,9 @@ function ChapterReader(props: { manifest: JMManifest; refresh: () => void }) {
   )
 }
 
-function WorkPage(props: { manifest: JMManifest }) {
+function WorkPage(props: { manifest: JMManifest; refresh: () => void }) {
   const m = props.manifest
+  const [coverFailed, setCoverFailed] = createSignal(false)
   const t = useJMTranslation()
   const { to, pathname } = useRouter()
   const saved = readProgress(m)
@@ -394,26 +399,32 @@ function WorkPage(props: { manifest: JMManifest }) {
   }
   return (
     <VStack w="$full" alignItems="start" spacing="$4" p="$3">
-      <HStack alignItems="start" flexWrap="wrap" gap="$4">
-        <Show when={m.cover}>
-          <img
-            src={m.cover}
-            referrerPolicy="no-referrer"
-            alt={m.title}
-            style={{
-              width: "160px",
-              "max-height": "240px",
-              "object-fit": "contain",
-              "border-radius": "8px",
-            }}
-          />
-        </Show>
-        <VStack alignItems="start" spacing="$2">
+      <div class="jm-work-header">
+        <VStack class="jm-work-info" alignItems="start" spacing="$2">
           <Heading>{m.title}</Heading>
           <Text>
             JM{m.album_id} · {m.date} · {(m.authors ?? []).join(" / ")}
           </Text>
-          <Text>{(m.tags ?? []).join(" · ")}</Text>
+          <div class="jm-work-tags">
+            <For each={m.tags ?? []}>
+              {(tag) => {
+                const link = m.tag_links?.find((link) => link.name === tag)
+                return (
+                  <Show
+                    when={link}
+                    fallback={<span class="jm-tag">{tag}</span>}
+                  >
+                    <LinkWithBase
+                      class="jm-tag"
+                      href={encodePath(link!.path, true)}
+                    >
+                      {tag}
+                    </LinkWithBase>
+                  </Show>
+                )
+              }}
+            </For>
+          </div>
           <HStack flexWrap="wrap" gap="$2">
             <Button
               colorScheme="accent"
@@ -437,10 +448,28 @@ function WorkPage(props: { manifest: JMManifest }) {
             </Show>
           </HStack>
         </VStack>
-      </HStack>
+        <Show when={m.cover && !coverFailed()}>
+          <img
+            class="jm-work-cover"
+            src={m.cover}
+            referrerPolicy="no-referrer"
+            alt={m.title}
+            loading="lazy"
+            decoding="async"
+            onError={() => setCoverFailed(true)}
+          />
+        </Show>
+      </div>
       <Text css={{ "white-space": "pre-wrap", "overflow-wrap": "anywhere" }}>
         {m.description}
       </Text>
+      <ExportControls manifest={m} />
+      <Show when={m.unavailable}>
+        <Text role="status">
+          {m.chapters.length ? t("work_details_stale") : t("work_unavailable")}
+        </Text>
+        <Button onClick={props.refresh}>{t("refresh_work_metadata")}</Button>
+      </Show>
       <Heading size="base">
         {t("chapters_title")} ({m.chapters.length})
       </Heading>
@@ -506,7 +535,7 @@ export default function JMComicView() {
             objStore.reader?.kind === "chapter" ? (
               <ChapterReader manifest={m} refresh={refresh} />
             ) : (
-              <WorkPage manifest={m} />
+              <WorkPage manifest={m} refresh={refresh} />
             )
           }
         </Show>

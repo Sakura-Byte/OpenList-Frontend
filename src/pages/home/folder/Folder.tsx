@@ -27,6 +27,7 @@ import { Search } from "./Search"
 const ListLayout = lazy(() => import("./List"))
 const GridLayout = lazy(() => import("./Grid"))
 const ImageLayout = lazy(() => import("./Images"))
+const TagFolders = lazy(() => import("../jmcomic/TagFolders"))
 
 const Folder = () => {
   const { rawLink } = useLink()
@@ -71,6 +72,9 @@ const Folder = () => {
   return (
     <>
       <Switch>
+        <Match when={objStore.objs.some((obj) => !!obj.tag)}>
+          <TagFolders />
+        </Match>
         <Match when={layout() === "list"}>
           <ListLayout />
         </Match>

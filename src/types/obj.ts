@@ -22,6 +22,7 @@ export interface Obj {
   type: ObjType
   mount_details?: MountDetails
   reader?: ReaderInfo
+  tag?: { name: string; count: number }
 }
 
 export type StoreObj = Obj & {

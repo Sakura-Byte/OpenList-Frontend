@@ -29,6 +29,7 @@ const initialObjStore = {
   readme: "",
   header: "",
   provider: "",
+  search_available: false,
   reader: undefined as ReaderInfo | undefined,
   direct_upload_tools: <string[] | undefined>undefined,
   state: State.Initial,

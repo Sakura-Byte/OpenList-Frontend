@@ -25,9 +25,11 @@ export interface JMManifest {
   description: string
   authors: string[] | null
   tags: string[] | null
+  tag_links?: { name: string; path: string }[]
   date: string
   updated: number
   cover: string
   chapters: JMChapter[]
   pages: JMPage[]
+  unavailable?: boolean
 }

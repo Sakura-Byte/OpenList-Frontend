@@ -136,7 +136,10 @@ export const usePath = () => {
       (data) => {
         ObjStore.setObj(data)
         ObjStore.setProvider(data.provider)
-        ObjStore.set({ reader: data.reader })
+        ObjStore.set({
+          reader: data.reader,
+          search_available: data.search_available ?? false,
+        })
         if (data.is_dir) {
           setPathAs(path)
           handleFolder(path, index)
@@ -189,7 +192,10 @@ export const usePath = () => {
         ObjStore.setWriteContentBypass(data.write_content_bypass)
         ObjStore.setProvider(data.provider)
         ObjStore.setDirectUploadTools(data.direct_upload_tools)
-        ObjStore.set({ reader: data.reader })
+        ObjStore.set({
+          reader: data.reader,
+          search_available: data.search_available ?? false,
+        })
         shouldKeepState() || ObjStore.setState(State.Folder)
       },
       onlyList

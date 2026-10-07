@@ -1,0 +1,92 @@
+.jm-work-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  width: 100%;
+}
+
+.jm-work-info {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.jm-work-cover {
+  display: block;
+  flex-shrink: 0;
+  width: 200px;
+  max-width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+@media (max-width: 600px) {
+  .jm-work-header {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .jm-work-info {
+    flex-basis: 100%;
+  }
+
+  .jm-work-cover {
+    margin-inline-start: auto;
+  }
+}
+
+.jm-work-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.jm-tag {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.4rem;
+  background: var(--hope-colors-neutral4);
+}
+a.jm-tag:hover {
+  background: var(--hope-colors-info4);
+}
+.jm-tag-folders {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.6rem;
+}
+.jm-tag-folder {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--hope-colors-neutral3);
+}
+.jm-tag-folder:hover {
+  background: var(--hope-colors-info3);
+}
+.jm-tag-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--hope-colors-neutral10);
+}
+.jm-export-controls {
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--hope-colors-neutral5);
+}
+.jm-export-select {
+  color: var(--hope-colors-neutral12);
+  background: var(--hope-colors-neutral3);
+  padding: 0.4rem;
+  border: 1px solid var(--hope-colors-neutral6);
+  border-radius: 0.35rem;
+}
+
+.jm-export-controls label {
+  min-width: 0;
+  max-width: 100%;
+}
+.jm-export-select {
+  max-width: 100%;
+}

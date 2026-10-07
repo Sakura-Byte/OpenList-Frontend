@@ -55,7 +55,12 @@ export const Header = () => {
           </HStack>
           <HStack class="header-right" spacing="$2">
             <Show when={objStore.state === State.Folder}>
-              <Show when={getSetting("search_index") !== "none"}>
+              <Show
+                when={
+                  getSetting("search_index") !== "none" ||
+                  objStore.search_available
+                }
+              >
                 <HStack
                   bg="$neutral4"
                   w="$32"

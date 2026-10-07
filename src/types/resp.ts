@@ -22,6 +22,7 @@ export type FsListResp = Resp<{
   provider: string
   direct_upload_tools?: string[]
   reader?: ReaderInfo
+  search_available?: boolean
 }>
 
 export type SearchNode = {
@@ -37,6 +38,7 @@ export type FsSearchResp = PageResp<SearchNode>
 
 export type FsGetResp = Resp<
   Obj & {
+    search_available?: boolean
     raw_url: string
     readme: string
     header: string
