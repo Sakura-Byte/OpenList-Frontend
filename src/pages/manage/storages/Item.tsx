@@ -15,6 +15,7 @@ import { DriverItem, Type } from "~/types"
 import { SelectOptions } from "~/components"
 
 export type ItemProps = DriverItem & {
+  label?: string
   readonly?: boolean
   full_name_path?: string
   options_prefix?: string
@@ -60,11 +61,12 @@ const Item = (props: ItemProps) => {
       required={props.required}
     >
       <FormLabel for={props.name} display="flex" alignItems="center">
-        {t(
-          (props.full_name_path ?? props.driver === "common")
-            ? `storages.common.${props.name}`
-            : `drivers.${props.driver}.${props.name}`,
-        )}
+        {props.label ??
+          t(
+            (props.full_name_path ?? props.driver === "common")
+              ? `storages.common.${props.name}`
+              : `drivers.${props.driver}.${props.name}`,
+          )}
       </FormLabel>
       <Switch fallback={<Center>{t("settings.unknown_type")}</Center>}>
         <Match when={props.type === Type.String}>

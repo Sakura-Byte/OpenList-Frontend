@@ -1731,6 +1731,17 @@
     "WeiYun": "WeiYun",
     "WoPan": "WoPan",
     "YandexDisk": "YandexDisk",
-    "cloudflare_imgbed": "Cloudflare imgbed"
+    "cloudflare_imgbed": "Cloudflare imgbed",
+    "ASMR.ONE": "ASMR.ONE"
+  },
+  "ASMR.ONE": {
+    "api_url": "API URL",
+    "cache_root": "Cache root directory",
+    "cache_root-tips": "Defaults to <OpenList data directory>/cache/asmrone. Each storage and API URL has an isolated cache.",
+    "requests_per_second": "Metadata requests per second",
+    "requests_per_second-tips": "Default 1, concurrency 1. Storages using the same upstream share the lowest configured rate.",
+    "sync_hours": "Catalog sync interval (hours)",
+    "full_sync_days": "Full catalog check interval (days)",
+    "root_folder_path": "Root folder path"
   }
 }

@@ -20,6 +20,7 @@ import {
 } from "~/types"
 import { createStore, produce } from "solid-js/store"
 import { Item } from "./Item"
+import { ASMRONESyncPanel, useASMRONETranslation } from "./ASMRONESyncPanel"
 import { ResponsiveGrid } from "../common/ResponsiveGrid"
 
 interface DriverInfo {
@@ -64,6 +65,7 @@ const normalizeProxy = (storage: Storage): Storage => ({
 })
 
 const AddOrEdit = () => {
+  const asmroneT = useASMRONETranslation()
   const t = useT()
   const { params, back, to } = useRouter()
   const { id } = params
@@ -157,6 +159,7 @@ const AddOrEdit = () => {
               )
             }
             setStorage("driver", value)
+            if (value === "ASMR.ONE") setStorage("mount_path", "/ASMR_DLSite")
           }}
         />
         <Show when={alert()}>
@@ -166,6 +169,9 @@ const AddOrEdit = () => {
           </Alert>
         </Show>
       </VStack>
+      <Show when={id && storage.driver === "ASMR.ONE"}>
+        <ASMRONESyncPanel storageId={Number(id)} disabled={storage.disabled} />
+      </Show>
       <ResponsiveGrid>
         <Show when={drivers()[storage.driver]}>
           <For each={drivers()[storage.driver].common}>
@@ -201,6 +207,11 @@ const AddOrEdit = () => {
                 {...item}
                 type={item.type as any}
                 driver={storage.driver}
+                label={
+                  storage.driver === "ASMR.ONE"
+                    ? asmroneT(item.name)
+                    : undefined
+                }
                 value={addition[item.name] as any}
                 onChange={(val: any) => {
                   setAddition(item.name, val)
