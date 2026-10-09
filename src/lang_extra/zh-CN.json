@@ -1,0 +1,13 @@
+{
+  "home": {
+    "layouts": {
+      "poster": "海报视图"
+    },
+    "local_settings": {
+      "global_default_layout_options": {
+        "poster": "海报视图"
+      },
+      "poster_item_size": "海报卡片宽度"
+    }
+  }
+}

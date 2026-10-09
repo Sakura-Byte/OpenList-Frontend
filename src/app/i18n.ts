@@ -39,6 +39,12 @@ export type Lang = keyof typeof langs
 export type RawDictionary = typeof en.dict
 export type Dictionary = i18n.Flatten<RawDictionary>
 
+// Fork-only keys that the upstream translation bundles do not contain yet
+const extraDicts = import.meta.glob<RawDictionary>("~/lang_extra/*.json", {
+  eager: true,
+  import: "default",
+})
+
 // English dictionary cache for fallback
 let enDictCache: Dictionary | null = null
 
@@ -59,7 +65,12 @@ const fetchDictionary = async (locale: Lang): Promise<Dictionary> => {
     // If not English, merge with English as fallback (English keys underneath, locale on top)
     if (locale !== "en") {
       const enDict = await fetchEnDict()
-      return { ...enDict, ...flatDict } as Dictionary
+      const extra = extraDicts[`/src/lang_extra/${locale}.json`]
+      return {
+        ...enDict,
+        ...(extra ? i18n.flatten(extra) : {}),
+        ...flatDict,
+      } as Dictionary
     }
 
     return flatDict

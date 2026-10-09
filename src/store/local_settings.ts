@@ -59,7 +59,7 @@ export const initialLocalSettings: LocalSetting[] = [
     key: "global_default_layout",
     default: "list",
     type: "select",
-    options: ["list", "grid", "image"],
+    options: ["list", "grid", "image", "poster"],
   },
   {
     key: "show_folder_in_image_view",
@@ -88,6 +88,11 @@ export const initialLocalSettings: LocalSetting[] = [
   {
     key: "grid_item_size",
     default: "90",
+    type: "number",
+  },
+  {
+    key: "poster_item_size",
+    default: "160",
     type: "number",
   },
   {

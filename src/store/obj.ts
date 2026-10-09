@@ -187,7 +187,20 @@ export const isIndeterminate = () => {
 
 const selectedNum = createMemo(() => selectedObjs().length)
 
-export type LayoutType = "list" | "grid" | "image"
+export type LayoutType = "list" | "grid" | "image" | "poster"
+
+// Work lists of these providers open in the poster layout by default
+const posterProviders: Record<string, string> = {
+  JMComic: "3 / 4",
+  "ASMR.ONE": "4 / 3",
+}
+export const isPosterProvider = () => objStore.provider in posterProviders
+export const posterAspect = () => posterProviders[objStore.provider] ?? "3 / 4"
+const isWorkList = createMemo(() => {
+  if (!isPosterProvider()) return false
+  const works = objStore.objs.filter((obj) => obj.is_dir && obj.thumb).length
+  return works * 2 > objStore.objs.length
+})
 const [pathname, setPathname] = createSignal<string>(location.pathname)
 const layoutRecord: Record<string, LayoutType> = (() => {
   try {
@@ -203,7 +216,9 @@ const [_layout, _setLayout] = createSignal<LayoutType>(
 )
 export const layout = () => {
   const layout = layoutRecord[pathname()]
-  _setLayout(layout || local["global_default_layout"])
+  _setLayout(
+    layout || (isWorkList() ? "poster" : local["global_default_layout"]),
+  )
   return _layout()
 }
 export const setLayout = (layout: LayoutType) => {

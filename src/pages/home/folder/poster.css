@@ -1,0 +1,90 @@
+.poster-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(var(--poster-min), 100%), 1fr)
+  );
+  gap: 20px 16px;
+  padding: 4px;
+}
+
+@media (max-width: 480px) {
+  .poster-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 12px;
+  }
+}
+
+/* No card container: the cover carries the colour, text sits on the page */
+.poster-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.poster-cover {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: var(--poster-aspect);
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: var(--hope-colors-neutral3);
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.poster-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .poster-item:hover .poster-cover {
+    transform: translateY(-4px);
+  }
+}
+
+.poster-item.selected .poster-cover,
+.poster-item:focus-visible .poster-cover {
+  outline: 2px solid var(--poster-accent);
+  outline-offset: 3px;
+}
+
+.poster-item:focus-visible {
+  outline: none;
+}
+
+.poster-checkbox {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+}
+
+.poster-body {
+  display: grid;
+  gap: 2px;
+  padding-inline: 2px;
+}
+
+.poster-code {
+  font-size: var(--hope-fontSizes-xs);
+  color: var(--hope-colors-neutral11);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.poster-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: var(--hope-fontSizes-sm);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}

@@ -6,7 +6,7 @@ import {
   MenuTrigger,
 } from "@hope-ui/solid"
 import { changeColor } from "seemly"
-import { BsGridFill, BsCardImage } from "solid-icons/bs"
+import { BsGridFill, BsCardImage, BsPostcardFill } from "solid-icons/bs"
 import { FaSolidListUl } from "solid-icons/fa"
 import { Switch, Match, For } from "solid-js"
 import { Dynamic } from "solid-js/web"
@@ -17,6 +17,7 @@ const layouts = {
   list: FaSolidListUl,
   grid: BsGridFill,
   image: BsCardImage,
+  poster: BsPostcardFill,
 } as const
 
 export const Layout = () => {
@@ -43,6 +44,9 @@ export const Layout = () => {
             </Match>
             <Match when={layout() === "image"}>
               <BsCardImage />
+            </Match>
+            <Match when={layout() === "poster"}>
+              <BsPostcardFill />
             </Match>
           </Switch>
         }

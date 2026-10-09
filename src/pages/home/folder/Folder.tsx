@@ -27,6 +27,7 @@ import { Search } from "./Search"
 const ListLayout = lazy(() => import("./List"))
 const GridLayout = lazy(() => import("./Grid"))
 const ImageLayout = lazy(() => import("./Images"))
+const PosterLayout = lazy(() => import("./Poster"))
 const TagFolders = lazy(() => import("../jmcomic/TagFolders"))
 
 const Folder = () => {
@@ -83,6 +84,9 @@ const Folder = () => {
         </Match>
         <Match when={layout() === "image"}>
           <ImageLayout images={images()} />
+        </Match>
+        <Match when={layout() === "poster"}>
+          <PosterLayout />
         </Match>
       </Switch>
       <Pager />
