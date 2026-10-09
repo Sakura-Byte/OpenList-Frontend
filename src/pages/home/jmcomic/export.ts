@@ -4,11 +4,7 @@ import { restoreMoves } from "./restore"
 export type ExportFormat = "epub" | "cbz" | "pdf" | "zip"
 export type ExportScope = "chapter" | "album"
 export type ExportErrorCode =
-  | "cors"
-  | "image"
-  | "limit"
-  | "empty"
-  | "mode_changed"
+  "cors" | "image" | "limit" | "empty" | "mode_changed"
 export class ComicExportError extends Error {
   constructor(
     public code: ExportErrorCode,

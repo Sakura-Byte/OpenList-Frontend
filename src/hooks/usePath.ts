@@ -112,8 +112,7 @@ export const usePath = () => {
     // Reload their local listing; the work page restores its own scroll position.
     const cachedReader = (
       HistoryMap.get(getHistoryKey(path, index))?.obj as
-        | { reader?: unknown }
-        | undefined
+        { reader?: unknown } | undefined
     )?.reader
     if (hasHistory(path, index) && !cachedReader) {
       log(`handle [${getHistoryKey(path, index)}] from history`)
