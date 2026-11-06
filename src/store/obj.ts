@@ -2,7 +2,7 @@ import naturalSort from "typescript-natural-sort"
 import { cookieStorage, createStorageSignal } from "@solid-primitives/storage"
 import { createMemo, createSignal } from "solid-js"
 import { createStore, produce } from "solid-js/store"
-import { Obj, ObjType, StoreObj } from "~/types"
+import { DownloadQuota, Obj, ObjType, StoreObj } from "~/types"
 import { bus, log } from "~/utils"
 import { keyPressed } from "./key-event"
 import { local } from "./local_settings"
@@ -22,6 +22,7 @@ const initialObjStore = {
   obj: {} as Obj,
   raw_url: "",
   related: [] as Obj[],
+  download_quota: undefined as DownloadQuota | undefined,
 
   objs: [] as StoreObj[],
   total: 0,

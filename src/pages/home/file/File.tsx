@@ -7,6 +7,7 @@ import { useRouter } from "~/hooks"
 import { Download } from "../previews/download"
 import { OpenWith } from "./open-with"
 import { getPreviews } from "../previews"
+import { DownloadQuotaNotice } from "./download-quota"
 
 const File = () => {
   const { searchParams, setSearchParams } = useRouter()
@@ -22,29 +23,34 @@ const File = () => {
   })
 
   return (
-    <Show when={previews.length > 1} fallback={<Download openWith />}>
-      <VStack w="$full" spacing="$2">
-        <HStack w="$full" spacing="$2">
-          <SelectWrapper
-            alwaysShowBorder
-            value={cur()?.key || ""}
-            onChange={(key) => {
-              setSearchParams({ preview: key }, { replace: true })
-            }}
-            options={previews.map((item) => ({
-              value: item.key,
-              label: item.name,
-            }))}
-          />
-          <OpenWith />
-        </HStack>
-        <ErrorBoundary fallback={(err) => <Error msg={String(err)} />}>
-          <Suspense fallback={<FullLoading />}>
-            <Dynamic component={cur()?.component} />
-          </Suspense>
-        </ErrorBoundary>
-      </VStack>
-    </Show>
+    <VStack w="$full" spacing="$2">
+      <DownloadQuotaNotice />
+      <Show when={!objStore.download_quota?.blocked}>
+        <Show when={previews.length > 1} fallback={<Download openWith />}>
+          <VStack w="$full" spacing="$2">
+            <HStack w="$full" spacing="$2">
+              <SelectWrapper
+                alwaysShowBorder
+                value={cur()?.key || ""}
+                onChange={(key) => {
+                  setSearchParams({ preview: key }, { replace: true })
+                }}
+                options={previews.map((item) => ({
+                  value: item.key,
+                  label: item.name,
+                }))}
+              />
+              <OpenWith />
+            </HStack>
+            <ErrorBoundary fallback={(err) => <Error msg={String(err)} />}>
+              <Suspense fallback={<FullLoading />}>
+                <Dynamic component={cur()?.component} />
+              </Suspense>
+            </ErrorBoundary>
+          </VStack>
+        </Show>
+      </Show>
+    </VStack>
   )
 }
 

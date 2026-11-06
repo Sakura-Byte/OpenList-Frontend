@@ -57,6 +57,14 @@ export type ArchiveMeta = {
   sign: string
 }
 
+export type DownloadQuota = {
+  limit: number
+  used: number
+  remaining: number
+  reset_at: number
+  blocked: boolean
+}
+
 export type MountDetails = {
   total_space?: number
   free_space?: number

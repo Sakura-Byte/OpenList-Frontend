@@ -14,6 +14,10 @@
   },
   "preview": {
     "download": "Download",
+    "download_quota_title": "Google Drive download limit reached",
+    "download_quota_blocked": "Your IP has downloaded {{limit}} Google Drive files in the last 24 hours and reached the limit. It resets at {{time}}.",
+    "download_quota_local": "Files on local storage, such as 3D Local, are not affected.",
+    "download_quota_remaining": "Google Drive downloads left in 24 hours: {{remaining}}/{{limit}}",
     "failed_load_img": "Failed to load image",
     "open_with": "Open with ...",
     "play_with": "Play with ...",

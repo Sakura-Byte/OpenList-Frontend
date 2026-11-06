@@ -147,6 +147,7 @@ export const usePath = () => {
           ObjStore.setHeader(data.header)
           ObjStore.setRelated(data.related ?? [])
           ObjStore.setRawUrl(data.raw_url)
+          ObjStore.set({ download_quota: data.download_quota })
           shouldKeepState() || ObjStore.setState(State.File)
         }
       },

@@ -1,4 +1,4 @@
-import { Obj } from "."
+import { DownloadQuota, Obj } from "."
 import type { ReaderInfo } from "./jmcomic"
 
 export interface Resp<T> {
@@ -44,6 +44,7 @@ export type FsGetResp = Resp<
     header: string
     provider: string
     related: Obj[]
+    download_quota?: DownloadQuota
   }
 >
 
