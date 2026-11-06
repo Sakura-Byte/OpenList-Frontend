@@ -14,6 +14,7 @@ import {
   BsBucket,
   BsHddNetwork,
   BsArrowLeftRight,
+  BsBarChartFill,
 } from "solid-icons/bs"
 import { FiLogIn } from "solid-icons/fi"
 import { SiMetabase } from "solid-icons/si"
@@ -205,6 +206,12 @@ export const side_menu_items: SideMenuItem[] = [
     icon: BsSearch,
     to: "/@manage/indexes",
     component: lazy(() => import("./indexes/index_page")),
+  },
+  {
+    title: "manage.sidemenu.download_stats",
+    icon: BsBarChartFill,
+    to: "/@manage/download_stats",
+    component: lazy(() => import("./download-stats")),
   },
   {
     title: "manage.sidemenu.backup-restore",

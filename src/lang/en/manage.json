@@ -28,7 +28,8 @@
     "s3": "S3",
     "ftp": "FTP",
     "traffic": "Traffic",
-    "plugins": "Plugins"
+    "plugins": "Plugins",
+    "download_stats": "Download stats"
   },
   "title": "OpenList Management",
   "not_admin": "You are not an admin user, please login with an admin account.",
@@ -39,5 +40,19 @@
   "add_storage-tips": "You may need to fill in some information in the newly opened tab.",
   "messenger-tips": "You may need to fill in some information on this tab as prompted.",
   "load_default_setting": "Load default settings",
-  "load_default_setting_success": "Loaded successfully, not saved"
+  "load_default_setting_success": "Loaded successfully, not saved",
+  "download_stats": {
+    "title": "3D author downloads",
+    "description": "Only files still on Google Drive count, so authors moved to local storage drop off. Counting started when this feature went live. Size is an estimate: file size × downloads.",
+    "days": "{{days}} d",
+    "top": "Top {{count}}",
+    "search": "Filter authors",
+    "authors": "Authors listed",
+    "author": "Author",
+    "downloads": "Downloads",
+    "estimated": "Estimated size",
+    "share": "Share of list",
+    "empty": "No downloads recorded in this period yet.",
+    "no_match": "No author matches the filter."
+  }
 }
