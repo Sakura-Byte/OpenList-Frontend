@@ -1781,7 +1781,8 @@
     "YandexDisk": "YandexDisk",
     "cloudflare_imgbed": "Cloudflare imgbed",
     "ASMR.ONE": "ASMR.ONE",
-    "JMComic": "JMComic"
+    "JMComic": "JMComic",
+    "GalGames": "GalGames (gal.games)"
   },
   "ASMR.ONE": {
     "api_url": "API URL",
@@ -1792,5 +1793,12 @@
     "sync_hours": "Catalog sync interval (hours)",
     "full_sync_days": "Full catalog check interval (days)",
     "root_folder_path": "Root folder path"
+  },
+  "GalGames": {
+    "root_folder_path": "Root folder path",
+    "api_url": "API URL",
+    "api_url-tips": "Base URL of the public JSON API, including /v1",
+    "page_size": "Page size",
+    "page_size-tips": "Items requested per listing page, 1-200"
   }
 }
