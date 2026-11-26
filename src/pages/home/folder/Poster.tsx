@@ -1,34 +1,38 @@
-import { Box, Text } from "@hope-ui/solid"
-import { For, Show } from "solid-js"
+import { For, Show, createMemo } from "solid-js"
+import { useT, useUtil } from "~/hooks"
+import { checkboxOpen, haveSelected, local, objStore } from "~/store"
 import { PosterItem } from "./PosterItem"
-import { smartCountMsg, local, objStore } from "~/store"
 import { useSelectWithMouse } from "./helper"
 import "./poster.css"
 
 const PosterLayout = () => {
+  const t = useT()
+  const { isHide } = useUtil()
   const { registerSelectContainer, captureContentMenu } = useSelectWithMouse()
   registerSelectContainer()
+
+  const visibleCount = createMemo(
+    () => objStore.objs.filter((o) => !isHide(o)).length,
+  )
+
   return (
-    <>
-      <Show when={local["show_count_msg"] === "visible"}>
-        <Box w="100%" textAlign="left" pl="$2">
-          <Text size="sm" color="$neutral11">
-            {smartCountMsg()}
-          </Text>
-        </Box>
-      </Show>
+    <Show
+      when={visibleCount() > 0}
+      fallback={<div class="ol-empty">{t("home.empty_dir")}</div>}
+    >
       <div
         oncapture:contextmenu={captureContentMenu}
-        class="viselect-container poster-grid"
+        class="ol-posters poster-grid ol-nav-body viselect-container"
+        data-selecting={haveSelected() || checkboxOpen()}
         style={{
-          "--poster-min": `${parseInt(local["poster_item_size"]) || 160}px`,
+          "--poster-min": `${parseInt(local["poster_item_size"]) || 156}px`,
         }}
       >
         <For each={objStore.objs}>
           {(obj, i) => <PosterItem obj={obj} index={i()} />}
         </For>
       </div>
-    </>
+    </Show>
   )
 }
 

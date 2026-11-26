@@ -1,5 +1,5 @@
-import { Show, createMemo, createResource, on } from "solid-js"
-import { Markdown, MaybeLoading } from "~/components"
+import { Show, createEffect, createMemo, createSignal, on } from "solid-js"
+import { Markdown } from "~/components"
 import { useLink, useRouter } from "~/hooks"
 import { State, getSettingBool, objStore } from "~/store"
 import { fetchText } from "~/utils"
@@ -32,6 +32,11 @@ export function Readme(props: {
 }) {
   const { proxyLink } = useLink()
   const { searchParams } = useRouter()
+  const [displayedContent, setDisplayedContent] = createSignal<
+    string | ArrayBuffer
+  >("")
+  let fetchSeq = 0
+
   const trackingMeta = createMemo(() =>
     props.fromMeta === "header"
       ? {
@@ -44,7 +49,7 @@ export function Readme(props: {
         },
   )
 
-  const readme = createMemo(
+  const resolvedSource = createMemo(
     on(
       () =>
         [
@@ -53,61 +58,83 @@ export function Readme(props: {
           objStore[props.fromMeta],
           searchParams.view,
         ] as const,
-      () => {
+      (): { settled: boolean; src: string } => {
+        // Keep previous DOM visible during in-flight folder transitions (zero blink!)
+        if (
+          [State.FetchingObj, State.FetchingObjs, State.Initial].includes(
+            objStore.state,
+          )
+        ) {
+          return { settled: false, src: "" }
+        }
         if (
           ![State.FetchingMore, State.Folder, State.File].includes(
             objStore.state,
           )
         ) {
-          return ""
+          return { settled: true, src: "" }
         }
         if (
           [State.FetchingMore, State.Folder].includes(objStore.state) &&
           !(objStore.reader && searchParams.view !== "files")
         ) {
-          const obj = objStore.objs.find((item) =>
-            props.files.find(
-              (file) => file.toLowerCase() === item.name.toLowerCase(),
-            ),
-          )
-          if (obj) {
-            return proxyLink(obj, true)
+          // On ASMR.ONE work directories, ASMRWorkView handles synthesized README.md via toggle
+          if (objStore.provider !== "ASMR.ONE") {
+            const obj = objStore.objs.find((item) =>
+              props.files.find(
+                (file) => file.toLowerCase() === item.name.toLowerCase(),
+              ),
+            )
+            if (obj) {
+              return { settled: true, src: proxyLink(obj, true) }
+            }
           }
         }
         const metaVal = objStore[props.fromMeta]
         if (metaVal && typeof metaVal === "string") {
-          return metaVal.trim()
+          return { settled: true, src: metaVal.trim() }
         }
-        return ""
+        return { settled: true, src: "" }
       },
     ),
   )
 
-  const fetchContent = async (src: string) => {
-    if (!src) return { content: "" as string | ArrayBuffer }
-    if (/^https?:\/\//i.test(src)) {
-      return await fetchText(src)
-    }
-    return {
-      content: src as string | ArrayBuffer,
-    }
-  }
-  const [content] = createResource(readme, fetchContent)
+  createEffect(
+    on(resolvedSource, async ({ settled, src }) => {
+      if (!settled) return
+      const mySeq = ++fetchSeq
+      if (!src) {
+        setDisplayedContent("")
+        return
+      }
+      if (/^https?:\/\//i.test(src)) {
+        const res = await fetchText(src)
+        if (mySeq !== fetchSeq) return
+        setDisplayedContent(() => res.content)
+      } else {
+        setDisplayedContent(src)
+      }
+    }),
+  )
+
+  const hasVisibleContent = createMemo(() => {
+    const c = displayedContent()
+    if (typeof c === "string") return c.length > 0
+    return Boolean(c && c.byteLength > 0)
+  })
 
   return (
-    <Show when={getSettingBool("readme_autorender") && readme()}>
+    <Show when={getSettingBool("readme_autorender") && hasVisibleContent()}>
       <section class="ol-sheet ol-readme">
         <div class="ol-nav-body">
-          <MaybeLoading loading={content.loading}>
-            <Markdown
-              children={content()?.content}
-              readme
-              toc={props.fromMeta === "readme"}
-              trackContent
-              contentName={trackingMeta().name}
-              contentPiece={trackingMeta().piece}
-            />
-          </MaybeLoading>
+          <Markdown
+            children={displayedContent()}
+            readme
+            toc={props.fromMeta === "readme"}
+            trackContent
+            contentName={trackingMeta().name}
+            contentPiece={trackingMeta().piece}
+          />
         </div>
       </section>
     </Show>

@@ -49,7 +49,10 @@ import {
   TbMovie,
   TbMusic,
   TbPhoto,
+  TbPlayerPause,
   TbPlayerPlay,
+  TbPlayerSkipBack,
+  TbPlayerSkipForward,
   TbRefresh,
   TbReplace,
   TbSearch,
@@ -132,6 +135,9 @@ export const IArchive = make(TbArchive)
 export const IMagnet = make(TbMagnet)
 export const ICheckbox = make(TbCheckbox)
 export const IPlay = make(TbPlayerPlay)
+export const IPause = make(TbPlayerPause)
+export const ISkipBack = make(TbPlayerSkipBack)
+export const ISkipForward = make(TbPlayerSkipForward)
 
 // ---------------------------------------------------------------------------
 // File types
@@ -170,7 +176,7 @@ reg("pdf", "pdf")
 reg("doc", "doc,docx,ppt,pptx,rtf,odt")
 reg("sheet", "xls,xlsx,csv,ods")
 reg("book", "epub,mobi,azw3,cbz,cbr,fb2")
-reg("subtitle", "ass,ssa,srt,vtt,sub,sup")
+reg("subtitle", "ass,ssa,srt,vtt,lrc,sub,sup")
 reg("text", "txt,md,nfo,log,ini,cue,url")
 reg(
   "code",
@@ -196,11 +202,10 @@ export function fileKind(name: string, isDir: boolean, type = 0): FileKind {
   return (
     (
       {
-        2: "doc",
-        3: "video",
-        4: "audio",
-        5: "text",
-        6: "image",
+        2: "video",
+        3: "audio",
+        4: "text",
+        5: "image",
       } as Record<number, FileKind>
     )[type] ?? "other"
   )

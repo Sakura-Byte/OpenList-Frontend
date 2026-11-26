@@ -327,11 +327,27 @@
     "search": "Search",
     "searching": "Searching...",
     "no_result": "No result yet",
+    "disabled_hint": "Search index is not enabled on this server",
     "scopes": {
       "all": "All",
       "folder": "Folder",
       "file": "File"
     }
+  },
+  "asmr": {
+    "play_all": "Play all audio",
+    "pause": "Pause",
+    "play_track": "Play track",
+    "loading_tracks": "Loading tracks...",
+    "no_audio_tracks": "No audio tracks found in this work",
+    "view_readme": "View notes",
+    "hide_readme": "Hide notes",
+    "download_cover": "Download cover",
+    "cv": "CV",
+    "queue": "Playlist",
+    "close_player": "Close player",
+    "expand": "Expand",
+    "collapse": "Collapse"
   },
   "fetching_settings_failed": "Failed fetching settings: ",
   "get_current_user_failed": "Failed get current user: ",

@@ -131,7 +131,6 @@ function isDismissedInScope(n: Notice, lsKey: string, ssKey: string): boolean {
     return typeof entry.until === "number" && Date.now() < entry.until
   }
 
-  // until_updated
   return entry.key === verKey
 }
 
@@ -251,25 +250,30 @@ export function applyFallbackAnnouncementIfNeeded(hasPromotions: boolean) {
   setActiveNotices([fallback])
 }
 
+export function hydrateNoticesFromBootstrap(
+  payload?: PublicNoticesData | Notice[],
+): boolean {
+  if (!payload) return false
+  if (Array.isArray(payload)) {
+    setActiveNotices(payload)
+    setHistoryNotices([])
+  } else if (typeof payload === "object") {
+    setActiveNotices(Array.isArray(payload.active) ? payload.active : [])
+    setHistoryNotices(Array.isArray(payload.history) ? payload.history : [])
+  } else {
+    return false
+  }
+  setNoticesLoaded(true)
+  return true
+}
+
 export async function loadPublicNotices(): Promise<boolean> {
   try {
     const resp = (await r.get("/public/notices")) as Resp<
       PublicNoticesData | Notice[]
     >
     if (resp && resp.code === 200 && resp.data) {
-      if (Array.isArray(resp.data)) {
-        setActiveNotices(resp.data)
-        setHistoryNotices([])
-      } else {
-        setActiveNotices(
-          Array.isArray(resp.data.active) ? resp.data.active : [],
-        )
-        setHistoryNotices(
-          Array.isArray(resp.data.history) ? resp.data.history : [],
-        )
-      }
-      setNoticesLoaded(true)
-      return true
+      return hydrateNoticesFromBootstrap(resp.data)
     }
   } catch {
     /* 404 or network fallback */

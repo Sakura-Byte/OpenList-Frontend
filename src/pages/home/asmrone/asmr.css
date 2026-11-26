@@ -1,0 +1,272 @@
+/* ASMR.ONE Unified Work Hero & Inline Audio Player (--ol-* tokens) */
+
+.ol-asmr-work {
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--ol-row-line);
+}
+
+.ol-asmr-hero {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.ol-asmr-hero .jm-info,
+.ol-asmr-hero .jm-head {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.ol-asmr-hero .jm-actions {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ol-asmr-hero .jm-read {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ol-asmr-hero .jm-read__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ol-asmr-cover {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--ol-radius-md);
+  background: var(--ol-surface-2);
+  box-shadow:
+    0 0 0 1px var(--ol-border),
+    var(--ol-shadow-sm);
+  display: block;
+}
+
+.ol-asmr-cover--placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--ol-text-muted);
+  font-family: var(--ol-font-mono);
+  font-size: 13px;
+}
+
+.ol-asmr-cv {
+  font-size: 13px;
+  color: var(--ol-text-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.ol-asmr-cv__label {
+  color: var(--ol-text-muted);
+}
+
+.ol-asmr-readme {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: var(--ol-radius-md);
+  border: 1px solid var(--ol-border);
+  background: var(--ol-surface-2);
+}
+
+/* Inline Audio Player Bar inside sheet */
+.ol-asmr-player {
+  border-bottom: 1px solid var(--ol-row-line);
+  background: var(--ol-surface-2);
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ol-home[data-surface="glass"] .ol-asmr-player {
+  background: color-mix(in srgb, var(--ol-surface-2) 86%, transparent);
+}
+
+.ol-asmr-player__main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ol-asmr-player__controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ol-asmr-player__play {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--ol-accent);
+  color: var(--ol-accent-fg);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    transform 160ms var(--ol-ease-out);
+}
+.ol-asmr-player__play:hover {
+  background: var(--ol-accent-hover);
+}
+.ol-asmr-player__play:active {
+  transform: scale(0.96);
+}
+
+.ol-asmr-player__meta {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ol-asmr-player__title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.ol-asmr-player__title {
+  font-weight: 550;
+  color: var(--ol-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ol-asmr-player__time {
+  flex: none;
+  font-size: 12px;
+  color: var(--ol-text-muted);
+}
+
+.ol-asmr-player__scrubber {
+  width: 100%;
+  height: 4px;
+  accent-color: var(--ol-accent);
+  cursor: pointer;
+}
+
+.ol-asmr-player__tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ol-asmr-player__rate {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-family: var(--ol-font-mono);
+}
+
+.ol-asmr-player__lyric {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ol-accent-text);
+  padding: 2px 4px 0;
+  text-align: center;
+}
+
+.ol-asmr-queue {
+  max-height: 200px;
+  overflow-y: auto;
+  border-top: 1px solid var(--ol-row-line);
+  padding-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ol-asmr-queue__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--ol-radius-xs);
+  background: none;
+  color: var(--ol-text-secondary);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.ol-asmr-queue__item:hover {
+  background: var(--ol-surface-hover);
+  color: var(--ol-text-primary);
+}
+.ol-asmr-queue__item[data-active="true"] {
+  background: var(--ol-surface-active);
+  color: var(--ol-accent-text);
+  font-weight: 550;
+}
+
+@container home (max-width: 620px) {
+  .ol-asmr-work {
+    padding: 14px 14px 12px;
+  }
+  .ol-asmr-hero {
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 12px 14px;
+  }
+  .ol-asmr-hero .jm-info {
+    display: contents;
+  }
+  .ol-asmr-hero .jm-title {
+    font-size: 17px;
+  }
+  .ol-asmr-hero .jm-desc,
+  .ol-asmr-hero .jm-more,
+  .ol-asmr-hero .jm-actions {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .ol-asmr-hero .jm-desc {
+    margin-top: 0;
+  }
+  .ol-asmr-hero .jm-actions {
+    margin-top: 2px;
+  }
+}
+
+@media (max-width: 640px) {
+  .ol-asmr-work {
+    padding: 14px 14px 12px;
+  }
+  .ol-asmr-hero {
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 12px 14px;
+  }
+  .ol-asmr-hero .jm-info {
+    display: contents;
+  }
+  .ol-asmr-hero .jm-title {
+    font-size: 17px;
+  }
+  .ol-asmr-hero .jm-desc,
+  .ol-asmr-hero .jm-more,
+  .ol-asmr-hero .jm-actions {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .ol-asmr-hero .jm-desc {
+    margin-top: 0;
+  }
+  .ol-asmr-hero .jm-actions {
+    margin-top: 2px;
+  }
+}

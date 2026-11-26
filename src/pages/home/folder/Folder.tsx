@@ -17,6 +17,7 @@ import { Pager } from "./Pager"
 import { Search } from "./Search"
 import { SelectionBar } from "./SelectionBar"
 import { ContextMenu } from "./context-menu"
+import { ASMRInlinePlayer, ASMRWorkView } from "../asmrone/ASMRWorkView"
 
 const ListLayout = lazy(() => import("./List"))
 const GridLayout = lazy(() => import("./Grid"))
@@ -89,6 +90,8 @@ const Folder = () => {
 
   return (
     <>
+      <ASMRWorkView />
+      <ASMRInlinePlayer />
       <Show when={haveSelected() && layout() !== "list" && layout() !== "grid"}>
         <SelectionBar />
       </Show>

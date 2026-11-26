@@ -1,8 +1,25 @@
+export interface AsmrWorkMeta {
+  id?: number
+  source_id?: string
+  title?: string
+  circle?: string
+  release?: string
+  cover?: string
+  vas?: string[]
+  tags?: string[]
+  introduction?: string
+}
+
 export interface DirInfo {
   readme?: string
   source_note?: string
   archive_passwords?: string[]
   cover?: string
+  extra?: {
+    asmrone_work?: AsmrWorkMeta
+    [key: string]: unknown
+  }
+  asmrone_work?: AsmrWorkMeta
 }
 
 export interface Meta {

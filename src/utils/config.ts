@@ -1,3 +1,26 @@
+import type { Notice, Promotion, PublicNoticesData } from "~/types"
+
+export interface OpenListBootstrapPayload {
+  settings?: Record<string, string>
+  archive_extensions?: string[]
+  initialized?: boolean
+  notices?: PublicNoticesData | Notice[]
+  promotions?: Promotion[] | { content: Promotion[] }
+}
+
+declare global {
+  interface Window {
+    __OPENLIST_BOOTSTRAP__?: OpenListBootstrapPayload
+  }
+}
+
+export function getBootstrapData(): OpenListBootstrapPayload | undefined {
+  if (typeof window === "undefined") return undefined
+  const raw = window.__OPENLIST_BOOTSTRAP__
+  if (!raw || typeof raw !== "object") return undefined
+  return raw
+}
+
 // api and base_path both don't endsWith /
 
 export let base_path = ""

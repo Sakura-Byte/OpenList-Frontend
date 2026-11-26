@@ -266,6 +266,7 @@ export const fsSearch = async (
   scope = 0,
   page = 1,
   per_page = 100,
+  signal?: AbortSignal,
 ): Promise<FsSearchResp> => {
   return r.post(
     "/fs/search",
@@ -279,6 +280,7 @@ export const fsSearch = async (
     },
     {
       rpsKind: "search",
+      signal,
     },
   )
 }

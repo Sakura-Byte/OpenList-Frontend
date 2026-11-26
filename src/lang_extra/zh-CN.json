@@ -60,7 +60,23 @@
       "load_time": "本页载入 {{sec}} 秒"
     },
     "search": {
-      "searching": "正在搜索…"
+      "searching": "正在搜索…",
+      "disabled_hint": "当前站点未启用搜索索引"
+    },
+    "asmr": {
+      "play_all": "播放全部音频",
+      "pause": "暂停",
+      "play_track": "播放音频",
+      "loading_tracks": "正在加载音轨…",
+      "no_audio_tracks": "未找到可播放的音频文件",
+      "view_readme": "查看说明",
+      "hide_readme": "收起说明",
+      "download_cover": "下载封面",
+      "cv": "声优",
+      "queue": "播放列表",
+      "close_player": "关闭播放器",
+      "expand": "展开",
+      "collapse": "收起"
     },
     "local_settings": {
       "global_default_layout_options": {
@@ -68,6 +84,28 @@
       },
       "poster_item_size": "海报卡片宽度"
     }
+  },
+  "jmcomic": {
+    "start": "开始阅读",
+    "continue": "继续阅读",
+    "restart": "从头开始",
+    "page_num": "第 {{page}} 页",
+    "chapters_title": "章节",
+    "chapters_count": "共 {{count}} 话",
+    "files": "浏览图片文件",
+    "files_short": "文件列表",
+    "export_btn": "导出",
+    "chapters_and_export": "章节与导出",
+    "expand": "展开",
+    "collapse": "收起",
+    "order_asc": "正序",
+    "order_desc": "倒序",
+    "read_to": "读到",
+    "chapter_done": "已读",
+    "chapter_end": "本话完",
+    "last_chapter_end": "已经是最后一话",
+    "filter_tags": "筛选标签",
+    "no_matching_tags": "没有匹配的标签"
   },
   "manage": {
     "sidemenu": {

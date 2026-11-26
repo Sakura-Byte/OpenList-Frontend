@@ -2,6 +2,7 @@ import { createSignal } from "solid-js"
 import {
   applyFallbackAnnouncementIfNeeded,
   getUnreadModalNoticeForPath,
+  hydrateNoticesFromBootstrap,
   loadPublicNotices,
   matchPathPrefix,
   noticesLoaded,
@@ -11,6 +12,7 @@ import {
 } from "~/store/notices"
 import { Promotion, PromotionSlot, Resp } from "~/types"
 import { r } from "~/utils"
+import { getBootstrapData } from "~/utils/config"
 
 export const MAX_PROMO_CLOSE_DELAY_SEC = 10
 
@@ -145,20 +147,28 @@ export function closePopupAdModal() {
   setPopupAdOpen(false)
 }
 
+export function hydratePromotionsFromBootstrap(
+  payload?: Promotion[] | { content: Promotion[] },
+): boolean {
+  if (!payload) return false
+  const rawList = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload.content)
+      ? payload.content
+      : null
+  if (!rawList) return false
+  setPromotions(rawList.map(normalizePromotion))
+  setPromotionsLoaded(true)
+  return true
+}
+
 export async function loadPublicPromotions(): Promise<boolean> {
   try {
     const resp = (await r.get("/public/promotions")) as Resp<
       Promotion[] | { content: Promotion[] }
     >
     if (resp && resp.code === 200 && resp.data) {
-      const rawList = Array.isArray(resp.data)
-        ? resp.data
-        : Array.isArray(resp.data.content)
-          ? resp.data.content
-          : []
-      setPromotions(rawList.map(normalizePromotion))
-      setPromotionsLoaded(true)
-      return true
+      return hydratePromotionsFromBootstrap(resp.data)
     }
   } catch {
     /* 404 or network fallback */
@@ -172,26 +182,29 @@ let publicChannelsPromise: Promise<void> | null = null
 
 export function ensurePublicChannelsLoaded(): Promise<void> {
   if (!publicChannelsPromise) {
+    const boot = getBootstrapData()
+    const bootNoticesOk =
+      noticesLoaded() || hydrateNoticesFromBootstrap(boot?.notices)
+    const bootPromosOk =
+      promotionsLoaded() || hydratePromotionsFromBootstrap(boot?.promotions)
+
+    if (bootNoticesOk && bootPromosOk) {
+      applyFallbackAnnouncementIfNeeded(promotions().length > 0)
+      publicChannelsPromise = Promise.resolve()
+      return publicChannelsPromise
+    }
+
     publicChannelsPromise = (async () => {
-      const [noticesOk, promosOk] = await Promise.all([
-        loadPublicNotices(),
-        loadPublicPromotions(),
+      await Promise.all([
+        bootNoticesOk ? Promise.resolve(true) : loadPublicNotices(),
+        bootPromosOk ? Promise.resolve(true) : loadPublicPromotions(),
       ])
-      if (!noticesOk || (!promosOk && promotions().length === 0)) {
-        applyFallbackAnnouncementIfNeeded(promotions().length > 0)
-      } else {
-        applyFallbackAnnouncementIfNeeded(promotions().length > 0)
-      }
+      applyFallbackAnnouncementIfNeeded(promotions().length > 0)
     })()
   }
   return publicChannelsPromise
 }
 
-/**
- * Single-modal-per-visit orchestrator:
- * 1) Unread critical/modal Notice takes top priority and defers popup_ad to next visit.
- * 2) Otherwise, eligible popup_ad promotions open once according to freq_cap & snooze.
- */
 export function orchestrateVisitModals(pathname: string) {
   if (!noticesLoaded() || !promotionsLoaded()) return
   if (visitModalClaimed()) return

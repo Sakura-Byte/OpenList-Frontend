@@ -2,17 +2,24 @@ import { Progress, ProgressIndicator, useColorMode } from "@hope-ui/solid"
 import { Route, Routes, useIsRouting } from "@solidjs/router"
 import {
   Component,
+  Match,
+  Switch,
   createEffect,
   createSignal,
   lazy,
-  Match,
   onCleanup,
-  Switch,
 } from "solid-js"
 import { Portal } from "solid-js/web"
 import { Error, FullScreenLoading } from "~/components"
-import { useLoading, useRouter, useT } from "~/hooks"
-import { ensurePublicChannelsLoaded, setSettings } from "~/store"
+import { useRouter, useT } from "~/hooks"
+import {
+  applyFallbackAnnouncementIfNeeded,
+  ensurePublicChannelsLoaded,
+  hydrateNoticesFromBootstrap,
+  hydratePromotionsFromBootstrap,
+  promotions,
+  setSettings,
+} from "~/store"
 import { setArchiveExtensions } from "~/store/archive"
 import { InitStatus, Resp } from "~/types"
 import {
@@ -22,6 +29,7 @@ import {
   initPluginEngine,
   r,
 } from "~/utils"
+import { getBootstrapData } from "~/utils/config"
 import { applyCustomize } from "~/utils/customize"
 import { createMatomoSpaBridge } from "~/utils/matomo"
 import { syncSiteThemeTokens, useThemeSync } from "~/utils/theme_sync"
@@ -60,51 +68,86 @@ const App: Component = () => {
     matomo.trackRouteChange()
   })
 
-  const [err, setErr] = createSignal<string[]>([])
-  const [initialized, setInitialized] = createSignal(true)
-  const [loading, data] = useLoading(() =>
-    Promise.all([
-      (async () => {
-        const resp = (await r.get("/public/settings")) as Resp<
-          Record<string, string>
-        >
-        handleRespWithoutAuthAndNotify(
-          resp,
-          (data) => {
-            setSettings(data)
-            setSettingsVersion((v) => v + 1)
-            syncSiteThemeTokens(colorMode() === "dark" ? "dark" : "light")
-            applyCustomize()
-          },
-          (e, code) => {
-            if (code === 503) return
-            setErr(err().concat(e))
-          },
-        )
-      })(),
-      (async () => {
-        handleRespWithoutAuthAndNotify(
-          (await r.get("/public/archive_extensions")) as Resp<string[]>,
-          setArchiveExtensions,
-        )
-      })(),
-      (async () => {
-        handleRespWithoutAuthAndNotify(
-          (await r.get("/public/init_status")) as Resp<InitStatus>,
-          (data) => setInitialized(data.initialized),
-        )
-      })(),
-    ]).then(async () => {
-      await ensurePublicChannelsLoaded()
-    }),
+  // Synchronous 0-RTT hydration from window.__OPENLIST_BOOTSTRAP__ when injected by Go server
+  const boot = getBootstrapData()
+  const bootSettingsReady = Boolean(
+    boot?.settings && Object.keys(boot.settings).length > 0,
   )
-  data()
+  const bootArchiveReady = Array.isArray(boot?.archive_extensions)
+  const bootInitReady = typeof boot?.initialized === "boolean"
+
+  if (bootSettingsReady && boot?.settings) {
+    setSettings(boot.settings)
+    syncSiteThemeTokens(colorMode() === "dark" ? "dark" : "light")
+    applyCustomize()
+  }
+  if (bootArchiveReady && boot?.archive_extensions) {
+    setArchiveExtensions(boot.archive_extensions)
+  }
+  const bootNoticesReady = hydrateNoticesFromBootstrap(boot?.notices)
+  const bootPromosReady = hydratePromotionsFromBootstrap(boot?.promotions)
+  if (bootSettingsReady && bootNoticesReady && bootPromosReady) {
+    applyFallbackAnnouncementIfNeeded(promotions().length > 0)
+  }
+
+  const [err, setErr] = createSignal<string[]>([])
+  const [initialized, setInitialized] = createSignal(
+    bootInitReady ? Boolean(boot!.initialized) : true,
+  )
+  const [loading, setLoading] = createSignal(!bootSettingsReady)
+
+  ;(async () => {
+    try {
+      await Promise.all([
+        bootSettingsReady
+          ? Promise.resolve()
+          : (async () => {
+              const resp = (await r.get("/public/settings")) as Resp<
+                Record<string, string>
+              >
+              handleRespWithoutAuthAndNotify(
+                resp,
+                (data) => {
+                  setSettings(data)
+                  setSettingsVersion((v) => v + 1)
+                  syncSiteThemeTokens(colorMode() === "dark" ? "dark" : "light")
+                  applyCustomize()
+                },
+                (e, code) => {
+                  if (code === 503) return
+                  setErr((prev) => prev.concat(e))
+                },
+              )
+            })(),
+        bootArchiveReady
+          ? Promise.resolve()
+          : (async () => {
+              handleRespWithoutAuthAndNotify(
+                (await r.get("/public/archive_extensions")) as Resp<string[]>,
+                setArchiveExtensions,
+              )
+            })(),
+        bootInitReady
+          ? Promise.resolve()
+          : (async () => {
+              handleRespWithoutAuthAndNotify(
+                (await r.get("/public/init_status")) as Resp<InitStatus>,
+                (data) => setInitialized(data.initialized),
+              )
+            })(),
+      ])
+      await ensurePublicChannelsLoaded()
+    } finally {
+      setLoading(false)
+    }
+  })()
 
   createEffect(() => {
     if (initialized() === false && !pathname().startsWith("/@init")) {
       to("/@init", true)
     }
   })
+
   return (
     <>
       <Portal>

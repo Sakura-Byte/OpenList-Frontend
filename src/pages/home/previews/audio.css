@@ -1,43 +1,59 @@
 #audio-player {
-  border-radius: 8px;
+  border-radius: var(--ol-radius-md);
+  overflow: clip;
+  border: 1px solid var(--ol-border);
 }
 .aplayer {
-  background: var(--hope-colors-neutral2);
-  color: var(--hope-colors-neutral12) !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  background: var(--ol-surface-card) !important;
+  color: var(--ol-text-primary) !important;
+  font-family: var(--ol-font) !important;
 }
 .aplayer-body .aplayer-pic {
-  background-color: unset !important;
+  background-color: var(--ol-surface-2) !important;
+}
+.aplayer .aplayer-info {
+  border-bottom: 1px solid var(--ol-row-line) !important;
+}
+.aplayer .aplayer-info .aplayer-music .aplayer-title {
+  color: var(--ol-text-primary) !important;
 }
 .aplayer .aplayer-info .aplayer-music .aplayer-author {
-  color: var(--hope-colors-neutral11);
-}
-.aplayer .aplayer-list ol li:hover {
-  background: var(--hope-colors-neutral4);
-}
-.aplayer .aplayer-list ol li.aplayer-list-light {
-  background: var(--hope-colors-neutral4);
-}
-.aplayer .aplayer-list ol li .aplayer-list-author {
-  color: var(--hope-colors-neutral9);
-}
-.aplayer .aplayer-list ol li .aplayer-list-index {
-  color: var(--hope-colors-neutral10);
-}
-.aplayer .aplayer-lrc:after {
-  background: none;
-}
-.aplayer .aplayer-lrc:before {
-  background: none;
-}
-.aplayer .aplayer-info .aplayer-controller .aplayer-time .aplayer-icon path {
-  fill: var(--hope-colors-neutral12);
-}
-.aplayer .aplayer-lrc p {
-  color: var(--hope-colors-neutral12);
+  color: var(--ol-text-muted) !important;
 }
 .aplayer .aplayer-list ol li {
-  border-top: 1px solid var(--hope-colors-neutral6);
+  border-top: 1px solid var(--ol-row-line) !important;
+  color: var(--ol-text-primary) !important;
+}
+.aplayer .aplayer-list ol li:hover {
+  background: var(--ol-surface-hover) !important;
+}
+.aplayer .aplayer-list ol li.aplayer-list-light {
+  background: var(--ol-surface-active) !important;
+}
+.aplayer .aplayer-list ol li .aplayer-list-author {
+  color: var(--ol-text-muted) !important;
+}
+.aplayer .aplayer-list ol li .aplayer-list-index {
+  color: var(--ol-text-faint) !important;
+}
+.aplayer .aplayer-lrc:after,
+.aplayer .aplayer-lrc:before {
+  background: none !important;
+}
+.aplayer .aplayer-info .aplayer-controller .aplayer-time {
+  color: var(--ol-text-muted) !important;
+}
+.aplayer .aplayer-info .aplayer-controller .aplayer-time .aplayer-icon path {
+  fill: var(--ol-text-secondary) !important;
+}
+.aplayer .aplayer-lrc p {
+  color: var(--ol-text-secondary) !important;
+}
+.aplayer .aplayer-lrc p.aplayer-lrc-current {
+  color: var(--ol-accent-text) !important;
 }
 .aplayer.aplayer-withlist .aplayer-info {
-  border-bottom: 1px solid var(--hope-colors-neutral7);
+  border-bottom: 1px solid var(--ol-row-line) !important;
 }

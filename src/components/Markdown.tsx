@@ -1,4 +1,4 @@
-import { Box, useColorModeValue } from "@hope-ui/solid"
+import { Box, useColorMode, useColorModeValue } from "@hope-ui/solid"
 import { createStorageSignal } from "@solid-primitives/storage"
 import { clsx } from "clsx"
 import hljs from "highlight.js"
@@ -74,9 +74,15 @@ const ALLOWED_CSS_EXACT = new Set([
   "width",
   "max-width",
   "min-width",
+  "height",
+  "max-height",
+  "min-height",
   "overflow",
   "overflow-x",
   "overflow-y",
+  "vertical-align",
+  "float",
+  "clear",
 ])
 
 const ALLOWED_CSS_PREFIXES = ["padding", "margin", "border", "flex", "grid"]
@@ -93,7 +99,70 @@ function isAllowedCssProp(prop: string): boolean {
   )
 }
 
-export function sanitizeCssStyle(rawStyle: string): string {
+function srgbChannelToLinear(channel255: number): number {
+  const c = Math.max(0, Math.min(255, channel255)) / 255
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+}
+
+/**
+ * Parse #hex or rgb()/rgba() inline CSS colors and return WCAG relative luminance [0..1].
+ */
+export function parseCssColorLuminance(rawVal: string): number | null {
+  const v = rawVal.trim().toLowerCase()
+  let r = -1
+  let g = -1
+  let b = -1
+
+  if (v.startsWith("#")) {
+    const hex = v.slice(1)
+    if (hex.length === 3 || hex.length === 4) {
+      r = parseInt(hex[0] + hex[0], 16)
+      g = parseInt(hex[1] + hex[1], 16)
+      b = parseInt(hex[2] + hex[2], 16)
+    } else if (hex.length === 6 || hex.length === 8) {
+      r = parseInt(hex.slice(0, 2), 16)
+      g = parseInt(hex.slice(2, 4), 16)
+      b = parseInt(hex.slice(4, 6), 16)
+    }
+  } else {
+    const rgbMatch = v.match(
+      /^rgba?\(\s*(\d{1,3})\s*(?:,|\s)\s*(\d{1,3})\s*(?:,|\s)\s*(\d{1,3})/,
+    )
+    if (rgbMatch) {
+      r = Number(rgbMatch[1])
+      g = Number(rgbMatch[2])
+      b = Number(rgbMatch[3])
+    }
+  }
+
+  if (
+    r < 0 ||
+    g < 0 ||
+    b < 0 ||
+    Number.isNaN(r) ||
+    Number.isNaN(g) ||
+    Number.isNaN(b)
+  ) {
+    return null
+  }
+  return (
+    0.2126 * srgbChannelToLinear(r) +
+    0.7152 * srgbChannelToLinear(g) +
+    0.0722 * srgbChannelToLinear(b)
+  )
+}
+
+function rescueDarkContrastColor(val: string, darkMode: boolean): string {
+  if (!darkMode) return val
+  if (val.includes("var(") || val.includes("color-mix(")) return val
+  const lum = parseCssColorLuminance(val)
+  if (lum !== null && lum < 0.18) {
+    return `color-mix(in oklab, ${val} 35%, #f3f3f4)`
+  }
+  return val
+}
+
+export function sanitizeCssStyle(rawStyle: string, darkMode = false): string {
   if (!rawStyle || typeof rawStyle !== "string") return ""
   const cleaned = rawStyle.replace(/\/\*[\s\S]*?\*\//g, "")
   const declarations = cleaned.split(";")
@@ -103,7 +172,7 @@ export function sanitizeCssStyle(rawStyle: string): string {
     const colonIdx = decl.indexOf(":")
     if (colonIdx <= 0) continue
     const prop = decl.slice(0, colonIdx).trim().toLowerCase()
-    const val = decl.slice(colonIdx + 1).trim()
+    let val = decl.slice(colonIdx + 1).trim()
     if (!prop || !val) continue
     if (!isAllowedCssProp(prop)) continue
     if (DANGEROUS_CSS_RE.test(val)) continue
@@ -111,6 +180,10 @@ export function sanitizeCssStyle(rawStyle: string): string {
 
     if (prop === "background-image") {
       if (!SAFE_GRADIENT_RE.test(val)) continue
+    }
+
+    if (prop === "color") {
+      val = rescueDarkContrastColor(val, darkMode)
     }
 
     safeParts.push(`${prop}: ${val}`)
@@ -136,6 +209,7 @@ const MODERN_SANITIZE_SCHEMA = {
     "figcaption",
     "details",
     "summary",
+    "br",
   ],
   attributes: {
     ...defaultSchema.attributes,
@@ -149,6 +223,7 @@ const MODERN_SANITIZE_SCHEMA = {
       "width",
       "height",
       "open",
+      "data*",
       "dataTrackContent",
       "dataContentName",
       "dataContentPiece",
@@ -156,7 +231,9 @@ const MODERN_SANITIZE_SCHEMA = {
       "dataNosnippet",
       "dataUmamiEvent",
       "referrerPolicy",
+      "referrerpolicy",
     ],
+    br: ["clear"],
     code: [
       ...((defaultSchema.attributes?.code as any[]) || []),
       ["className", /^language-[\w-]+$/, "math-inline", "math-display"],
@@ -166,6 +243,7 @@ const MODERN_SANITIZE_SCHEMA = {
       "target",
       "rel",
       "referrerPolicy",
+      "referrerpolicy",
     ],
     img: [
       ...((defaultSchema.attributes?.img as any[]) || []),
@@ -176,6 +254,7 @@ const MODERN_SANITIZE_SCHEMA = {
       "width",
       "height",
       "referrerPolicy",
+      "referrerpolicy",
     ],
   },
   protocols: {
@@ -334,6 +413,8 @@ function slugifyHeading(text: string, seen: Map<string, number>): string {
   return count === 0 ? base : `${base}-${count}`
 }
 
+const SPONSOR_HEADING_RE = /赞助|sponsor|打赏|捐助|支持本站/i
+
 function createCopyIconHast(): HastNode {
   return {
     type: "element",
@@ -382,11 +463,27 @@ interface EnhanceLabels {
 
 function rehypeModernEnhance(options: {
   sanitizeStyles: boolean
+  darkMode: boolean
   tocOut: TocHeading[]
   labels: EnhanceLabels
 }) {
   return (tree: HastNode) => {
     const slugCounts = new Map<string, number>()
+    let hasSponsorAnchor = false
+
+    const checkExistingIds = (parent: HastNode) => {
+      if (!parent.children) return
+      for (const child of parent.children) {
+        if (child.type === "element") {
+          if (child.properties?.id === "sponsor") {
+            hasSponsorAnchor = true
+            slugCounts.set("sponsor", 1)
+          }
+          checkExistingIds(child)
+        }
+      }
+    }
+    checkExistingIds(tree)
 
     const walk = (parent: HastNode) => {
       if (!parent.children) return
@@ -395,12 +492,23 @@ function rehypeModernEnhance(options: {
         const node = parent.children[i]
         if (node.type !== "element") continue
 
-        if (options.sanitizeStyles && node.properties?.style) {
-          const safe = sanitizeCssStyle(String(node.properties.style))
-          if (safe) {
-            node.properties.style = safe
-          } else {
-            delete node.properties.style
+        if (node.properties?.style) {
+          if (options.sanitizeStyles) {
+            const safe = sanitizeCssStyle(
+              String(node.properties.style),
+              options.darkMode,
+            )
+            if (safe) {
+              node.properties.style = safe
+            } else {
+              delete node.properties.style
+            }
+          } else if (options.darkMode) {
+            node.properties.style = String(node.properties.style).replace(
+              /(^|;)\s*color\s*:\s*([^;]+)/gi,
+              (_m, pre: string, rawVal: string) =>
+                `${pre} color: ${rescueDarkContrastColor(rawVal.trim(), true)}`,
+            )
           }
         }
 
@@ -436,14 +544,38 @@ function rehypeModernEnhance(options: {
           const text = getNodeText(node).trim()
           if (text) {
             node.properties = node.properties || {}
-            const existingId =
+            let resolvedId =
               typeof node.properties.id === "string" &&
               node.properties.id.trim()
                 ? node.properties.id.trim()
-                : slugifyHeading(text, slugCounts)
-            node.properties.id = existingId
+                : ""
+            if (!resolvedId) {
+              if (!hasSponsorAnchor && SPONSOR_HEADING_RE.test(text)) {
+                resolvedId = "sponsor"
+                hasSponsorAnchor = true
+                slugCounts.set("sponsor", 1)
+              } else {
+                resolvedId = slugifyHeading(text, slugCounts)
+              }
+            } else if (
+              !hasSponsorAnchor &&
+              resolvedId !== "sponsor" &&
+              SPONSOR_HEADING_RE.test(text)
+            ) {
+              hasSponsorAnchor = true
+              node.children = [
+                {
+                  type: "element",
+                  tagName: "span",
+                  properties: { id: "sponsor" },
+                  children: [],
+                },
+                ...(node.children || []),
+              ]
+            }
+            node.properties.id = resolvedId
             if (level <= 3) {
-              options.tocOut.push({ level, text, id: existingId })
+              options.tocOut.push({ level, text, id: resolvedId })
             }
           }
         }
@@ -548,7 +680,7 @@ interface CachedMdResult {
 }
 
 const mdRenderCache = new Map<string, CachedMdResult>()
-const MAX_MD_CACHE = 16
+const MAX_MD_CACHE = 20
 
 function putMdCache(key: string, val: CachedMdResult) {
   if (mdRenderCache.has(key)) {
@@ -565,9 +697,10 @@ const { katexCSSPath, mermaidJSPath } = useCDN()
 async function renderMarkdown(
   content: string,
   sanitize: boolean,
+  darkMode: boolean,
   labels: EnhanceLabels,
 ): Promise<CachedMdResult> {
-  const cacheKey = `${sanitize ? "1" : "0"}:${labels.copyCode}:${content}`
+  const cacheKey = `${sanitize ? "1" : "0"}:${darkMode ? "d" : "l"}:${labels.copyCode}:${content}`
   const hit = mdRenderCache.get(cacheKey)
   if (hit && !hit.hasMermaid) {
     return hit
@@ -601,6 +734,7 @@ async function renderMarkdown(
 
   processor.use(rehypeModernEnhance as any, {
     sanitizeStyles: sanitize,
+    darkMode,
     tocOut: toc,
     labels,
   })
@@ -649,6 +783,8 @@ export function Markdown(props: {
   sanitize?: boolean
 }) {
   const t = useT()
+  const { colorMode } = useColorMode()
+  const isDark = () => colorMode() === "dark"
   const [encoding, setEncoding] = createSignal<string>("utf-8")
   const [markdownHTML, setMarkdownHTML] = createSignal<string>("")
   const [tocItems, setTocItems] = createSignal<TocHeading[]>([])
@@ -702,7 +838,7 @@ export function Markdown(props: {
   })
 
   createEffect(
-    on([md, mermaidTheme], async () => {
+    on([md, isDark, mermaidTheme], async () => {
       const labels: EnhanceLabels = {
         alerts: {
           note: t("home.markdown.alert_note"),
@@ -716,6 +852,7 @@ export function Markdown(props: {
       const { html, toc, hasMermaid } = await renderMarkdown(
         md(),
         Boolean(props.sanitize || getSettingBool("filter_readme_scripts")),
+        isDark(),
         labels,
       )
       setMarkdownHTML(html)

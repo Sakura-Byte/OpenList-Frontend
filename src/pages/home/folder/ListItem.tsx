@@ -6,12 +6,17 @@ import {
   IDownload,
   ILink,
   IMore,
+  IPlay,
   fileKind,
 } from "~/components/icons-tb"
 import { useLink, usePath, useRouter, useT, useUtil } from "~/hooks"
-import { OrderBy, selectIndex } from "~/store"
+import { OrderBy, objStore, selectIndex } from "~/store"
 import { StoreObj } from "~/types"
 import { formatDate, getFileSize } from "~/utils"
+import {
+  isAudioFilename,
+  playObjInCurrentAsmrFolder,
+} from "../asmrone/ASMRWorkView"
 import { useSelectWithMouse } from "./helper"
 
 export interface Col {
@@ -34,7 +39,7 @@ export const ListItem = (props: { obj: StoreObj; index: number }) => {
   const t = useT()
   const { setPathAs } = usePath()
   const { show } = useContextMenu({ id: 1 })
-  const { pushHref, to } = useRouter()
+  const { pathname, isShare, pushHref, to } = useRouter()
   const { rawLink, previewPage } = useLink()
   const { openWithDoubleClick, toggleWithClick, restoreSelectionCache } =
     useSelectWithMouse()
@@ -118,6 +123,29 @@ export const ListItem = (props: { obj: StoreObj; index: number }) => {
           on:mousedown={(e: MouseEvent) => e.stopPropagation()}
           onClick={(e: MouseEvent) => e.stopPropagation()}
         >
+          <Show
+            when={
+              !props.obj.is_dir &&
+              isAudioFilename(props.obj.name, props.obj.type) &&
+              (objStore.provider === "ASMR.ONE" ||
+                Boolean(
+                  objStore.dir_info?.extra?.asmrone_work ??
+                  objStore.dir_info?.asmrone_work,
+                ))
+            }
+          >
+            <button
+              type="button"
+              class="ol-icon-btn"
+              title={t("home.asmr.play_track")}
+              aria-label={t("home.asmr.play_track")}
+              onClick={() => {
+                playObjInCurrentAsmrFolder(props.obj, pathname(), isShare())
+              }}
+            >
+              <IPlay size={16} />
+            </button>
+          </Show>
           <Show when={!props.obj.is_dir}>
             <button
               type="button"

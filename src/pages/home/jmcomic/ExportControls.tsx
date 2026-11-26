@@ -1,9 +1,9 @@
-import { Button, HStack, Text, VStack } from "@hope-ui/solid"
-import { createSignal, onCleanup, Show } from "solid-js"
+import { Show, createSignal, onCleanup } from "solid-js"
+import { IDownload } from "~/components/icons-tb"
 import { password } from "~/store"
-import { r } from "~/utils"
 import type { Resp } from "~/types"
 import type { JMManifest } from "~/types/jmcomic"
+import { r } from "~/utils"
 import type { ExportFormat, ExportScope } from "./export"
 import { useJMTranslation } from "./i18n"
 
@@ -16,6 +16,7 @@ export function ExportControls(props: { manifest: JMManifest }) {
   const [error, setError] = createSignal("")
   let controller: AbortController | undefined
   onCleanup(() => controller?.abort())
+
   const run = async () => {
     if (busy()) return
     controller = new AbortController()
@@ -62,16 +63,12 @@ export function ExportControls(props: { manifest: JMManifest }) {
       setBusy(false)
     }
   }
+
   return (
-    <VStack
-      class="jm-export-controls"
-      alignItems="start"
-      spacing="$2"
-      w="$full"
-    >
-      <HStack flexWrap="wrap" gap="$2">
-        <label>
-          {t("export_format")}{" "}
+    <div class="jm-export-controls">
+      <div class="jm-export-row">
+        <label class="jm-export-label">
+          <span>{t("export_format")}</span>
           <select
             class="jm-export-select"
             aria-label={t("export_format")}
@@ -85,8 +82,8 @@ export function ExportControls(props: { manifest: JMManifest }) {
             <option value="zip">ZIP</option>
           </select>
         </label>
-        <label>
-          {t("export_scope")}{" "}
+        <label class="jm-export-label">
+          <span>{t("export_scope")}</span>
           <select
             class="jm-export-select"
             aria-label={t("export_scope")}
@@ -98,38 +95,51 @@ export function ExportControls(props: { manifest: JMManifest }) {
             <option value="album">{t("export_album")}</option>
           </select>
         </label>
-        <Button
+        <button
+          type="button"
+          class="ol-btn ol-btn--primary"
           onClick={run}
           disabled={busy() || !props.manifest.chapters.length}
         >
+          <IDownload size={14} />
           {t("export_download")}
-        </Button>
+        </button>
         <Show when={busy()}>
-          <Button onClick={() => controller?.abort()}>
+          <button
+            type="button"
+            class="ol-btn"
+            onClick={() => controller?.abort()}
+          >
             {t("export_cancel")}
-          </Button>
+          </button>
         </Show>
-      </HStack>
-      <Text size="sm">{t("export_policy")}</Text>
+      </div>
+      <div class="jm-export-note">{t("export_policy")}</div>
       <Show when={scope() === "chapter"}>
-        <Text size="sm">
+        <div class="jm-export-note">
           {t("export_chapter")}:{" "}
           {props.manifest.chapters.find(
             (c) => c.id === props.manifest.chapter_id,
           )?.name ?? props.manifest.chapters[0]?.name}
-        </Text>
+        </div>
       </Show>
       <Show when={format() === "pdf"}>
-        <Text size="sm">{t("export_pdf_policy")}</Text>
+        <div class="jm-export-note">{t("export_pdf_policy")}</div>
       </Show>
       <Show when={status()}>
-        <Text role="status" aria-live="polite">
+        <div class="jm-export-note" role="status" aria-live="polite">
           {status()}
-        </Text>
+        </div>
       </Show>
       <Show when={error()}>
-        <Text role="alert">{error()}</Text>
+        <div
+          class="jm-export-note"
+          style={{ color: "var(--ol-danger)" }}
+          role="alert"
+        >
+          {error()}
+        </div>
       </Show>
-    </VStack>
+    </div>
   )
 }
