@@ -1,11 +1,10 @@
-import { Menu, Item, Submenu } from "solid-contextmenu"
-import { useCopyLink, useDownload, useLink, useRouter, useT } from "~/hooks"
+import { HStack, Icon, Image, Text, useColorMode } from "@hope-ui/solid"
+import axios from "axios"
+import { Item, Menu, Submenu } from "solid-contextmenu"
 import "solid-contextmenu/dist/style.css"
-import { HStack, Icon, Text, useColorMode, Image } from "@hope-ui/solid"
-import { operations } from "../toolbar/operations"
-import { createMemo, For, Show } from "solid-js"
-import { bus, convertURL, notify, torrentParse } from "~/utils"
-import { ObjType, UserMethods } from "~/types"
+import { TbPlayerPlay } from "solid-icons/tb"
+import { For, Show, createMemo } from "solid-js"
+import { useCopyLink, useDownload, useLink, useRouter, useT } from "~/hooks"
 import {
   getSettingBool,
   haveSelected,
@@ -15,20 +14,21 @@ import {
   selectedObjs,
   userCan,
 } from "~/store"
-import { players } from "../previews/video_box"
-import { getPreviews } from "../previews"
-import { BsPlayCircleFill } from "solid-icons/bs"
 import { isArchive } from "~/store/archive"
-import axios from "axios"
+import { ObjType, UserMethods } from "~/types"
+import { bus, convertURL, notify, torrentParse } from "~/utils"
+import { getPreviews } from "../previews"
+import { players } from "../previews/video_box"
+import { operations } from "../toolbar/operations"
 
 const ItemContent = (props: { name: string }) => {
   const t = useT()
   return (
     <HStack spacing="$2">
       <Icon
-        p={operations[props.name].p ? "$1" : undefined}
         as={operations[props.name].icon}
-        boxSize="$7"
+        boxSize="$5"
+        class="ol-ico"
         color={operations[props.name].color}
       />
       <Text>{t(`home.toolbar.${props.name}`)}</Text>
@@ -53,7 +53,6 @@ export const ContextMenu = () => {
     const obj = objs[0]
     if (obj.is_dir) return []
     return getPreviews({ ...obj, provider: objStore.provider })
-    // .filter((p) => p.key !== "download")
   })
   return (
     <Menu
@@ -130,7 +129,6 @@ export const ContextMenu = () => {
           const obj = selectedObjs()[0]
           if (!obj) return
           try {
-            // 获取 torrent 文件的下载链接并下载内容
             const link = rawLink(obj, false)
             const resp = await axios.get(link, { responseType: "arraybuffer" })
             const buffer = resp.data as ArrayBuffer
@@ -140,8 +138,6 @@ export const ContextMenu = () => {
               binary += String.fromCharCode(bytes[i])
             }
             const base64Data = btoa(binary)
-
-            // 调用解析 API
             const parseResp = await torrentParse(base64Data)
             if (parseResp.code === 200) {
               bus.emit("torrent_parsed", {
@@ -149,10 +145,15 @@ export const ContextMenu = () => {
                 info: parseResp.data,
               })
             } else {
-              notify.error(parseResp.message || "解析 torrent 失败")
+              notify.error(
+                parseResp.message ||
+                  t("home.toolbar.offline_download_enhanced.parse_failed"),
+              )
             }
           } catch (err) {
-            notify.error(`解析 torrent 失败: ${err}`)
+            notify.error(
+              `${t("home.toolbar.offline_download_enhanced.parse_failed")}: ${err}`,
+            )
           }
         }}
       >
@@ -191,12 +192,7 @@ export const ContextMenu = () => {
           }}
           label={
             <HStack spacing="$2">
-              <Icon
-                as={BsPlayCircleFill}
-                boxSize="$7"
-                p="$0_5"
-                color="$info9"
-              />
+              <Icon as={TbPlayerPlay} boxSize="$5" class="ol-ico" />
               <Text>{t("home.preview.play_with")}</Text>
             </HStack>
           }
@@ -216,8 +212,8 @@ export const ContextMenu = () => {
                 <HStack spacing="$2">
                   <Image
                     m="0 auto"
-                    boxSize="$7"
-                    src={`${window.__dynamic_base__}/images/${player.icon}.webp`}
+                    boxSize="$6"
+                    src={`${window.__dynamic_base__ || ""}/images/${player.icon}.webp`}
                   />
                   <Text>{player.name}</Text>
                 </HStack>

@@ -1,4 +1,4 @@
-import { DownloadQuota, Obj } from "."
+import { DirInfo, DownloadQuota, Obj } from "."
 import type { ReaderInfo } from "./jmcomic"
 
 export interface Resp<T> {
@@ -17,6 +17,9 @@ export type FsListResp = Resp<{
   total: number
   readme: string
   header: string
+  source_note?: string
+  archive_passwords?: string[]
+  dir_info?: DirInfo
   write: boolean
   write_content_bypass: boolean
   provider: string

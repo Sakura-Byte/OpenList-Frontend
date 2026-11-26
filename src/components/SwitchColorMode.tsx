@@ -1,19 +1,18 @@
 import { Icon, useColorMode, useColorModeValue } from "@hope-ui/solid"
-// import { IoMoonOutline as Moon } from "solid-icons/io";
-import { FiSun as Sun } from "solid-icons/fi"
-import { FiMoon as Moon } from "solid-icons/fi"
+import { TbMoon, TbSun } from "solid-icons/tb"
+import { toggleThemeWithTransition } from "~/utils/theme_sync"
 
 const SwitchColorMode = () => {
   const { toggleColorMode } = useColorMode()
   const icon = useColorModeValue(
     {
       size: "$8",
-      component: Moon,
+      component: TbMoon,
       p: "$0_5",
     },
     {
       size: "$8",
-      component: Sun,
+      component: TbSun,
       p: "$0_5",
     },
   )
@@ -22,7 +21,8 @@ const SwitchColorMode = () => {
       cursor="pointer"
       boxSize={icon().size}
       as={icon().component}
-      onClick={toggleColorMode}
+      class="ol-ico"
+      onClick={() => toggleThemeWithTransition(toggleColorMode)}
       p={icon().p}
     />
   )

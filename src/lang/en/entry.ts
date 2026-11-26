@@ -5,17 +5,19 @@ import home from "./home.json"
 import index from "./index.json"
 import indexes from "./indexes.json"
 import init from "./init.json"
+import jmcomic from "./jmcomic.json"
 import login from "./login.json"
 import manage from "./manage.json"
 import metas from "./metas.json"
+import notices from "./notices.json"
 import plugins from "./plugins.json"
-import settings_other from "./settings_other.json"
+import promotions from "./promotions.json"
 import settings from "./settings.json"
+import settings_other from "./settings_other.json"
 import shares from "./shares.json"
 import storages from "./storages.json"
 import tasks from "./tasks.json"
 import users from "./users.json"
-import jmcomic from "./jmcomic.json"
 
 export const dict = {
   br,
@@ -28,7 +30,9 @@ export const dict = {
   login,
   manage,
   metas,
+  notices,
   plugins,
+  promotions,
   settings_other,
   settings,
   shares,

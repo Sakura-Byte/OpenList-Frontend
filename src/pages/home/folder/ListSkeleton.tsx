@@ -1,13 +1,29 @@
-import { Skeleton, VStack } from "@hope-ui/solid"
 import { For } from "solid-js"
 
 const ListSkeleton = () => {
+  const widths = ["52%", "68%", "44%", "61%", "39%", "57%", "48%", "64%"]
   return (
-    <VStack w="$full" spacing="$2">
-      <For each={Array.from({ length: 10 })}>
-        {() => <Skeleton rounded="$lg" w="$full" h="$8" />}
+    <div>
+      <For each={widths}>
+        {(w) => (
+          <div class="ol-skeleton-row">
+            <span
+              class="ol-skeleton-bar"
+              style={{ width: "18px", height: "18px", margin: "0 auto" }}
+            />
+            <span class="ol-skeleton-bar" style={{ width: w }} />
+            <span
+              class="ol-skeleton-bar"
+              style={{ width: "54px", "justify-self": "end" }}
+            />
+            <span
+              class="ol-skeleton-bar"
+              style={{ width: "108px", "justify-self": "end" }}
+            />
+          </div>
+        )}
       </For>
-    </VStack>
+    </div>
   )
 }
 

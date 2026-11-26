@@ -1,25 +1,26 @@
-import { Text, useColorModeValue, VStack, Button } from "@hope-ui/solid"
+import { Button, Text } from "@hope-ui/solid"
 import {
+  Match,
+  Show,
+  Suspense,
+  Switch,
   createEffect,
   createMemo,
   createSignal,
   lazy,
-  Match,
   on,
-  Show,
-  Suspense,
-  Switch,
 } from "solid-js"
 import { Error, FullLoading, LinkWithBase } from "~/components"
 import { useObjTitle, usePath, useRouter, useT } from "~/hooks"
 import {
+  State,
   getPagination,
+  layout,
+  me,
   objStore,
   password,
   recordHistory,
   setPassword,
-  /*layout,*/ State,
-  me,
 } from "~/store"
 import { UserMethods } from "~/types"
 import { encodePath, joinBase } from "~/utils"
@@ -29,20 +30,19 @@ import {
   setDescriptionMeta,
   setRobotsMeta,
 } from "~/utils/seo"
+import GridSkeleton from "./folder/GridSkeleton"
+import ListSkeleton from "./folder/ListSkeleton"
 
 const Folder = lazy(() => import("./folder/Folder"))
 const JMComicView = lazy(() => import("./jmcomic/JMComicView"))
 const File = lazy(() => import("./file/File"))
 const Password = lazy(() => import("./Password"))
-// const ListSkeleton = lazy(() => import("./Folder/ListSkeleton"));
-// const GridSkeleton = lazy(() => import("./Folder/GridSkeleton"));
 
 const [objBoxRef, setObjBoxRef] = createSignal<HTMLDivElement>()
 export { objBoxRef }
 
 export const Obj = () => {
   const t = useT()
-  const cardBg = useColorModeValue("white", "$neutral3")
   const { pathname, searchParams, isShare, to } = useRouter()
   const { handlePathChange, refresh } = usePath()
   const pagination = getPagination()
@@ -111,63 +111,63 @@ export const Obj = () => {
       {t("global.go_to_storages")}
     </Button>
   )
+
   return (
-    <VStack
+    <div
       ref={(el: HTMLDivElement) => setObjBoxRef(el)}
-      class="obj-box"
-      w="$full"
-      rounded="$xl"
-      bgColor={cardBg()}
-      p="$2"
-      shadow="$lg"
-      spacing="$2"
+      class="obj-box ol-obj-wrap"
     >
-      <Suspense fallback={<FullLoading />}>
+      <Suspense fallback={<ListSkeleton />}>
         <Switch>
           <Match when={objStore.err}>
-            <Error
-              msg={objStore.err}
-              disableColor
-              show404Face={isShare() && objStore.err === t("shares.share_gone")}
-              actions={
-                shouldShowStorageButton() ? storageErrorActions() : undefined
-              }
-            />
+            <div style={{ padding: "24px 16px" }}>
+              <Error
+                msg={objStore.err}
+                disableColor
+                show404Face={
+                  isShare() && objStore.err === t("shares.share_gone")
+                }
+                actions={
+                  shouldShowStorageButton() ? storageErrorActions() : undefined
+                }
+              />
+            </div>
           </Match>
           <Match
             when={[State.FetchingObj, State.FetchingObjs].includes(
               objStore.state,
             )}
           >
-            <FullLoading />
-            {/* <Show when={layout() === "list"} fallback={<GridSkeleton />}>
+            <Show when={layout() === "list"} fallback={<GridSkeleton />}>
               <ListSkeleton />
-            </Show> */}
+            </Show>
           </Match>
           <Match when={objStore.state === State.NeedPassword}>
-            <Password
-              title={
-                isShare()
-                  ? t("shares.input_password")
-                  : t("home.input_password")
-              }
-              password={password}
-              setPassword={setPassword}
-              enterCallback={() => refresh(true)}
-            >
-              <Show when={!isShare()}>
-                <Text>{t("global.have_account")}</Text>
-                <Text
-                  color="$info9"
-                  as={LinkWithBase}
-                  href={`/@login?redirect=${encodeURIComponent(
-                    location.pathname,
-                  )}`}
-                >
-                  {t("global.go_login")}
-                </Text>
-              </Show>
-            </Password>
+            <div style={{ padding: "24px 16px" }}>
+              <Password
+                title={
+                  isShare()
+                    ? t("shares.input_password")
+                    : t("home.input_password")
+                }
+                password={password}
+                setPassword={setPassword}
+                enterCallback={() => refresh(true)}
+              >
+                <Show when={!isShare()}>
+                  <Text>{t("global.have_account")}</Text>
+                  <Text
+                    color="$info9"
+                    as={LinkWithBase}
+                    href={`/@login?redirect=${encodeURIComponent(
+                      location.pathname,
+                    )}`}
+                  >
+                    {t("global.go_login")}
+                  </Text>
+                </Show>
+              </Password>
+            </div>
           </Match>
           <Match
             when={
@@ -185,10 +185,15 @@ export const Obj = () => {
             <Folder />
           </Match>
           <Match when={objStore.state === State.File}>
-            <File />
+            <div style={{ padding: "12px 16px 16px" }}>
+              <File />
+            </div>
+          </Match>
+          <Match when={objStore.state === State.Initial}>
+            <FullLoading />
           </Match>
         </Switch>
       </Suspense>
-    </VStack>
+    </div>
   )
 }

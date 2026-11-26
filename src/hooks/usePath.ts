@@ -37,7 +37,6 @@ export const getGlobalPage = () => {
 }
 export const setGlobalPage = (page: number) => {
   globalPage = page
-  // console.log("setGlobalPage", globalPage)
 }
 export const resetGlobalPage = () => {
   setGlobalPage(1)
@@ -68,7 +67,6 @@ export const usePath = () => {
         index: arg?.index,
         size: arg?.size,
       }
-      // setSearchParams(page);
       return fsList(
         arg?.path,
         password(),
@@ -93,11 +91,7 @@ export const usePath = () => {
     }
   }
 
-  // record is second time password is wrong
   let retry_pass = false
-  // handle pathname change
-  // if confirm current path is dir, fetch List directly
-  // if not, fetch get then determine if it is dir or file
   const handlePathChange = (
     path: string,
     index?: number,
@@ -108,8 +102,6 @@ export const usePath = () => {
     cancelList?.()
     retry_pass = rp ?? false
     ObjStore.setErr("")
-    // Reader mounts can change delivery mode while this page is in history.
-    // Reload their local listing; the work page restores its own scroll position.
     const cachedReader = (
       HistoryMap.get(getHistoryKey(path, index))?.obj as
         { reader?: unknown } | undefined
@@ -126,7 +118,6 @@ export const usePath = () => {
     }
   }
 
-  // handle enter obj that don't know if it is dir or file
   const handleObj = async (path: string, index?: number) => {
     shouldKeepState() || ObjStore.setState(State.FetchingObj)
     const resp = await getObj(path)
@@ -145,6 +136,9 @@ export const usePath = () => {
         } else {
           ObjStore.setReadme(data.readme)
           ObjStore.setHeader(data.header)
+          ObjStore.setSourceNote("")
+          ObjStore.setArchivePasswords([])
+          ObjStore.setDirInfo(undefined)
           ObjStore.setRelated(data.related ?? [])
           ObjStore.setRawUrl(data.raw_url)
           ObjStore.set({ download_quota: data.download_quota })
@@ -155,7 +149,6 @@ export const usePath = () => {
     )
   }
 
-  // change enter a folder or turn page or load more
   const handleFolder = async (
     path: string,
     index?: number,
@@ -186,8 +179,18 @@ export const usePath = () => {
         if (onlyList) {
           return
         }
-        ObjStore.setReadme(data.readme)
-        ObjStore.setHeader(data.header)
+        const resolvedReadme = data.readme || data.dir_info?.readme || ""
+        const resolvedSourceNote =
+          data.source_note || data.dir_info?.source_note || ""
+        const resolvedPasswords =
+          data.archive_passwords && data.archive_passwords.length > 0
+            ? data.archive_passwords
+            : (data.dir_info?.archive_passwords ?? [])
+        ObjStore.setReadme(resolvedReadme)
+        ObjStore.setHeader(data.header || "")
+        ObjStore.setSourceNote(resolvedSourceNote)
+        ObjStore.setArchivePasswords(resolvedPasswords)
+        ObjStore.setDirInfo(data.dir_info)
         ObjStore.setWrite(data.write)
         ObjStore.setWriteContentBypass(data.write_content_bypass)
         ObjStore.setProvider(data.provider)

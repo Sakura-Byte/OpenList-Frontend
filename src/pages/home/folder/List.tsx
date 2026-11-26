@@ -1,21 +1,27 @@
-import { HStack, VStack, Text } from "@hope-ui/solid"
-import { batch, createEffect, createSignal, For, Show, onMount } from "solid-js"
-import { useT, useRouter } from "~/hooks"
 import {
+  For,
+  Show,
+  batch,
+  createEffect,
+  createMemo,
+  createSignal,
+  onMount,
+} from "solid-js"
+import { IArrowDown, IArrowUp } from "~/components/icons-tb"
+import { useRouter, useT, useUtil } from "~/hooks"
+import {
+  OrderBy,
   allChecked,
   checkboxOpen,
-  countMsg,
-  isIndeterminate,
-  local,
+  haveSelected,
   objStore,
   selectAll,
-  selectedMsg,
   sortObjs,
 } from "~/store"
-import { OrderBy } from "~/store"
-import { Col, cols, ListItem } from "./ListItem"
-import { ItemCheckbox, useSelectWithMouse } from "./helper"
 import { bus } from "~/utils"
+import { ListItem } from "./ListItem"
+import { SelectionBar } from "./SelectionBar"
+import { useSelectWithMouse } from "./helper"
 
 export interface SortState {
   orderBy: string
@@ -71,59 +77,72 @@ export const ListTitle = (props: {
     }
   })
 
-  const itemProps = (col: Col) => {
-    return {
-      fontWeight: "bold",
-      fontSize: "$sm",
-      color: "$neutral11",
-      textAlign: col.textAlign as any,
-      cursor: "pointer",
-      onClick: () => {
-        if (col.name === orderBy()) {
-          setReverse(!reverse())
-        } else {
-          batch(() => {
-            setOrderBy(col.name as OrderBy)
-            setReverse(false)
-          })
-        }
-      },
+  const toggleSort = (col: OrderBy) => {
+    if (orderBy() === col) {
+      setReverse(!reverse())
+    } else {
+      batch(() => {
+        setOrderBy(col)
+        setReverse(col !== "name")
+      })
     }
   }
+
   return (
-    <HStack class="title" w="$full" p="$2">
-      <HStack w={cols[0].w} spacing="$1">
-        <Show when={!props.disableCheckbox && checkboxOpen()}>
-          <ItemCheckbox
+    <div class="ol-list__head title">
+      <span class="ol-row__check">
+        <Show when={!props.disableCheckbox}>
+          <input
+            type="checkbox"
+            class="ol-checkbox"
+            style={{ opacity: 0.65 }}
+            aria-label={t("home.selbar.select_all")}
             checked={allChecked()}
-            indeterminate={isIndeterminate()}
-            onChange={(e: any) => {
-              selectAll(e.target.checked as boolean)
-            }}
+            onChange={(e) => selectAll(e.currentTarget.checked)}
           />
         </Show>
-        {selectedMsg() ? (
-          <Text {...itemProps(cols[0])}>{selectedMsg()}</Text>
-        ) : (
-          <Text {...itemProps(cols[0])}>{t(`home.obj.${cols[0].name}`)}</Text>
-        )}
-      </HStack>
-      <Text w={cols[1].w} {...itemProps(cols[1])}>
-        {t(`home.obj.${cols[1].name}`)}
-      </Text>
-      <Text
-        w={cols[2].w}
-        {...itemProps(cols[2])}
-        display={{ "@initial": "none", "@md": "inline" }}
+      </span>
+      <button
+        type="button"
+        class="ol-sort"
+        data-active={orderBy() === "name"}
+        onClick={() => toggleSort("name")}
       >
-        {t(`home.obj.${cols[2].name}`)}
-      </Text>
-    </HStack>
+        {t("home.obj.name")}
+        <Show when={orderBy() === "name"}>
+          {reverse() ? <IArrowDown size={12} /> : <IArrowUp size={12} />}
+        </Show>
+      </button>
+      <button
+        type="button"
+        class="ol-sort ol-sort--end"
+        data-active={orderBy() === "size"}
+        onClick={() => toggleSort("size")}
+      >
+        {t("home.obj.size")}
+        <Show when={orderBy() === "size"}>
+          {reverse() ? <IArrowDown size={12} /> : <IArrowUp size={12} />}
+        </Show>
+      </button>
+      <button
+        type="button"
+        class="ol-sort ol-sort--end ol-col-date"
+        data-active={orderBy() === "modified"}
+        onClick={() => toggleSort("modified")}
+      >
+        {t("home.obj.modified")}
+        <Show when={orderBy() === "modified"}>
+          {reverse() ? <IArrowDown size={12} /> : <IArrowUp size={12} />}
+        </Show>
+      </button>
+    </div>
   )
 }
 
 const ListLayout = () => {
+  const t = useT()
   const { pathname } = useRouter()
+  const { isHide } = useUtil()
 
   const [initialOrder, setInitialOrder] = createSignal<OrderBy>()
   const [initialReverse, setInitialReverse] = createSignal(false)
@@ -143,8 +162,7 @@ const ListLayout = () => {
   const onDragOver = (e: DragEvent) => {
     const items = Array.from(e.dataTransfer?.items ?? [])
     for (let i = 0; i < items.length; i++) {
-      const item = items[i]
-      if (item.kind === "file") {
+      if (items[i].kind === "file") {
         bus.emit("tool", "upload")
         e.preventDefault()
         break
@@ -152,30 +170,41 @@ const ListLayout = () => {
     }
   }
 
+  const visibleCount = createMemo(
+    () => objStore.objs.filter((o) => !isHide(o)).length,
+  )
+
   return (
-    <VStack
+    <div
       onDragOver={onDragOver}
       oncapture:contextmenu={captureContentMenu}
-      class="list viselect-container"
-      w="$full"
-      spacing="$1"
+      class="ol-list list viselect-container"
+      data-selecting={haveSelected() || checkboxOpen()}
     >
-      <ListTitle
-        sortCallback={sortObjs}
-        initialOrder={initialOrder()}
-        initialReverse={initialReverse()}
-      />
-      <For each={objStore.objs}>
-        {(obj, i) => {
-          return <ListItem obj={obj} index={i()} />
-        }}
-      </For>
-      <Show when={local["show_count_msg"] === "visible"}>
-        <Text size="sm" color="$neutral11">
-          {countMsg()}
-        </Text>
+      <Show
+        when={haveSelected()}
+        fallback={
+          <ListTitle
+            sortCallback={sortObjs}
+            initialOrder={initialOrder()}
+            initialReverse={initialReverse()}
+          />
+        }
+      >
+        <SelectionBar />
       </Show>
-    </VStack>
+
+      <Show
+        when={visibleCount() > 0}
+        fallback={<div class="ol-empty">{t("home.empty_dir")}</div>}
+      >
+        <div class="ol-nav-body" role="listbox" aria-multiselectable="true">
+          <For each={objStore.objs}>
+            {(obj, i) => <ListItem obj={obj} index={i()} />}
+          </For>
+        </div>
+      </Show>
+    </div>
   )
 }
 

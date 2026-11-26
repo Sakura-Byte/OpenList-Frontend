@@ -1,9 +1,5 @@
 import { Show, createSignal, onCleanup } from "solid-js"
-import { Box, Icon } from "@hope-ui/solid"
-import { FiArrowUp } from "solid-icons/fi"
-import { Motion } from "solid-motionone"
-import { isMobile } from "~/utils/compatibility"
-import { getMainColor } from "~/store"
+import { IArrowUp } from "~/components/icons-tb"
 
 export const useScrollListener = (
   callback: (e?: Event) => void,
@@ -15,44 +11,21 @@ export const useScrollListener = (
 }
 
 export const BackTop = () => {
-  if (isMobile) return null
-
   const [visible, setVisible] = createSignal(false)
-
-  useScrollListener(() => setVisible(window.scrollY > 100))
+  useScrollListener(() => setVisible(window.scrollY > 240))
 
   return (
     <Show when={visible()}>
-      <Box
-        as={Motion.div}
-        initial={{ y: -999 }}
-        animate={{ y: 0 }}
-        zIndex="$overlay"
-        pos="fixed"
-        right="$5"
-        top="0"
-        borderBottomRadius="50%"
-        bgColor="$whiteAlpha12"
-        color={getMainColor()}
-        overflow="hidden"
-        shadow="$lg"
-        _dark={{ bgColor: getMainColor(), color: "white" }}
-        _hover={{ bgColor: getMainColor(), color: "white" }}
+      <button
+        type="button"
+        class="ol-fab-btn"
+        aria-label="Back to top"
+        onClick={() => {
+          window.scrollTo({ top: 0, behavior: "smooth" })
+        }}
       >
-        <Icon
-          _focus={{
-            outline: "none",
-          }}
-          cursor="pointer"
-          boxSize="$7"
-          p="$1"
-          rounded="$lg"
-          as={FiArrowUp}
-          onClick={() => {
-            window.scrollTo({ top: 0, behavior: "smooth" })
-          }}
-        />
-      </Box>
+        <IArrowUp size={18} />
+      </button>
     </Show>
   )
 }

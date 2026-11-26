@@ -21,6 +21,14 @@ export enum Flag {
   DEPRECATED,
 }
 
+export type AppearanceSurfaceMode = "solid" | "glass"
+
+export interface FooterLinkItem {
+  label: string
+  url: string
+  external?: boolean
+}
+
 export interface SettingItem {
   key: string
   value: string

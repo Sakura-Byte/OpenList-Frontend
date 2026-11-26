@@ -1,28 +1,22 @@
+import type { LightGallery } from "lightgallery/lightgallery"
 import {
-  lazy,
+  Match,
+  Show,
+  Switch,
   createEffect,
   createMemo,
-  onCleanup,
-  Switch,
-  Match,
+  lazy,
   on,
+  onCleanup,
 } from "solid-js"
-import { layout } from "~/store"
-import { ContextMenu } from "./context-menu"
-import { Pager } from "./Pager"
-import { useLink, useT } from "~/hooks"
-import { objStore, local } from "~/store"
+import { useLink } from "~/hooks"
+import { haveSelected, layout, local, objStore } from "~/store"
 import { ObjType } from "~/types"
 import { bus } from "~/utils"
-import lightGallery from "lightgallery"
-import lgThumbnail from "lightgallery/plugins/thumbnail"
-import lgZoom from "lightgallery/plugins/zoom"
-import lgRotate from "lightgallery/plugins/rotate"
-import lgAutoplay from "lightgallery/plugins/autoplay"
-import lgFullscreen from "lightgallery/plugins/fullscreen"
-import "lightgallery/css/lightgallery-bundle.css"
-import { LightGallery } from "lightgallery/lightgallery"
+import { Pager } from "./Pager"
 import { Search } from "./Search"
+import { SelectionBar } from "./SelectionBar"
+import { ContextMenu } from "./context-menu"
 
 const ListLayout = lazy(() => import("./List"))
 const GridLayout = lazy(() => import("./Grid"))
@@ -37,7 +31,23 @@ const Folder = () => {
   )
 
   let dynamicGallery: LightGallery | undefined
-  const initGallery = () => {
+  const initGallery = async () => {
+    const [
+      { default: lightGallery },
+      { default: lgThumbnail },
+      { default: lgZoom },
+      { default: lgRotate },
+      { default: lgAutoplay },
+      { default: lgFullscreen },
+    ] = await Promise.all([
+      import("lightgallery"),
+      import("lightgallery/plugins/thumbnail"),
+      import("lightgallery/plugins/zoom"),
+      import("lightgallery/plugins/rotate"),
+      import("lightgallery/plugins/autoplay"),
+      import("lightgallery/plugins/fullscreen"),
+      import("lightgallery/css/lightgallery-bundle.css"),
+    ])
     dynamicGallery = lightGallery(document.createElement("div"), {
       addClass: "lightgallery-container",
       dynamic: true,
@@ -53,25 +63,35 @@ const Folder = () => {
       }),
     })
   }
+
   createEffect(
     on([images, () => local["show_gallery_thumbnails"]], () => {
       dynamicGallery?.destroy()
       dynamicGallery = undefined
     }),
   )
-  bus.on("gallery", (name) => {
+
+  const onGallery = async (name: string) => {
     if (!dynamicGallery) {
-      initGallery()
+      await initGallery()
     }
-    dynamicGallery?.openGallery(images().findIndex((obj) => obj.name === name))
-  })
+    const idx = images().findIndex((obj) => obj.name === name)
+    if (idx >= 0) {
+      dynamicGallery?.openGallery(idx)
+    }
+  }
+
+  bus.on("gallery", onGallery)
   onCleanup(() => {
-    bus.off("gallery")
+    bus.off("gallery", onGallery)
     dynamicGallery?.destroy()
   })
-  const t = useT()
+
   return (
     <>
+      <Show when={haveSelected() && layout() !== "list" && layout() !== "grid"}>
+        <SelectionBar />
+      </Show>
       <Switch>
         <Match when={objStore.objs.some((obj) => !!obj.tag)}>
           <TagFolders />

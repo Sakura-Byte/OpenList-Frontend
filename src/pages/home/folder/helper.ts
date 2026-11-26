@@ -1,24 +1,23 @@
 import { Checkbox, hope } from "@hope-ui/solid"
-import { createEffect, onCleanup } from "solid-js"
-import { useContextMenu } from "solid-contextmenu"
 import SelectionArea from "@viselect/vanilla"
+import { useContextMenu } from "solid-contextmenu"
+import { createEffect, onCleanup } from "solid-js"
 import {
-  checkboxOpen,
   haveSelected,
   local,
   objStore,
   oneChecked,
   selectAll,
-  selectedObjs,
   selectIndex,
+  selectedObjs,
 } from "~/store"
-import { isMobile } from "~/utils/compatibility"
 import { StoreObj } from "~/types"
+import { isMobile } from "~/utils/compatibility"
 
 let selectedCache: StoreObj[] | null = null
 
 export function useSelectWithMouse() {
-  const isMouseSupported = () => !isMobile && checkboxOpen()
+  const isMouseSupported = () => !isMobile
   const openWithDoubleClick = () =>
     isMouseSupported() && local["open_item_on_checkbox"] === "dblclick"
   const toggleWithClick = () =>
@@ -31,7 +30,7 @@ export function useSelectWithMouse() {
   }
 
   const restoreSelectionCache = () => {
-    if (selectedCache === null) return false
+    if (selectedCache === null) return true
     for (let i = 0; i < objStore.objs.length; ++i) {
       selectIndex(i, selectedCache.indexOf(objStore.objs[i]) >= 0)
     }
@@ -58,7 +57,15 @@ export function useSelectWithMouse() {
         boundaries: [".viselect-container"],
         selectables: [".viselect-item"],
       })
-      selection.on("beforestart", () => {
+      selection.on("beforestart", ({ event }) => {
+        const target = event?.target as Element | null
+        if (
+          target?.closest(
+            "input, button, a, .ol-row__check, .ol-tile__check, .ol-row__actions, .ol-selbar, .ol-list__head",
+          )
+        ) {
+          return false
+        }
         saveSelectionCache()
         selection.clearSelection(true, true)
         selection.select(".viselect-item.selected", true)
@@ -103,7 +110,7 @@ export function useSelectWithMouse() {
       const index = Number($selectedItem?.getAttribute("data-index"))
 
       const isClickOnContainer = Number.isNaN(index)
-      const isClickOnSelectedItems = () => !!objStore.objs[index].selected
+      const isClickOnSelectedItems = () => !!objStore.objs[index]?.selected
       if (isClickOnContainer || !isClickOnSelectedItems()) return
 
       e.stopPropagation()
@@ -123,7 +130,6 @@ export function useSelectWithMouse() {
 
 export const ItemCheckbox = hope(Checkbox, {
   baseStyle: {
-    // expand the range of click
     _before: {
       content: "",
       pos: "absolute",

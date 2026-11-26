@@ -40,6 +40,26 @@ const hide_routes: Route[] = [
     component: lazy(() => import("./metas/AddOrEdit")),
   },
   {
+    to: "/notices/add",
+    backend: ["go"],
+    component: lazy(() => import("./notices/AddOrEdit")),
+  },
+  {
+    to: "/notices/edit/:id",
+    backend: ["go"],
+    component: lazy(() => import("./notices/AddOrEdit")),
+  },
+  {
+    to: "/promotions/add",
+    backend: ["go"],
+    component: lazy(() => import("./promotions/AddOrEdit")),
+  },
+  {
+    to: "/promotions/edit/:id",
+    backend: ["go"],
+    component: lazy(() => import("./promotions/AddOrEdit")),
+  },
+  {
     to: "/2fa",
     component: lazy(() => import("./users/2fa")),
   },

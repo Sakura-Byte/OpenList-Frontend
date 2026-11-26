@@ -1,3 +1,5 @@
+@import "../styles/modern-tokens.css";
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

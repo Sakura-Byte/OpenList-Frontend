@@ -1,3 +1,10 @@
+export interface DirInfo {
+  readme?: string
+  source_note?: string
+  archive_passwords?: string[]
+  cover?: string
+}
+
 export interface Meta {
   id: number
   path: string
@@ -15,6 +22,12 @@ export interface Meta {
   r_sub: boolean
   header: string
   header_sub: boolean
+  source_note: string
+  source_sub: boolean
+  archive_passwords: string[]
+  archive_passwords_sub: boolean
+  stop_header: boolean
+  stop_readme: boolean
 }
 
 export type MetaGridUpdate = Omit<

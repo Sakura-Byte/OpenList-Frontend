@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   Checkbox,
-  createDisclosure,
   FormControl,
   FormLabel,
   HStack,
@@ -23,10 +22,12 @@ import {
   Thead,
   Tr,
   VStack,
+  createDisclosure,
 } from "@hope-ui/solid"
-import { createSignal, For, Show } from "solid-js"
-import { createStore, reconcile } from "solid-js/store"
 import { createStorageSignal } from "@solid-primitives/storage"
+import { For, Show, createSignal } from "solid-js"
+import { createStore, reconcile } from "solid-js/store"
+import { FolderChooseInput, Wether } from "~/components"
 import {
   useFetch,
   useListFetch,
@@ -34,10 +35,20 @@ import {
   useRouter,
   useT,
 } from "~/hooks"
-import { handleResp, notify, r } from "~/utils"
 import { Meta, MetaGridUpdate, PEmptyResp, PPageResp } from "~/types"
+import { handleResp, notify, r } from "~/utils"
 import { DeletePopover } from "../common/DeletePopover"
-import { FolderChooseInput, Wether } from "~/components"
+
+export function parseArchivePasswordsText(raw: string): string[] {
+  return raw
+    .split(/[\r\n,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
+export function formatArchivePasswordsText(list?: string[]): string {
+  return (list ?? []).join("\n")
+}
 
 const Metas = () => {
   const t = useT()
@@ -95,6 +106,12 @@ const Metas = () => {
         header_sub: meta.header_sub,
         readme: meta.readme,
         r_sub: meta.r_sub,
+        source_note: meta.source_note ?? "",
+        source_sub: Boolean(meta.source_sub),
+        archive_passwords: meta.archive_passwords ?? [],
+        archive_passwords_sub: Boolean(meta.archive_passwords_sub),
+        stop_header: Boolean(meta.stop_header),
+        stop_readme: Boolean(meta.stop_readme),
       }))
       const resp: Awaited<PEmptyResp> = await r.post(
         "/admin/meta/update_grid",
@@ -200,7 +217,15 @@ const Metas = () => {
               <Table highlightOnHover dense>
                 <Thead>
                   <Tr>
-                    <For each={["path", "password", "write"]}>
+                    <For
+                      each={[
+                        "path",
+                        "password",
+                        "source_note",
+                        "archive_passwords",
+                        "write",
+                      ]}
+                    >
                       {(title) => <Th>{t(`metas.${title}`)}</Th>}
                     </For>
                     <Th>{t("global.operations")}</Th>
@@ -212,10 +237,11 @@ const Metas = () => {
                       <Tr>
                         <Td>{meta.path}</Td>
                         <Td>{meta.password}</Td>
+                        <Td>{meta.source_note}</Td>
+                        <Td>{(meta.archive_passwords ?? []).join(", ")}</Td>
                         <Td>
                           <Wether yes={meta.write} />
                         </Td>
-                        {/* <Td>{meta.hide}</Td> */}
                         <Td>
                           <HStack spacing="$2">
                             <Button
@@ -265,6 +291,8 @@ const Metas = () => {
                       "password",
                       "write",
                       "hide",
+                      "source_note",
+                      "archive_passwords",
                       "header",
                       "readme",
                     ]}
@@ -364,6 +392,65 @@ const Metas = () => {
                       </Td>
                       <Td css={{ minWidth: "220px" }}>
                         <VStack spacing="$1" alignItems="start">
+                          <Input
+                            value={meta.source_note ?? ""}
+                            onInput={(e) =>
+                              updateMeta(
+                                index(),
+                                "source_note",
+                                e.currentTarget.value,
+                              )
+                            }
+                          />
+                          <Checkbox
+                            css={{ whiteSpace: "nowrap" }}
+                            checked={Boolean(meta.source_sub)}
+                            onChange={(e: any) =>
+                              updateMeta(
+                                index(),
+                                "source_sub",
+                                e.currentTarget.checked,
+                              )
+                            }
+                          >
+                            {t("metas.apply_sub")}
+                          </Checkbox>
+                        </VStack>
+                      </Td>
+                      <Td css={{ minWidth: "220px" }}>
+                        <VStack spacing="$1" alignItems="start">
+                          <Textarea
+                            rows={2}
+                            value={formatArchivePasswordsText(
+                              meta.archive_passwords,
+                            )}
+                            onInput={(e) =>
+                              updateMeta(
+                                index(),
+                                "archive_passwords",
+                                parseArchivePasswordsText(
+                                  e.currentTarget.value,
+                                ),
+                              )
+                            }
+                          />
+                          <Checkbox
+                            css={{ whiteSpace: "nowrap" }}
+                            checked={Boolean(meta.archive_passwords_sub)}
+                            onChange={(e: any) =>
+                              updateMeta(
+                                index(),
+                                "archive_passwords_sub",
+                                e.currentTarget.checked,
+                              )
+                            }
+                          >
+                            {t("metas.apply_sub")}
+                          </Checkbox>
+                        </VStack>
+                      </Td>
+                      <Td css={{ minWidth: "220px" }}>
+                        <VStack spacing="$1" alignItems="start">
                           <Textarea
                             rows={2}
                             value={meta.header}
@@ -387,6 +474,19 @@ const Metas = () => {
                             }
                           >
                             {t("metas.apply_sub")}
+                          </Checkbox>
+                          <Checkbox
+                            css={{ whiteSpace: "nowrap" }}
+                            checked={Boolean(meta.stop_header)}
+                            onChange={(e: any) =>
+                              updateMeta(
+                                index(),
+                                "stop_header",
+                                e.currentTarget.checked,
+                              )
+                            }
+                          >
+                            {t("metas.stop_header")}
                           </Checkbox>
                         </VStack>
                       </Td>
@@ -415,6 +515,19 @@ const Metas = () => {
                             }
                           >
                             {t("metas.apply_sub")}
+                          </Checkbox>
+                          <Checkbox
+                            css={{ whiteSpace: "nowrap" }}
+                            checked={Boolean(meta.stop_readme)}
+                            onChange={(e: any) =>
+                              updateMeta(
+                                index(),
+                                "stop_readme",
+                                e.currentTarget.checked,
+                              )
+                            }
+                          >
+                            {t("metas.stop_readme")}
                           </Checkbox>
                         </VStack>
                       </Td>

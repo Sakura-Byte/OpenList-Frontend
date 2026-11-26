@@ -1,0 +1,31 @@
+{
+  "slot": "Ad Slot",
+  "slots": {
+    "popup_ad": "Popup Ad",
+    "header_banner": "Directory Header Banner",
+    "readme_sponsor": "Readme Sponsor",
+    "ad_recruit": "Ad Slot Inquiry",
+    "subdir_sponsor": "Subdirectory Compact Sponsor"
+  },
+  "title": "Title",
+  "subtitle": "Subtitle",
+  "body": "Description",
+  "image": "Image URL",
+  "cta_url": "Target URL",
+  "cta_text": "Button Text",
+  "track_name": "Track Name (data-content-name)",
+  "track_piece": "Track Piece (data-content-piece)",
+  "close_delay_sec": "Close Delay (sec)",
+  "close_delay_help": "Clamped to 0–10 seconds; locks Esc and backdrop click until 0",
+  "allow_snooze": "Allow 'Hide for today'",
+  "freq_cap": "Frequency Cap",
+  "freq_caps": {
+    "visit": "Every visit",
+    "session": "Once per session",
+    "12h": "Every 12 hours",
+    "24h": "Every 24 hours"
+  },
+  "path_prefix": "Path Prefix",
+  "priority": "Priority",
+  "enabled": "Enabled"
+}

@@ -1,17 +1,37 @@
-import { Box, useColorModeValue } from "@hope-ui/solid"
-import { createMemo, Show, createResource, on } from "solid-js"
+import { Show, createMemo, createResource, on } from "solid-js"
 import { Markdown, MaybeLoading } from "~/components"
 import { useLink, useRouter } from "~/hooks"
-import { getSettingBool, objStore, State } from "~/store"
+import { State, getSettingBool, objStore } from "~/store"
 import { fetchText } from "~/utils"
+
+export function hasActiveReadmeForCurrentView(files: string[]) {
+  const { searchParams } = useRouter()
+  return createMemo(() => {
+    if (!getSettingBool("readme_autorender")) return false
+    if (
+      ![State.FetchingMore, State.Folder, State.File].includes(objStore.state)
+    ) {
+      return false
+    }
+    if (
+      [State.FetchingMore, State.Folder].includes(objStore.state) &&
+      !(objStore.reader && searchParams.view !== "files")
+    ) {
+      const found = objStore.objs.find((item) =>
+        files.some((file) => file.toLowerCase() === item.name.toLowerCase()),
+      )
+      if (found) return true
+    }
+    return Boolean(objStore.readme && objStore.readme.trim())
+  })
+}
 
 export function Readme(props: {
   files: string[]
   fromMeta: keyof typeof objStore
 }) {
-  const cardBg = useColorModeValue("white", "$neutral3")
   const { proxyLink } = useLink()
-  const { pathname, searchParams } = useRouter()
+  const { searchParams } = useRouter()
   const trackingMeta = createMemo(() =>
     props.fromMeta === "header"
       ? {
@@ -23,9 +43,16 @@ export function Readme(props: {
           piece: "home-readme",
         },
   )
+
   const readme = createMemo(
     on(
-      () => [objStore.state, objStore.reader, searchParams.view] as const,
+      () =>
+        [
+          objStore.state,
+          objStore.reader,
+          objStore[props.fromMeta],
+          searchParams.view,
+        ] as const,
       () => {
         if (
           ![State.FetchingMore, State.Folder, State.File].includes(
@@ -47,40 +74,42 @@ export function Readme(props: {
             return proxyLink(obj, true)
           }
         }
-        if (
-          objStore[props.fromMeta] &&
-          typeof objStore[props.fromMeta] === "string"
-        ) {
-          return objStore[props.fromMeta] as string
+        const metaVal = objStore[props.fromMeta]
+        if (metaVal && typeof metaVal === "string") {
+          return metaVal.trim()
         }
         return ""
       },
     ),
   )
-  const fetchContent = async (readme: string) => {
-    let res = {
-      content: readme as string | ArrayBuffer,
+
+  const fetchContent = async (src: string) => {
+    if (!src) return { content: "" as string | ArrayBuffer }
+    if (/^https?:\/\//i.test(src)) {
+      return await fetchText(src)
     }
-    if (/^https?:\/\//g.test(readme)) {
-      res = await fetchText(readme)
+    return {
+      content: src as string | ArrayBuffer,
     }
-    return res
   }
   const [content] = createResource(readme, fetchContent)
+
   return (
     <Show when={getSettingBool("readme_autorender") && readme()}>
-      <Box w="$full" rounded="$xl" p="$4" bgColor={cardBg()} shadow="$lg">
-        <MaybeLoading loading={content.loading}>
-          <Markdown
-            children={content()?.content}
-            readme
-            toc={props.fromMeta === "readme"}
-            trackContent
-            contentName={trackingMeta().name}
-            contentPiece={trackingMeta().piece}
-          />
-        </MaybeLoading>
-      </Box>
+      <section class="ol-sheet ol-readme">
+        <div class="ol-nav-body">
+          <MaybeLoading loading={content.loading}>
+            <Markdown
+              children={content()?.content}
+              readme
+              toc={props.fromMeta === "readme"}
+              trackContent
+              contentName={trackingMeta().name}
+              contentPiece={trackingMeta().piece}
+            />
+          </MaybeLoading>
+        </div>
+      </section>
     </Show>
   )
 }

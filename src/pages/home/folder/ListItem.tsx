@@ -1,37 +1,18 @@
-import {
-  HStack,
-  Icon,
-  Progress,
-  ProgressIndicator,
-  ProgressLabel,
-  Text,
-} from "@hope-ui/solid"
-import { Motion } from "solid-motionone"
 import { useContextMenu } from "solid-contextmenu"
-import { batch, Show } from "solid-js"
+import { Show, batch, createMemo } from "solid-js"
 import { LinkWithPush } from "~/components"
-import { usePath, useRouter, useUtil } from "~/hooks"
 import {
-  checkboxOpen,
-  getMainColor,
-  getSettingBool,
-  local,
-  OrderBy,
-  selectIndex,
-} from "~/store"
-import { MountDetails, ObjType, StoreObj } from "~/types"
-import {
-  bus,
-  formatDate,
-  getFileSize,
-  hoverColor,
-  showDiskUsage,
-  usedPercentage,
-  toReadableUsage,
-  nearlyFull,
-} from "~/utils"
-import { getIconByObj } from "~/utils/icon"
-import { ItemCheckbox, useSelectWithMouse } from "./helper"
+  FileIcon,
+  IDownload,
+  ILink,
+  IMore,
+  fileKind,
+} from "~/components/icons-tb"
+import { useLink, usePath, useRouter, useT, useUtil } from "~/hooks"
+import { OrderBy, selectIndex } from "~/store"
+import { StoreObj } from "~/types"
+import { formatDate, getFileSize } from "~/utils"
+import { useSelectWithMouse } from "./helper"
 
 export interface Col {
   name: OrderBy
@@ -46,175 +27,147 @@ export const cols: Col[] = [
 ]
 
 export const ListItem = (props: { obj: StoreObj; index: number }) => {
-  const { isHide } = useUtil()
+  const { isHide, copy } = useUtil()
   if (isHide(props.obj)) {
     return null
   }
+  const t = useT()
   const { setPathAs } = usePath()
   const { show } = useContextMenu({ id: 1 })
   const { pushHref, to } = useRouter()
+  const { rawLink, previewPage } = useLink()
   const { openWithDoubleClick, toggleWithClick, restoreSelectionCache } =
     useSelectWithMouse()
-  const filenameStyle = () => local["list_item_filename_overflow"]
+
+  const kind = createMemo(() =>
+    fileKind(props.obj.name, props.obj.is_dir, props.obj.type),
+  )
+
+  const handleRowActivate = (e: MouseEvent) => {
+    if (openWithDoubleClick()) return
+    if (e.ctrlKey || e.metaKey || e.shiftKey) {
+      selectIndex(props.index, !props.obj.selected)
+      return
+    }
+    if (!restoreSelectionCache()) return
+    if (toggleWithClick()) {
+      selectIndex(props.index, !props.obj.selected)
+      return
+    }
+    to(pushHref(props.obj.name))
+  }
+
   return (
-    <Motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.2 }}
-      style={{
-        width: "100%",
+    <div
+      class="ol-row list-item viselect-item"
+      classList={{ selected: !!props.obj.selected }}
+      role="option"
+      aria-selected={!!props.obj.selected}
+      data-dir={props.obj.is_dir}
+      data-index={props.index}
+      on:dblclick={() => {
+        if (!openWithDoubleClick()) return
+        selectIndex(props.index, true, true)
+        to(pushHref(props.obj.name))
+      }}
+      onClick={handleRowActivate}
+      onMouseEnter={() => {
+        setPathAs(props.obj.name, props.obj.is_dir, true)
+      }}
+      onContextMenu={(e: MouseEvent) => {
+        batch(() => {
+          selectIndex(props.index, true, true)
+        })
+        show(e, { props: props.obj })
       }}
     >
-      <HStack
-        classList={{ selected: !!props.obj.selected }}
-        class="list-item viselect-item"
-        data-index={props.index}
-        w="$full"
-        p="$2"
-        rounded="$lg"
-        transition="all 0.3s"
-        _hover={{
-          transform: "scale(1.01)",
-          bgColor: hoverColor(),
-        }}
-        as={LinkWithPush}
-        href={props.obj.name}
-        cursor={
-          openWithDoubleClick() || toggleWithClick() ? "default" : "pointer"
-        }
-        bgColor={props.obj.selected ? hoverColor() : undefined}
-        on:dblclick={() => {
-          if (!openWithDoubleClick()) return
-          selectIndex(props.index, true, true)
-          to(pushHref(props.obj.name))
-        }}
-        on:click={(e: MouseEvent) => {
-          e.preventDefault()
-          if (openWithDoubleClick()) return
-          if (e.ctrlKey || e.metaKey || e.shiftKey) return
-          if (!restoreSelectionCache()) return
-          if (toggleWithClick())
-            return selectIndex(props.index, !props.obj.selected)
-          to(pushHref(props.obj.name))
-        }}
-        onMouseEnter={() => {
-          setPathAs(props.obj.name, props.obj.is_dir, true)
-        }}
-        onContextMenu={(e: MouseEvent) => {
-          batch(() => {
-            // if (!checkboxOpen()) {
-            //   toggleCheckbox();
-            // }
-            selectIndex(props.index, true, true)
-          })
-          show(e, { props: props.obj })
-        }}
+      <span
+        class="ol-row__check"
+        on:mousedown={(e: MouseEvent) => e.stopPropagation()}
+        onClick={(e: MouseEvent) => e.stopPropagation()}
       >
-        <HStack class="name-box" spacing="$1" w={cols[0].w}>
-          <Show when={checkboxOpen()}>
-            <ItemCheckbox
-              // colorScheme="neutral"
-              on:mousedown={(e: MouseEvent) => {
-                e.stopPropagation()
-              }}
-              on:click={(e: MouseEvent) => {
-                e.stopPropagation()
-              }}
-              checked={props.obj.selected}
-              onChange={(e: any) => {
-                selectIndex(props.index, e.target.checked)
-              }}
-            />
-          </Show>
-          <Icon
-            class="icon"
-            boxSize="$6"
-            color={getMainColor()}
-            as={getIconByObj(props.obj)}
-            mr="$1"
-            cursor={props.obj.type !== ObjType.IMAGE ? "inherit" : "pointer"}
-            on:click={(e: MouseEvent) => {
-              if (props.obj.type !== ObjType.IMAGE) return
-              if (e.ctrlKey || e.metaKey || e.shiftKey) return
-              if (!restoreSelectionCache()) return
-              bus.emit("gallery", props.obj.name)
+        <FileIcon kind={kind()} size={20} />
+        <input
+          type="checkbox"
+          class="ol-checkbox"
+          aria-label={props.obj.name}
+          checked={!!props.obj.selected}
+          onChange={(e) => selectIndex(props.index, e.currentTarget.checked)}
+        />
+      </span>
+
+      <span class="ol-row__name name-box" title={props.obj.name}>
+        <LinkWithPush
+          class="ol-row__name-text name"
+          href={props.obj.name}
+          onClick={(e: MouseEvent) => {
+            if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
               e.preventDefault()
               e.stopPropagation()
-            }}
-          />
-          <Text
-            class="name"
-            css={{
-              wordBreak: "break-all",
-              whiteSpace: filenameStyle() === "multi_line" ? "unset" : "nowrap",
-              "overflow-x":
-                filenameStyle() === "scrollable" ? "auto" : "hidden",
-              textOverflow:
-                filenameStyle() === "ellipsis" ? "ellipsis" : "unset",
-              "scrollbar-width": "none", // firefox
-              "&::-webkit-scrollbar": {
-                // webkit
-                display: "none",
-              },
-            }}
-            title={props.obj.name}
-          >
-            {props.obj.name}
-          </Text>
-        </HStack>
-        <Show
-          fallback={
-            <Text
-              class="size"
-              w={cols[1].w}
-              textAlign={cols[1].textAlign as any}
-            >
-              {getFileSize(props.obj.size)}
-            </Text>
-          }
-          when={showDiskUsage(props.obj.mount_details)}
-        >
-          <Show
-            fallback={
-              <Text
-                class="size"
-                w={cols[1].w}
-                textAlign={cols[1].textAlign as any}
-              >
-                {toReadableUsage(props.obj.mount_details!)}
-              </Text>
+              handleRowActivate(e)
+            } else {
+              e.stopPropagation()
             }
-            when={!getSettingBool("show_disk_usage_in_plain_text")}
-          >
-            <Progress
-              w={cols[1].w}
-              class="disk-usage-percentage"
-              trackColor="$info3"
-              rounded="$full"
-              size="md"
-              value={usedPercentage(props.obj.mount_details!)}
-            >
-              <ProgressIndicator
-                color={
-                  nearlyFull(props.obj.mount_details!) ? "$danger6" : "$info6"
-                }
-                rounded="$md"
-              />
-              <ProgressLabel class="disk-usage-text">
-                {toReadableUsage(props.obj.mount_details!)}
-              </ProgressLabel>
-            </Progress>
-          </Show>
-        </Show>
-        <Text
-          class="modified"
-          display={{ "@initial": "none", "@md": "inline" }}
-          w={cols[2].w}
-          textAlign={cols[2].textAlign as any}
+          }}
         >
-          {formatDate(props.obj.modified)}
-        </Text>
-      </HStack>
-    </Motion.div>
+          {props.obj.name}
+        </LinkWithPush>
+
+        <span
+          class="ol-row__actions"
+          on:mousedown={(e: MouseEvent) => e.stopPropagation()}
+          onClick={(e: MouseEvent) => e.stopPropagation()}
+        >
+          <Show when={!props.obj.is_dir}>
+            <button
+              type="button"
+              class="ol-icon-btn"
+              title={t("home.toolbar.download")}
+              aria-label={t("home.toolbar.download")}
+              onClick={() => {
+                window.open(rawLink(props.obj, true), "_blank")
+              }}
+            >
+              <IDownload size={16} />
+            </button>
+          </Show>
+          <button
+            type="button"
+            class="ol-icon-btn"
+            title={t("home.toolbar.copy_link")}
+            aria-label={t("home.toolbar.copy_link")}
+            onClick={() => {
+              const url = props.obj.is_dir
+                ? previewPage(props.obj, true)
+                : rawLink(props.obj, true)
+              copy(url)
+            }}
+          >
+            <ILink size={16} />
+          </button>
+          <button
+            type="button"
+            class="ol-icon-btn"
+            title={t("home.toolbar.more")}
+            aria-label={t("home.toolbar.more")}
+            onClick={(e) => {
+              batch(() => {
+                selectIndex(props.index, true, true)
+              })
+              show(e, { props: props.obj })
+            }}
+          >
+            <IMore size={16} />
+          </button>
+        </span>
+      </span>
+
+      <span class="ol-row__size size">
+        {props.obj.is_dir ? "" : getFileSize(props.obj.size)}
+      </span>
+      <span class="ol-row__date modified">
+        {formatDate(props.obj.modified)}
+      </span>
+    </div>
   )
 }

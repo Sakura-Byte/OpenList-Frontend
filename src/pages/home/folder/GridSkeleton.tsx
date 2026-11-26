@@ -1,17 +1,24 @@
-import { Grid, Skeleton } from "@hope-ui/solid"
 import { For } from "solid-js"
 
 const GridSkeleton = () => {
   return (
-    <Grid
-      w="$full"
-      gap="$2"
-      templateColumns="repeat(auto-fill, minmax(100px,1fr))"
-    >
+    <div class="ol-grid">
       <For each={Array.from({ length: 12 })}>
-        {() => <Skeleton w="$full" h="$28" rounded="$lg" />}
+        {() => (
+          <div class="ol-tile">
+            <span
+              class="ol-skeleton-bar"
+              style={{
+                width: "48px",
+                height: "54px",
+                "border-radius": "var(--ol-radius-sm)",
+              }}
+            />
+            <span class="ol-skeleton-bar" style={{ width: "76%" }} />
+          </div>
+        )}
       </For>
-    </Grid>
+    </div>
   )
 }
 

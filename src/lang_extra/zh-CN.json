@@ -1,7 +1,66 @@
 {
   "home": {
     "layouts": {
+      "switch": "切换视图",
       "poster": "海报视图"
+    },
+    "ad_label": "广告",
+    "nav_aria": "当前位置",
+    "empty_dir": "这个目录是空的",
+    "crumbs_count": "{{count}} 项",
+    "facts": {
+      "archive_password": "解压密码",
+      "copy_password": "点击复制",
+      "source": "来源"
+    },
+    "selbar": {
+      "region": "批量操作",
+      "select_all": "全选",
+      "selected": "已选 {{count}} 项"
+    },
+    "notice": {
+      "site_announcement": "站点公告",
+      "details": "详情",
+      "dismiss": "关闭此公告",
+      "severity_info": "通知",
+      "severity_warning": "维护",
+      "severity_critical": "重要",
+      "updated_at": "更新于 {{date}}",
+      "acknowledge": "知道了",
+      "history_btn": "往期公告",
+      "history_title": "往期公告",
+      "no_history": "暂无往期公告",
+      "back_current": "返回当前公告"
+    },
+    "promo": {
+      "close": "关闭",
+      "close_in": "{{seconds}} 秒后可关闭",
+      "close_locked": "关闭（{{seconds}}）",
+      "snooze_today": "今天不再显示"
+    },
+    "subdir_sponsor": {
+      "default_title": "支持本站运营",
+      "default_desc": "浏览赞助说明或联系站长投放目录推广位",
+      "default_cta": "查看详情"
+    },
+    "markdown": {
+      "toc": "目录",
+      "copy_code": "复制代码",
+      "copied": "已复制",
+      "alert_note": "说明",
+      "alert_tip": "提示",
+      "alert_important": "重要",
+      "alert_warning": "注意",
+      "alert_caution": "警告"
+    },
+    "footer": {
+      "powered_by": "由 OpenList 驱动",
+      "manage": "管理",
+      "uptime_days": "已运行 {{days}} 天",
+      "load_time": "本页载入 {{sec}} 秒"
+    },
+    "search": {
+      "searching": "正在搜索…"
     },
     "local_settings": {
       "global_default_layout_options": {
@@ -9,5 +68,102 @@
       },
       "poster_item_size": "海报卡片宽度"
     }
+  },
+  "manage": {
+    "sidemenu": {
+      "notices": "站点公告",
+      "promotions": "推广与广告"
+    }
+  },
+  "metas": {
+    "source_note": "来源备注",
+    "source_note_help": "在目录面包屑下方展示来源说明或原始链接（支持 Markdown 链接与裸 URL）",
+    "archive_passwords": "解压密码",
+    "archive_passwords_help": "每行或英文逗号分隔一个密码，访客可点击一键复制",
+    "stop_header": "停止继承顶部说明",
+    "stop_header_help": "阻止祖先目录的顶部说明继承到当前及子目录",
+    "stop_readme": "停止继承底部说明",
+    "stop_readme_help": "阻止祖先目录的底部说明继承到当前及子目录"
+  },
+  "notices": {
+    "title": "标题",
+    "summary": "摘要",
+    "summary_help": "用于顶部单行公告横幅展示",
+    "content": "正文（支持 Markdown）",
+    "content_help": "在公告详情弹窗中以 Markdown 渲染",
+    "severity": "级别",
+    "severities": {
+      "info": "通知",
+      "warning": "维护",
+      "critical": "重要"
+    },
+    "display_type": "展示方式",
+    "display_types": {
+      "auto": "自动（重要级别自动弹窗）",
+      "top_banner": "仅顶部横幅",
+      "modal": "仅弹窗",
+      "both": "横幅 + 弹窗"
+    },
+    "dismiss_strategy": "关闭策略",
+    "dismiss_strategies": {
+      "until_updated": "内容更新前不再提醒",
+      "24h": "24 小时内不再提醒",
+      "session": "本次会话内不再提醒"
+    },
+    "path_prefix": "路径前缀",
+    "sort": "排序权重",
+    "start_at": "开始时间",
+    "end_at": "结束时间",
+    "enabled": "启用"
+  },
+  "promotions": {
+    "slot": "广告位",
+    "slots": {
+      "popup_ad": "弹窗广告",
+      "header_banner": "目录顶部横幅",
+      "readme_sponsor": "说明底部赞助",
+      "ad_recruit": "广告位招租",
+      "subdir_sponsor": "子目录紧凑赞助"
+    },
+    "title": "标题",
+    "subtitle": "副标题",
+    "body": "补充说明",
+    "image": "图片地址",
+    "cta_url": "跳转链接",
+    "cta_text": "按钮文案",
+    "track_name": "统计名称（data-content-name）",
+    "track_piece": "统计物料标识（data-content-piece）",
+    "close_delay_sec": "关闭倒计时（秒）",
+    "close_delay_help": "范围 0–10 秒，倒计时期间禁止 Esc 和遮罩点击关闭",
+    "allow_snooze": "允许“今天不再显示”",
+    "freq_cap": "频次控制",
+    "freq_caps": {
+      "visit": "每次访问",
+      "session": "每次会话",
+      "12h": "每 12 小时",
+      "24h": "每 24 小时"
+    },
+    "path_prefix": "路径前缀",
+    "priority": "优先级",
+    "enabled": "启用"
+  },
+  "settings": {
+    "appearance_blur_px": "毛玻璃模糊半径（px）",
+    "appearance_surface_mode": "页面表面材质",
+    "appearance_surface_modes": {
+      "glass": "毛玻璃（Glass）",
+      "solid": "实色（Solid）"
+    },
+    "appearance_wallpaper": "背景壁纸 URL（第一行浅色，第二行可选深色）",
+    "footer_links": "页脚自定义链接（JSON 数组）",
+    "footer_show_perf": "页脚显示页面载入耗时",
+    "footer_show_uptime": "页脚显示运行天数",
+    "site_description": "站点描述（SEO）",
+    "site_launch_at": "建站日期（YYYY-MM-DD）",
+    "subdir_sponsor_cta_text": "子目录赞助按钮文案",
+    "subdir_sponsor_cta_url": "子目录赞助跳转链接",
+    "subdir_sponsor_desc": "子目录赞助描述",
+    "subdir_sponsor_enabled": "无 README 的子目录显示紧凑赞助卡片",
+    "subdir_sponsor_title": "子目录赞助标题"
   }
 }

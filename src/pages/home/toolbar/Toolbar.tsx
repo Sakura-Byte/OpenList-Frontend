@@ -1,21 +1,20 @@
+import { lazy } from "solid-js"
 import { Portal } from "solid-js/web"
-import { Center } from "./Center"
-import { Right } from "./Right"
+import { BackTop } from "./BackTop"
+import { BatchRename } from "./BatchRename"
 import { Copy, Move } from "./CopyMove"
+import { Decompress } from "./Decompress"
 import { Delete } from "./Delete"
-import { Rename } from "./Rename"
-import { NewFile } from "./NewFile"
+import { PackageDownloadModal } from "./Download"
+import { LocalSettings } from "./LocalSettings"
 import { Mkdir } from "./Mkdir"
+import { ModalWrapper } from "./ModalWrapper"
+import { NewFile } from "./NewFile"
+import { OfflineDownloadEnhanced } from "./OfflineDownloadEnhanced"
 import { RecursiveMove } from "./RecursiveMove"
 import { RemoveEmptyDirectory } from "./RemoveEmptyDirectory"
-import { BatchRename } from "./BatchRename"
-import { OfflineDownloadEnhanced } from "./OfflineDownloadEnhanced"
-import { PackageDownloadModal } from "./Download"
-import { lazy } from "solid-js"
-import { ModalWrapper } from "./ModalWrapper"
-import { LocalSettings } from "./LocalSettings"
-import { BackTop } from "./BackTop"
-import { Decompress } from "./Decompress"
+import { Rename } from "./Rename"
+import { Right } from "./Right"
 import { Share } from "./Share"
 
 const Upload = lazy(() => import("../uploads/Upload"))
@@ -47,10 +46,11 @@ export const Modal = () => {
 export const Toolbar = () => {
   return (
     <Portal>
-      <Right />
-      <Center />
+      <div class="ol-modern-scope ol-fab-group">
+        <BackTop />
+        <Right />
+      </div>
       <Modal />
-      <BackTop />
     </Portal>
   )
 }

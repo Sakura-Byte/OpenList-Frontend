@@ -1,0 +1,31 @@
+{
+  "title": "Title",
+  "summary": "Summary",
+  "summary_help": "Shown in the single-line top notice banner",
+  "content": "Content (Markdown)",
+  "content_help": "Rendered as Markdown inside the notice modal",
+  "severity": "Severity",
+  "severities": {
+    "info": "Info",
+    "warning": "Maintenance",
+    "critical": "Critical"
+  },
+  "display_type": "Display Type",
+  "display_types": {
+    "auto": "Auto (modal for critical)",
+    "top_banner": "Top Banner Only",
+    "modal": "Modal Only",
+    "both": "Banner + Modal"
+  },
+  "dismiss_strategy": "Dismiss Strategy",
+  "dismiss_strategies": {
+    "until_updated": "Until content updated",
+    "24h": "24 hours",
+    "session": "Current session"
+  },
+  "path_prefix": "Path Prefix",
+  "sort": "Sort Order",
+  "start_at": "Start Time",
+  "end_at": "End Time",
+  "enabled": "Enabled"
+}

@@ -1,39 +1,9 @@
-import {
-  Badge,
-  createDisclosure,
-  HStack,
-  Icon,
-  IconButton,
-  Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalHeader,
-  ModalOverlay,
-  Text,
-  VStack,
-  hope,
-} from "@hope-ui/solid"
-import { BsSearch } from "solid-icons/bs"
-import {
-  createSignal,
-  For,
-  Match,
-  onCleanup,
-  onMount,
-  Show,
-  Switch,
-} from "solid-js"
-import Mark from "mark.js"
-import {
-  FullLoading,
-  LinkWithBase,
-  Paginator,
-  SelectWrapper,
-} from "~/components"
+import { useColorMode } from "@hope-ui/solid"
+import { For, Show, createEffect, createSignal, on, onCleanup } from "solid-js"
+import { Portal } from "solid-js/web"
+import { FileIcon, ISearch, fileKind } from "~/components/icons-tb"
 import { useFetch, usePath, useRouter, useT } from "~/hooks"
-import { getMainColor, me, password } from "~/store"
+import { me, password } from "~/store"
 import { SearchNode } from "~/types"
 import {
   bus,
@@ -41,194 +11,96 @@ import {
   fsSearch,
   getFileSize,
   handleResp,
-  hoverColor,
+  joinBase,
   pathJoin,
 } from "~/utils"
 import { isMac } from "~/utils/compatibility"
-import { getIconByObj } from "~/utils/icon"
 
-// class MarkKeywords {
-//   root
-//   rootHTML
-//   style
+type ScopeIndex = 0 | 1 | 2
+const SCOPES = ["all", "folder", "file"] as const
 
-//   /**
-//    * Keyword highlight
-//    * @param root Find root elements
-//    * @param style The default background is highly bright yellow
-//    */
-//   constructor(config: { root: Element | null; style?: string }) {
-//     if (!config.root) return
-//     this.root = config.root
-//     this.rootHTML = config.root.innerHTML
-//     this.style = config.style ?? "background-color: #FF0"
-//   }
-
-//   /** mark keyword */
-//   light(keyword: string) {
-//     const handler = (root: any) => {
-//       if (
-//         root.nodeName === "#text" &&
-//         root.parentNode.childNodes.length === 1
-//       ) {
-//         root.parentNode.innerHTML = root.parentNode.innerHTML.replace(
-//           new RegExp(keyword, "g"),
-//           `<span class="mark" style="${this.style}">${keyword}</span>`,
-//         )
-//       } else {
-//         for (const node of root.childNodes) {
-//           handler(node)
-//         }
-//       }
-//     }
-
-//     if (!this.root) return
-
-//     // reset HTML
-//     this.root.innerHTML = this.rootHTML!
-
-//     if (!keyword) return
-//     handler(this.root)
-//   }
-// }
-
-function NodeName(props: { keywords: string; name: string }) {
-  let ref: HTMLSpanElement
-  onMount(() => {
-    // const highlighter = new MarkKeywords({
-    //   root: ref!,
-    //   style: `background-color: var(--hope-colors-info5); border-radius: var(--hope-radii-md); margin: 0 1px; padding: 0 1px;`,
-    // })
-    // highlighter.light(props.keywords)
-    const mark = new Mark(ref!)
-    mark.mark(props.keywords, {
-      separateWordSearch: true,
-      diacritics: true,
-    })
-  })
-  return (
-    <hope.span
-      ref={ref!}
-      css={{
-        mark: {
-          bg: "$info4",
-          rounded: "$md",
-          px: "1px",
-          // mx: "1px",
-          color: "$info11",
-          fontWeight: "$bold",
-        },
-      }}
-    >
-      {props.name}
-    </hope.span>
-  )
-}
-
-const SearchResult = (props: { node: SearchNode; keywords: string }) => {
-  const { setPathAs } = usePath()
-  return (
-    <HStack
-      w="$full"
-      borderBottom={`1px solid ${hoverColor()}`}
-      _hover={{
-        bgColor: hoverColor(),
-      }}
-      rounded="$md"
-      cursor="pointer"
-      px="$2"
-      as={LinkWithBase}
-      href={`${props.node.path}?from=search`}
-      // encode
-      onMouseEnter={() => {
-        setPathAs(props.node.path, props.node.is_dir)
-      }}
-    >
-      <Icon
-        class="icon"
-        boxSize="$6"
-        color={getMainColor()}
-        as={getIconByObj(props.node)}
-        mr="$1"
-      />
-      <VStack flex={1} p="$1" spacing="$1" w="$full" alignItems="start">
-        <Text
-          css={{
-            wordBreak: "break-all",
-          }}
-        >
-          <NodeName keywords={props.keywords} name={props.node.name} />
-          <Show when={props.node.size > 0 || !props.node.is_dir}>
-            <Badge colorScheme="info" ml="$2">
-              {getFileSize(props.node.size)}
-            </Badge>
-          </Show>
-        </Text>
-        <Text
-          color="$neutral10"
-          size="xs"
-          css={{
-            wordBreak: "break-all",
-          }}
-        >
-          {props.node.parent}
-        </Text>
-      </VStack>
-    </HStack>
-  )
+function highlightName(text: string, query: string) {
+  const q = query.trim()
+  if (!q) return [{ t: text, m: false }]
+  const idx = text.toLowerCase().indexOf(q.toLowerCase())
+  if (idx < 0) return [{ t: text, m: false }]
+  return [
+    { t: text.slice(0, idx), m: false },
+    { t: text.slice(idx, idx + q.length), m: true },
+    { t: text.slice(idx + q.length), m: false },
+  ].filter((seg) => seg.t.length > 0)
 }
 
 const Search = () => {
   const pageSize = 100
-  const { isOpen, onOpen, onClose, onToggle } = createDisclosure()
   const t = useT()
-  const handler = (name: string) => {
+  const { colorMode } = useColorMode()
+  const { pathname, to } = useRouter()
+  const { setPathAs } = usePath()
+
+  const [open, setOpen] = createSignal(false)
+  const [keywords, setKeywords] = createSignal("")
+  const [scope, setScope] = createSignal<ScopeIndex>(0)
+  const [active, setActive] = createSignal(0)
+  const [results, setResults] = createSignal<SearchNode[]>([])
+  const [loading, searchReq] = useFetch(fsSearch)
+
+  let inputEl: HTMLInputElement | undefined
+  let listEl: HTMLDivElement | undefined
+  let debounceTimer: number | undefined
+  let reqSeq = 0
+
+  const close = () => setOpen(false)
+
+  const onTool = (name: string) => {
     if (name === "search") {
-      onOpen()
+      setOpen(true)
     }
   }
-  bus.on("tool", handler)
-  const searchEvent = (e: KeyboardEvent) => {
+  bus.on("tool", onTool)
+
+  const onGlobalKeyDown = (e: KeyboardEvent) => {
     if ((e.ctrlKey || (isMac && e.metaKey)) && e.key.toLowerCase() === "k") {
       e.preventDefault()
-      onToggle()
+      setOpen((v) => !v)
     }
   }
-  document.addEventListener("keydown", searchEvent)
+  document.addEventListener("keydown", onGlobalKeyDown)
+
   onCleanup(() => {
-    bus.off("tool", handler)
-    document.removeEventListener("keydown", searchEvent)
+    bus.off("tool", onTool)
+    document.removeEventListener("keydown", onGlobalKeyDown)
+    window.clearTimeout(debounceTimer)
   })
-  const [keywords, setKeywords] = createSignal("")
-  const { pathname } = useRouter()
-  const [loading, searchReq] = useFetch(fsSearch)
-  const [data, setData] = createSignal({
-    content: [] as SearchNode[],
-    total: 0,
-  })
-  const [scope, setScope] = createSignal(0)
-  const scopes = ["all", "folder", "file"]
-  let resetPaginator: () => void
-  const search = async (page = 1) => {
-    page === 1 && resetPaginator?.()
-    if (loading()) return
-    setData({
-      content: [],
-      total: 0,
+
+  createEffect(() => {
+    if (!open()) return
+    queueMicrotask(() => inputEl?.focus())
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    onCleanup(() => {
+      document.body.style.overflow = prevOverflow
     })
+  })
+
+  const runSearch = async (kw: string, sc: ScopeIndex) => {
+    const trimmed = kw.trim()
+    if (!trimmed) {
+      setResults([])
+      return
+    }
+    const mySeq = ++reqSeq
     const resp = await searchReq(
       pathname(),
-      keywords(),
+      trimmed,
       password(),
-      scope(),
-      page,
+      sc,
+      1,
       pageSize,
     )
+    if (mySeq !== reqSeq) return
     handleResp(resp, (data) => {
-      const content = data.content
-      if (!content) {
-        return
-      }
+      const content = data.content ?? []
       content.forEach((node) => {
         if (me().base_path && node.parent.startsWith(me().base_path)) {
           const pattern = new RegExp("^" + me().base_path)
@@ -239,87 +111,203 @@ const Search = () => {
         }
         node.path = encodePath(pathJoin(node.parent, node.name))
       })
-      setData(data)
+      setResults(content)
+      setActive(0)
     })
   }
+
+  createEffect(
+    on(
+      [keywords, scope, open],
+      ([kw, sc, isOpen]) => {
+        window.clearTimeout(debounceTimer)
+        if (!isOpen) return
+        if (!kw.trim()) {
+          reqSeq++
+          setResults([])
+          setActive(0)
+          return
+        }
+        debounceTimer = window.setTimeout(() => {
+          runSearch(kw, sc)
+        }, 250)
+      },
+      { defer: true },
+    ),
+  )
+
+  const selectNode = (node?: SearchNode) => {
+    if (!node) return
+    setPathAs(node.path, node.is_dir)
+    close()
+    to(`${node.path}?from=search`)
+  }
+
+  const onInputKeyDown = (e: KeyboardEvent) => {
+    const n = results().length
+    if (e.key === "ArrowDown") {
+      e.preventDefault()
+      setActive((i) => (n ? (i + 1) % n : 0))
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault()
+      setActive((i) => (n ? (i - 1 + n) % n : 0))
+    } else if (e.key === "Enter") {
+      e.preventDefault()
+      if (n > 0) {
+        selectNode(results()[active()])
+      } else if (keywords().trim()) {
+        window.clearTimeout(debounceTimer)
+        runSearch(keywords(), scope())
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault()
+      e.stopPropagation()
+      close()
+    } else if (e.key === "Tab") {
+      e.preventDefault()
+      const next = ((scope() + (e.shiftKey ? 2 : 1)) % 3) as ScopeIndex
+      setScope(next)
+    }
+  }
+
+  createEffect(() => {
+    const idx = active()
+    listEl
+      ?.querySelector<HTMLElement>(`[data-hit-index="${idx}"]`)
+      ?.scrollIntoView({ block: "nearest" })
+  })
+
   return (
-    <Modal
-      // blockScrollOnMount={false}
-      opened={isOpen()}
-      onClose={onClose}
-      closeOnEsc={false}
-      size={{
-        "@initial": "sm",
-        "@sm": "lg",
-        "@md": "2xl",
-      }}
-      initialFocus="#search-input"
-      scrollBehavior="inside"
-    >
-      <ModalOverlay bg="$blackAlpha5" />
-      <ModalContent mx="$2">
-        <ModalCloseButton />
-        <ModalHeader>{t("home.search.search")}</ModalHeader>
-        <ModalBody>
-          <VStack w="$full" spacing="$2">
-            <HStack w="$full" spacing="$2">
-              <SelectWrapper
-                w="$32"
-                value={scope()}
-                onChange={(v) => setScope(v)}
-                options={scopes.map((v, i) => ({
-                  value: i,
-                  label: t(`home.search.scopes.${v}`),
-                }))}
-              />
-              <Input
+    <Show when={open()}>
+      <Portal>
+        <div
+          class="ol-modern-scope ol-overlay ol-overlay--palette"
+          data-modern-theme={colorMode() === "dark" ? "dark" : "light"}
+          onClick={(e) => e.target === e.currentTarget && close()}
+        >
+          <div
+            class="ol-palette"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("home.search.search")}
+          >
+            <div class="ol-palette__input">
+              <ISearch size={18} />
+              <input
+                ref={inputEl}
                 id="search-input"
                 value={keywords()}
-                onInput={(e) => {
-                  setKeywords(e.currentTarget.value)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && keywords().length !== 0) {
-                    search()
-                  }
-                }}
+                placeholder={t("home.search.search")}
+                onInput={(e) => setKeywords(e.currentTarget.value)}
+                onKeyDown={onInputKeyDown}
               />
-              <IconButton
-                flexShrink={0}
-                aria-label="search"
-                icon={<BsSearch />}
-                onClick={() => search()}
-                loading={loading()}
-                disabled={keywords().length === 0}
-              />
-            </HStack>
-            <Switch>
-              <Match when={loading()}>
-                <FullLoading />
-              </Match>
-              <Match when={data().content.length === 0}>
-                <Text size="2xl" my="$8">
-                  {t("home.search.no_result")}
-                </Text>
-              </Match>
-            </Switch>
-            <VStack w="$full">
-              <For each={data().content}>
-                {(item) => <SearchResult node={item} keywords={keywords()} />}
+              <button
+                type="button"
+                class="ol-kbd"
+                style={{ cursor: "pointer", background: "transparent" }}
+                onClick={close}
+              >
+                Esc
+              </button>
+            </div>
+
+            <div class="ol-palette__scopes" role="group">
+              <For each={SCOPES}>
+                {(sc, idx) => (
+                  <button
+                    type="button"
+                    class="ol-scope"
+                    aria-pressed={scope() === idx()}
+                    onClick={() => {
+                      setScope(idx() as ScopeIndex)
+                      inputEl?.focus()
+                    }}
+                  >
+                    {t(`home.search.scopes.${sc}`)}
+                  </button>
+                )}
               </For>
-            </VStack>
-            <Paginator
-              total={data().total}
-              defaultPageSize={pageSize}
-              onChange={(page) => {
-                search(page)
-              }}
-              setResetCallback={(reset) => (resetPaginator = reset)}
-            />
-          </VStack>
-        </ModalBody>
-      </ModalContent>
-    </Modal>
+            </div>
+
+            <div class="ol-palette__list" role="listbox" ref={listEl}>
+              <Show
+                when={!loading()}
+                fallback={
+                  <div class="ol-empty">{t("home.search.searching")}</div>
+                }
+              >
+                <Show
+                  when={results().length > 0}
+                  fallback={
+                    <div class="ol-empty">{t("home.search.no_result")}</div>
+                  }
+                >
+                  <For each={results()}>
+                    {(item, i) => (
+                      <a
+                        class="ol-hit"
+                        role="option"
+                        href={joinBase(`${item.path}?from=search`)}
+                        data-hit-index={i()}
+                        data-active={active() === i()}
+                        aria-selected={active() === i()}
+                        onMouseMove={() => setActive(i())}
+                        onMouseEnter={() => setPathAs(item.path, item.is_dir)}
+                        onClick={(e) => {
+                          if (
+                            e.button === 0 &&
+                            !e.ctrlKey &&
+                            !e.metaKey &&
+                            !e.shiftKey
+                          ) {
+                            e.preventDefault()
+                            selectNode(item)
+                          }
+                        }}
+                      >
+                        <FileIcon
+                          kind={fileKind(item.name, item.is_dir, item.type)}
+                          size={20}
+                        />
+                        <span class="ol-hit__text">
+                          <span class="ol-hit__name">
+                            <For each={highlightName(item.name, keywords())}>
+                              {(seg) => (seg.m ? <mark>{seg.t}</mark> : seg.t)}
+                            </For>
+                          </span>
+                          <span class="ol-hit__path">{item.parent}</span>
+                        </span>
+                        <Show when={!item.is_dir && item.size > 0}>
+                          <span class="ol-hit__size">
+                            {getFileSize(item.size)}
+                          </span>
+                        </Show>
+                      </a>
+                    )}
+                  </For>
+                </Show>
+              </Show>
+            </div>
+
+            <div class="ol-palette__foot">
+              <span>
+                <kbd class="ol-kbd">↑</kbd>
+                <kbd class="ol-kbd">↓</kbd>
+              </span>
+              <span>
+                <kbd class="ol-kbd">Enter</kbd>
+              </span>
+              <span>
+                <kbd class="ol-kbd">Tab</kbd>
+              </span>
+              <span>
+                <kbd class="ol-kbd">Esc</kbd>
+              </span>
+            </div>
+          </div>
+        </div>
+      </Portal>
+    </Show>
   )
 }
 

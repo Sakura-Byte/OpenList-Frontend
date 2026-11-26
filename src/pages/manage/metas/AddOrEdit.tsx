@@ -1,37 +1,39 @@
 import {
   Button,
   Checkbox,
-  Switch as HopeSwitch,
+  Flex,
   FormControl,
+  FormHelperText,
   FormLabel,
+  HStack,
   Heading,
   Input,
-  VStack,
-  Flex,
-  Textarea,
-  FormHelperText,
   Select,
-  SelectTrigger,
   SelectContent,
+  SelectIcon,
   SelectListbox,
   SelectOption,
-  SelectOptionText,
   SelectOptionIndicator,
-  SelectValue,
-  SelectIcon,
+  SelectOptionText,
   SelectPlaceholder,
+  SelectTrigger,
+  SelectValue,
+  Switch as HopeSwitch,
+  Textarea,
+  VStack,
 } from "@hope-ui/solid"
-import { MaybeLoading, FolderChooseInput } from "~/components"
-import { useFetch, useRouter, useT } from "~/hooks"
-import { handleResp, notify, r } from "~/utils"
-import { Meta, PEmptyResp, PPageResp, PResp, User } from "~/types"
+import { For, Show, createSignal } from "solid-js"
 import { createStore } from "solid-js/store"
-import { createSignal, For, Show } from "solid-js"
+import { FolderChooseInput, MaybeLoading } from "~/components"
+import { useFetch, useRouter, useT } from "~/hooks"
+import { Meta, PEmptyResp, PPageResp, PResp, User } from "~/types"
+import { handleResp, notify, r } from "~/utils"
+import { formatArchivePasswordsText, parseArchivePasswordsText } from "./Metas"
 
 type ItemProps = {
   name: string
   sub?: boolean
-  onSub: (val: boolean) => void
+  onSub?: (val: boolean) => void
   help?: boolean
 } & (
   | { type: "string"; value: string; onChange: (val: string) => void }
@@ -102,18 +104,20 @@ const AddOrEdit = () => {
               </SelectContent>
             </Select>
           ) : null}
-          <FormControl w="fit-content" display="flex">
-            <Checkbox
-              css={{ whiteSpace: "nowrap" }}
-              id={`${props.name}_sub`}
-              onChange={(e: any) => props.onSub(e.currentTarget.checked)}
-              color="$neutral10"
-              fontSize="$sm"
-              checked={props.sub}
-            >
-              {t("metas.apply_sub")}
-            </Checkbox>
-          </FormControl>
+          <Show when={props.onSub}>
+            <FormControl w="fit-content" display="flex">
+              <Checkbox
+                css={{ whiteSpace: "nowrap" }}
+                id={`${props.name}_sub`}
+                onChange={(e: any) => props.onSub?.(e.currentTarget.checked)}
+                color="$neutral10"
+                fontSize="$sm"
+                checked={props.sub}
+              >
+                {t("metas.apply_sub")}
+              </Checkbox>
+            </FormControl>
+          </Show>
         </Flex>
         <Show when={props.help}>
           <FormHelperText>{t(`metas.${props.name}_help`)}</FormHelperText>
@@ -142,7 +146,15 @@ const AddOrEdit = () => {
     r_sub: false,
     header: "",
     header_sub: false,
+    source_note: "",
+    source_sub: false,
+    archive_passwords: [],
+    archive_passwords_sub: false,
+    stop_header: false,
+    stop_readme: false,
   })
+  const [passwordsText, setPasswordsText] = createSignal("")
+
   const [metaLoading, loadMeta] = useFetch((): PResp<Meta> =>
     r.get(`/admin/meta/get?id=${id}`),
   )
@@ -153,7 +165,14 @@ const AddOrEdit = () => {
 
   const initEdit = async () => {
     const respMeta = await loadMeta()
-    handleResp<Meta>(respMeta, setMeta)
+    handleResp<Meta>(respMeta, (data) => {
+      setMeta({
+        ...data,
+        source_note: data.source_note ?? "",
+        archive_passwords: data.archive_passwords ?? [],
+      })
+      setPasswordsText(formatArchivePasswordsText(data.archive_passwords))
+    })
   }
   const initUsers = async () => {
     const respUsers = await getUsers()
@@ -166,8 +185,12 @@ const AddOrEdit = () => {
   initUsers()
 
   const [okLoading, ok] = useFetch((): PEmptyResp => {
-    return r.post(`/admin/meta/${id ? "update" : "create"}`, meta)
+    return r.post(`/admin/meta/${id ? "update" : "create"}`, {
+      ...meta,
+      archive_passwords: parseArchivePasswordsText(passwordsText()),
+    })
   })
+
   return (
     <MaybeLoading loading={metaLoading() || getUsersLoading()}>
       <VStack w="$full" alignItems="start" spacing="$2">
@@ -182,17 +205,7 @@ const AddOrEdit = () => {
             onChange={(path) => setMeta("path", path)}
           />
         </FormControl>
-        {/* <FormControl w="$full" display="flex" flexDirection="column" required>
-          <FormLabel for="password" display="flex" alignItems="center">
-            {t(`metas.password`)}
-          </FormLabel>
-          <Input
-            id="password"
-            placeholder="********"
-            value={meta.password}
-            onInput={(e) => setMeta("password", e.currentTarget.value)}
-          />
-        </FormControl> */}
+
         <For
           each={
             [
@@ -211,31 +224,95 @@ const AddOrEdit = () => {
               },
               { name: "write", type: "bool", sub: "w_sub", help: true },
               { name: "hide", type: "text", sub: "h_sub", help: true },
-              { name: "header", type: "text", sub: "header_sub", help: true },
-              { name: "readme", type: "text", sub: "r_sub", help: true },
+              {
+                name: "source_note",
+                type: "string",
+                sub: "source_sub",
+                help: true,
+              },
             ] as const
           }
         >
-          {(item) => {
-            return (
-              // @ts-ignore
-              <Item
-                name={item.name}
-                type={item.type}
-                value={meta[item.name]}
-                onChange={(val: any): void => setMeta(item.name, val)}
-                sub={meta[item.sub]}
-                onSub={(val): void => setMeta(item.sub, val)}
-                help={(item as { help: boolean }).help}
-              />
-            )
-          }}
+          {(item) => (
+            // @ts-ignore
+            <Item
+              name={item.name}
+              type={item.type}
+              value={meta[item.name]}
+              onChange={(val: any): void => setMeta(item.name, val)}
+              sub={meta[item.sub]}
+              onSub={(val): void => setMeta(item.sub, val)}
+              help={(item as { help: boolean }).help}
+            />
+          )}
         </For>
+
+        <Item
+          name="archive_passwords"
+          type="text"
+          value={passwordsText()}
+          onChange={(val) => setPasswordsText(val)}
+          sub={meta.archive_passwords_sub}
+          onSub={(val) => setMeta("archive_passwords_sub", val)}
+          help
+        />
+
+        <Item
+          name="header"
+          type="text"
+          value={meta.header}
+          onChange={(val) => setMeta("header", val)}
+          sub={meta.header_sub}
+          onSub={(val) => setMeta("header_sub", val)}
+          help
+        />
+
+        <FormControl w="$full">
+          <HStack spacing="$2">
+            <HopeSwitch
+              id="stop_header"
+              checked={meta.stop_header}
+              onChange={(e: any) =>
+                setMeta("stop_header", e.currentTarget.checked)
+              }
+            />
+            <FormLabel for="stop_header" mb="0">
+              {t("metas.stop_header")}
+            </FormLabel>
+          </HStack>
+          <FormHelperText>{t("metas.stop_header_help")}</FormHelperText>
+        </FormControl>
+
+        <Item
+          name="readme"
+          type="text"
+          value={meta.readme}
+          onChange={(val) => setMeta("readme", val)}
+          sub={meta.r_sub}
+          onSub={(val) => setMeta("r_sub", val)}
+          help
+        />
+
+        <FormControl w="$full">
+          <HStack spacing="$2">
+            <HopeSwitch
+              id="stop_readme"
+              checked={meta.stop_readme}
+              onChange={(e: any) =>
+                setMeta("stop_readme", e.currentTarget.checked)
+              }
+            />
+            <FormLabel for="stop_readme" mb="0">
+              {t("metas.stop_readme")}
+            </FormLabel>
+          </HStack>
+          <FormHelperText>{t("metas.stop_readme_help")}</FormHelperText>
+        </FormControl>
+
         <Button
           loading={okLoading()}
           onClick={async () => {
             const resp = await ok()
-            // TODO maybe can use handleRrespWithNotifySuccess
             handleResp(resp, () => {
               notify.success(t("global.save_success"))
               to("/@manage/metas", false, { replace: true })

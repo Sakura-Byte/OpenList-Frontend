@@ -1,39 +1,46 @@
-import { Box, Grid, Text } from "@hope-ui/solid"
-import { For, Show } from "solid-js"
+import { For, Show, createMemo } from "solid-js"
+import { useT, useUtil } from "~/hooks"
+import { checkboxOpen, haveSelected, local, objStore } from "~/store"
 import { GridItem } from "./GridItem"
-import "lightgallery/css/lightgallery-bundle.css"
-import { smartCountMsg, local, objStore } from "~/store"
+import { SelectionBar } from "./SelectionBar"
 import { useSelectWithMouse } from "./helper"
 
 const GridLayout = () => {
-  const { isMouseSupported, registerSelectContainer, captureContentMenu } =
-    useSelectWithMouse()
+  const t = useT()
+  const { isHide } = useUtil()
+  const { registerSelectContainer, captureContentMenu } = useSelectWithMouse()
   registerSelectContainer()
+
+  const visibleCount = createMemo(
+    () => objStore.objs.filter((o) => !isHide(o)).length,
+  )
+
+  const minTileWidth = () =>
+    Math.max(120, (parseInt(local["grid_item_size"]) || 90) + 32)
+
   return (
-    <>
-      <Show when={local["show_count_msg"] === "visible"}>
-        <Box w="100%" textAlign="left" pl="$2">
-          <Text size="sm" color="$neutral11">
-            {smartCountMsg()}
-          </Text>
-        </Box>
+    <div>
+      <Show when={haveSelected()}>
+        <SelectionBar />
       </Show>
-      <Grid
-        oncapture:contextmenu={captureContentMenu}
-        class="viselect-container"
-        w="$full"
-        gap="$1"
-        templateColumns={`repeat(auto-fill, minmax(${
-          parseInt(local["grid_item_size"]) + 20
-        }px,1fr))`}
+      <Show
+        when={visibleCount() > 0}
+        fallback={<div class="ol-empty">{t("home.empty_dir")}</div>}
       >
-        <For each={objStore.objs}>
-          {(obj, i) => {
-            return <GridItem obj={obj} index={i()} />
+        <div
+          oncapture:contextmenu={captureContentMenu}
+          class="ol-grid ol-nav-body viselect-container"
+          data-selecting={haveSelected() || checkboxOpen()}
+          style={{
+            "grid-template-columns": `repeat(auto-fill, minmax(${minTileWidth()}px, 1fr))`,
           }}
-        </For>
-      </Grid>
-    </>
+        >
+          <For each={objStore.objs}>
+            {(obj, i) => <GridItem obj={obj} index={i()} />}
+          </For>
+        </div>
+      </Show>
+    </div>
   )
 }
 

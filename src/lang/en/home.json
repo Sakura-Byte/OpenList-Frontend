@@ -59,10 +59,60 @@
     }
   },
   "layouts": {
+    "switch": "Switch layout",
     "list": "List View",
     "grid": "Grid View",
     "image": "Image View",
     "poster": "Poster View"
+  },
+  "ad_label": "Ad",
+  "nav_aria": "Current location",
+  "empty_dir": "This folder is empty",
+  "crumbs_count": "{{count}} items",
+  "facts": {
+    "archive_password": "Password",
+    "copy_password": "Click to copy",
+    "source": "Source"
+  },
+  "selbar": {
+    "region": "Batch actions",
+    "select_all": "Select all",
+    "selected": "{{count}} selected"
+  },
+  "notice": {
+    "site_announcement": "Site Notice",
+    "details": "Details",
+    "dismiss": "Dismiss notice",
+    "severity_info": "Info",
+    "severity_warning": "Maintenance",
+    "severity_critical": "Critical",
+    "updated_at": "Updated {{date}}",
+    "acknowledge": "Got it",
+    "history_btn": "Past notices",
+    "history_title": "Past notices",
+    "no_history": "No past notices",
+    "back_current": "Back to current"
+  },
+  "promo": {
+    "close": "Close",
+    "close_in": "Closable in {{seconds}}s",
+    "close_locked": "Close ({{seconds}})",
+    "snooze_today": "Hide for today"
+  },
+  "subdir_sponsor": {
+    "default_title": "Support this site",
+    "default_desc": "Read sponsorship details or inquire about directory placements",
+    "default_cta": "Learn more"
+  },
+  "markdown": {
+    "toc": "Contents",
+    "copy_code": "Copy",
+    "copied": "Copied",
+    "alert_note": "Note",
+    "alert_tip": "Tip",
+    "alert_important": "Important",
+    "alert_warning": "Warning",
+    "alert_caution": "Caution"
   },
   "no_images": "No images in the current folder",
   "load_more": "Load more",
@@ -269,10 +319,13 @@
   },
   "footer": {
     "powered_by": "Powered by OpenList",
-    "manage": "Manage"
+    "manage": "Manage",
+    "uptime_days": "Online {{days}} days",
+    "load_time": "Loaded in {{sec}}s"
   },
   "search": {
     "search": "Search",
+    "searching": "Searching...",
     "no_result": "No result yet",
     "scopes": {
       "all": "All",

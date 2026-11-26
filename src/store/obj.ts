@@ -2,7 +2,7 @@ import naturalSort from "typescript-natural-sort"
 import { cookieStorage, createStorageSignal } from "@solid-primitives/storage"
 import { createMemo, createSignal } from "solid-js"
 import { createStore, produce } from "solid-js/store"
-import { DownloadQuota, Obj, ObjType, StoreObj } from "~/types"
+import { DirInfo, DownloadQuota, Obj, ObjType, StoreObj } from "~/types"
 import { bus, log } from "~/utils"
 import { keyPressed } from "./key-event"
 import { local } from "./local_settings"
@@ -29,6 +29,9 @@ const initialObjStore = {
 
   readme: "",
   header: "",
+  source_note: "",
+  archive_passwords: [] as string[],
+  dir_info: undefined as DirInfo | undefined,
   provider: "",
   search_available: false,
   reader: undefined as ReaderInfo | undefined,
@@ -69,20 +72,15 @@ export const ObjStore = {
   },
   setReadme: (readme: string) => setObjStore("readme", readme),
   setHeader: (header: string) => setObjStore("header", header),
+  setSourceNote: (source_note: string) =>
+    setObjStore("source_note", source_note),
+  setArchivePasswords: (archive_passwords: string[]) =>
+    setObjStore("archive_passwords", archive_passwords),
+  setDirInfo: (dir_info?: DirInfo) => setObjStore("dir_info", dir_info),
   setRelated: (related: Obj[]) => setObjStore("related", related),
   setWrite: (write: boolean) => setObjStore("write", write),
   setWriteContentBypass: (write_content_bypass: boolean) =>
     setObjStore("write_content_bypass", write_content_bypass),
-  // setGetResp: (resp: FsGetResp) => {
-  //   setObjStore("obj", resp.data);
-  //   setObjs(resp.data.related);
-  //   setObjStore("readme", resp.data.readme);
-  // },
-  // setListResp: (resp: FsListResp) => {
-  //   setObjs(resp.data.content);
-  //   setObjStore("readme", resp.data.readme);
-  //   setObjStore("write", resp.data.write);
-  // },
   setState: (state: State) => setObjStore("state", state),
   setDirectUploadTools: (tools?: string[]) =>
     setObjStore("direct_upload_tools", tools),
@@ -97,6 +95,9 @@ export const sortObjs = (orderBy: OrderBy, reverse?: boolean) => {
     "objs",
     produce((objs) =>
       objs.sort((a, b) => {
+        if (a.is_dir !== b.is_dir) {
+          return a.is_dir ? -1 : 1
+        }
         return (reverse ? -1 : 1) * naturalSort(a[orderBy], b[orderBy])
       }),
     ),
@@ -171,7 +172,7 @@ export const selectedObjs = () => {
 }
 
 export const allChecked = () => {
-  return objStore.objs.length === selectedNum()
+  return objStore.objs.length > 0 && objStore.objs.length === selectedNum()
 }
 
 export const oneChecked = () => {

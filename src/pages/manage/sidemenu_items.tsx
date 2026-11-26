@@ -28,7 +28,7 @@ import {
   FaSolidDatabase,
   FaSolidPuzzlePiece,
 } from "solid-icons/fa"
-import { TbArchive } from "solid-icons/tb"
+import { TbArchive, TbLayoutCards, TbSpeakerphone } from "solid-icons/tb"
 
 export type SideMenuItem = SideMenuItemProps & {
   component?: Component
@@ -200,6 +200,20 @@ export const side_menu_items: SideMenuItem[] = [
     icon: SiMetabase,
     to: "/@manage/metas",
     component: lazy(() => import("./metas/Metas")),
+  },
+  {
+    title: "manage.sidemenu.notices",
+    icon: TbSpeakerphone,
+    to: "/@manage/notices",
+    backend: ["go"],
+    component: lazy(() => import("./notices/Notices")),
+  },
+  {
+    title: "manage.sidemenu.promotions",
+    icon: TbLayoutCards,
+    to: "/@manage/promotions",
+    backend: ["go"],
+    component: lazy(() => import("./promotions/Promotions")),
   },
   {
     title: "manage.sidemenu.indexes",

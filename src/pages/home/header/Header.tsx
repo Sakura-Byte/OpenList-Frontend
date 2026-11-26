@@ -1,95 +1,112 @@
-import {
-  HStack,
-  useColorModeValue,
-  Image,
-  Center,
-  Icon,
-  Kbd,
-  CenterProps,
-} from "@hope-ui/solid"
-import { changeColor } from "seemly"
+import { useColorMode } from "@hope-ui/solid"
 import { Show, createMemo } from "solid-js"
-import { getMainColor, getSetting, local, objStore, State } from "~/store"
-import { BsSearch } from "solid-icons/bs"
-import { CenterLoading } from "~/components"
-import { Container } from "../Container"
+import { LinkWithBase } from "~/components"
+import {
+  ILogin,
+  IMoon,
+  ISearch,
+  ISettings,
+  ISun,
+  SiteLogo,
+} from "~/components/icons-tb"
+import { useRouter, useT } from "~/hooks"
+import { State, getSetting, local, me, objStore } from "~/store"
+import { UserMethods } from "~/types"
 import { bus } from "~/utils"
-import { Layout } from "./layout"
 import { isMac } from "~/utils/compatibility"
+import { toggleThemeWithTransition } from "~/utils/theme_sync"
+import { Layout } from "./layout"
 
 export const Header = () => {
-  const logos = getSetting("logo").split("\n")
-  const logo = useColorModeValue(logos[0], logos.pop())
+  const t = useT()
+  const { colorMode, toggleColorMode } = useColorMode()
+  const { isShare, pathname } = useRouter()
 
-  const stickyProps = createMemo<CenterProps>(() => {
-    switch (local["position_of_header_navbar"]) {
-      case "sticky":
-        return { position: "sticky", zIndex: "$sticky", top: 0 }
-      default:
-        return { position: undefined, zIndex: undefined, top: undefined }
+  const isDark = () => colorMode() === "dark"
+
+  const logoUrl = createMemo(() => {
+    const raw = (getSetting("logo") || "").trim()
+    if (!raw) return ""
+    const lines = raw
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (lines.length === 0) return ""
+    if (isDark() && lines.length > 1) {
+      return lines[lines.length - 1]
     }
+    return lines[0]
   })
 
+  const siteTitle = () => getSetting("site_title") || "OpenList"
+
+  const homeHref = createMemo(() => {
+    if (!isShare()) return "/"
+    const segs = pathname().split("/").filter(Boolean)
+    return `/@s/${segs[1] ?? ""}`
+  })
+
+  const isSticky = () => local["position_of_header_navbar"] !== "static"
+
+  const showSearch = () =>
+    [State.Folder, State.FetchingMore].includes(objStore.state) &&
+    (getSetting("search_index") !== "none" || objStore.search_available)
+
+  const isGuest = () => UserMethods.is_guest(me())
+
   return (
-    <Center
-      {...stickyProps}
-      bgColor="$background"
-      class="header"
-      w="$full"
-      // shadow="$md"
-    >
-      <Container>
-        <HStack
-          px="calc(2% + 0.5rem)"
-          py="$2"
-          w="$full"
-          justifyContent="space-between"
+    <header class="ol-bar header" data-sticky={isSticky() ? "true" : "false"}>
+      <LinkWithBase
+        class="ol-brand header-left"
+        href={homeHref()}
+        title={siteTitle()}
+      >
+        <SiteLogo src={logoUrl()} title={siteTitle()} size={28} />
+        <span class="ol-brand__title">{siteTitle()}</span>
+      </LinkWithBase>
+
+      <div class="ol-bar__spacer" />
+
+      <Show when={showSearch()}>
+        <button
+          type="button"
+          class="ol-search-trigger"
+          onClick={() => bus.emit("tool", "search")}
         >
-          <HStack class="header-left" h="44px">
-            <Image
-              src={logo()!}
-              h="$full"
-              w="auto"
-              fallback={<CenterLoading />}
-            />
-          </HStack>
-          <HStack class="header-right" spacing="$2">
-            <Show when={objStore.state === State.Folder}>
-              <Show
-                when={
-                  getSetting("search_index") !== "none" ||
-                  objStore.search_available
-                }
-              >
-                <HStack
-                  bg="$neutral4"
-                  w="$32"
-                  p="$1"
-                  rounded="$md"
-                  justifyContent="space-between"
-                  border="2px solid transparent"
-                  cursor="pointer"
-                  color={getMainColor()}
-                  bgColor={changeColor(getMainColor(), { alpha: 0.15 })}
-                  _hover={{
-                    bgColor: changeColor(getMainColor(), { alpha: 0.2 }),
-                  }}
-                  onClick={() => {
-                    bus.emit("tool", "search")
-                  }}
-                >
-                  <Icon as={BsSearch} />
-                  <HStack>
-                    {isMac ? <Kbd>Cmd</Kbd> : <Kbd>Ctrl</Kbd>}
-                    <Kbd>K</Kbd>
-                  </HStack>
-                </HStack>
-              </Show>
-              <Layout />
-            </Show>
-          </HStack>
-        </HStack>
-      </Container>
-    </Center>
+          <ISearch size={16} />
+          <span>{t("home.search.search")}</span>
+          <kbd class="ol-kbd">{isMac ? "⌘K" : "Ctrl K"}</kbd>
+        </button>
+      </Show>
+
+      <div class="ol-bar__tools header-right">
+        <Show
+          when={[State.Folder, State.FetchingMore].includes(objStore.state)}
+        >
+          <Layout />
+        </Show>
+
+        <button
+          type="button"
+          class="ol-icon-btn"
+          title={t("home.toolbar.toggle_theme")}
+          aria-label={t("home.toolbar.toggle_theme")}
+          onClick={() => toggleThemeWithTransition(toggleColorMode)}
+        >
+          {isDark() ? <ISun size={17} /> : <IMoon size={17} />}
+        </button>
+
+        <Show when={!isShare()}>
+          <LinkWithBase
+            class="ol-icon-btn"
+            href={isGuest() ? "/@login" : "/@manage"}
+            title={t(isGuest() ? "login.login" : "home.footer.manage")}
+            aria-label={t(isGuest() ? "login.login" : "home.footer.manage")}
+          >
+            {isGuest() ? <ILogin size={17} /> : <ISettings size={17} />}
+          </LinkWithBase>
+        </Show>
+      </div>
+    </header>
   )
 }
