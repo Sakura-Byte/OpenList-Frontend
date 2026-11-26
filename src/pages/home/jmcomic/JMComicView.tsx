@@ -17,9 +17,15 @@ import {
   onMount,
   Show,
 } from "solid-js"
-import { useRouter } from "~/hooks"
-import { me, objStore, password } from "~/store"
-import { encodePath, r } from "~/utils"
+import { useRouter, useTitle } from "~/hooks"
+import { getSetting, me, objStore, password } from "~/store"
+import { encodePath, joinBase, r } from "~/utils"
+import {
+  isJMComicEphemeralPath,
+  setCanonicalLink,
+  setDescriptionMeta,
+  setRobotsMeta,
+} from "~/utils/seo"
 import type { Resp } from "~/types"
 import type { JMManifest, JMPage } from "~/types/jmcomic"
 import { useJMTranslation } from "./i18n"
@@ -219,10 +225,23 @@ function ReaderPage(props: {
   )
 }
 
+function buildJMDescription(m: JMManifest): string {
+  const parts = [
+    `JM${m.album_id}`,
+    m.authors?.length ? m.authors.join(", ") : "",
+    m.tags?.length ? m.tags.join(", ") : "",
+    m.description ? m.description.replace(/\s+/g, " ").trim() : "",
+  ].filter(Boolean)
+  const text = parts.join(" · ")
+  const chars = Array.from(text)
+  if (chars.length <= 180) return text
+  return `${chars.slice(0, 177).join("").trimEnd()}...`
+}
+
 function ChapterReader(props: { manifest: JMManifest; refresh: () => void }) {
   const m = props.manifest
   const t = useJMTranslation()
-  const { to, searchParams } = useRouter()
+  const { to, pathname, searchParams } = useRouter()
   const saved = readProgress(m)
   const requested = Number(searchParams.reader_page)
   const start = Math.max(
@@ -239,6 +258,22 @@ function ChapterReader(props: { manifest: JMManifest; refresh: () => void }) {
   const [current, setCurrent] = createSignal(start)
   const [jumpPage, setJumpPage] = createSignal(start + 1)
   const chapterIndex = m.chapters.findIndex((c) => c.id === m.chapter_id)
+  const chapterName = m.chapters[chapterIndex]?.name
+  useTitle(() => {
+    const siteTitle = getSetting("site_title")
+    const pageTitle = chapterName ? `${chapterName} - ${m.title}` : m.title
+    return siteTitle ? `${pageTitle} | ${siteTitle}` : pageTitle
+  })
+  setRobotsMeta("noindex, follow")
+  onCleanup(() => {
+    setRobotsMeta(
+      searchParams["view"] === "reader" ||
+        searchParams["view"] === "files" ||
+        isJMComicEphemeralPath(pathname())
+        ? "noindex, follow"
+        : null,
+    )
+  })
   const blocks: HTMLDivElement[] = []
   let frame = 0
   let initialFrame = 0
@@ -378,6 +413,10 @@ function WorkPage(props: { manifest: JMManifest; refresh: () => void }) {
   const [coverFailed, setCoverFailed] = createSignal(false)
   const t = useJMTranslation()
   const { to, pathname } = useRouter()
+  useTitle(() => {
+    const siteTitle = getSetting("site_title")
+    return siteTitle ? `${m.title} | ${siteTitle}` : m.title
+  })
   const saved = readProgress(m)
   const resume = m.chapters.find((c) => c.id === saved?.chapter_id)
   const positionKey = `${m.source}:${m.album_id}:${pathname()}`
@@ -512,7 +551,18 @@ export default function JMComicView() {
     if (response.code !== 200) throw new Error(response.message)
     return response.data
   })
-  onCleanup(() => controller?.abort())
+  createEffect(() => {
+    const m = manifest()
+    if (!m) return
+    setDescriptionMeta(buildJMDescription(m))
+    if (m.canonical_path) {
+      setCanonicalLink(joinBase(encodePath(m.canonical_path, true)))
+    }
+  })
+  onCleanup(() => {
+    controller?.abort()
+    setDescriptionMeta(null)
+  })
   const refresh = () => setRevision(revision() + 1)
   return (
     <Show

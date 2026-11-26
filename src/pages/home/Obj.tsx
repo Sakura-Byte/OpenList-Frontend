@@ -22,6 +22,13 @@ import {
   me,
 } from "~/store"
 import { UserMethods } from "~/types"
+import { encodePath, joinBase } from "~/utils"
+import {
+  isJMComicEphemeralPath,
+  setCanonicalLink,
+  setDescriptionMeta,
+  setRobotsMeta,
+} from "~/utils/seo"
 
 const Folder = lazy(() => import("./folder/Folder"))
 const JMComicView = lazy(() => import("./jmcomic/JMComicView"))
@@ -60,6 +67,33 @@ export const Obj = () => {
       await handlePathChange(pathname, page)
     }),
   )
+
+  createEffect(() => {
+    const err = objStore.err
+    const state = objStore.state
+    const currentPath = pathname()
+    const view = searchParams["view"]
+
+    if (Boolean(err) || state === State.NeedPassword) {
+      setRobotsMeta("noindex")
+      setCanonicalLink(null)
+      setDescriptionMeta(null)
+      return
+    }
+    if (
+      view === "reader" ||
+      view === "files" ||
+      isJMComicEphemeralPath(currentPath)
+    ) {
+      setRobotsMeta("noindex, follow")
+      setCanonicalLink(null)
+      return
+    }
+    if (state === State.Folder || state === State.File) {
+      setRobotsMeta(null)
+      setCanonicalLink(joinBase(encodePath(currentPath, true)))
+    }
+  })
 
   const isStorageError = createMemo(() => {
     const err = objStore.err

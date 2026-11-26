@@ -21,6 +21,7 @@ export interface JMManifest {
   album_id: string
   chapter_id?: string
   album_path: string
+  canonical_path?: string
   title: string
   description: string
   authors: string[] | null
