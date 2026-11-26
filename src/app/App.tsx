@@ -34,11 +34,15 @@ import { applyCustomize } from "~/utils/customize"
 import { createMatomoSpaBridge } from "~/utils/matomo"
 import { syncSiteThemeTokens, useThemeSync } from "~/utils/theme_sync"
 import { MustUser, UserOrGuest } from "./MustUser"
+import { ensureAdminI18nLoaded } from "./i18n"
 import "./index.css"
 import { globalStyles } from "./theme"
 
 const Home = lazy(() => import("~/pages/home/Layout"))
-const Manage = lazy(() => import("~/pages/manage"))
+const Manage = lazy(async () => {
+  await ensureAdminI18nLoaded()
+  return import("~/pages/manage")
+})
 const Login = lazy(() => import("~/pages/login"))
 const Init = lazy(() => import("~/pages/init"))
 const Test = lazy(() => import("~/pages/test"))

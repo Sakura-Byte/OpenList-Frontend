@@ -1,6 +1,7 @@
 import { HopeProvider, NotificationsProvider } from "@hope-ui/solid"
 import { ErrorBoundary, Suspense } from "solid-js"
 import { Error, FullScreenLoading } from "~/components"
+import { OlToastRegion } from "~/components/ui"
 import App from "./App"
 import { globalStyles, theme } from "./theme"
 
@@ -15,6 +16,7 @@ const Index = () => {
         }}
       >
         <NotificationsProvider duration={3000}>
+          <OlToastRegion />
           <Suspense fallback={<FullScreenLoading />}>
             <App />
           </Suspense>

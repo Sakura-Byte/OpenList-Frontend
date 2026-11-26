@@ -1,56 +1,40 @@
-import {
-  Box,
-  Button,
-  createDisclosure,
-  HStack,
-  Icon,
-  Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  Spinner,
-  Text,
-  VStack,
-} from "@hope-ui/solid"
-import { BiSolidRightArrow, BiSolidFolderOpen } from "solid-icons/bi"
-import { TbX, TbCheck } from "solid-icons/tb"
+import { Button, HStack, Input } from "@hope-ui/solid"
+import { TbCheck, TbChevronRight, TbX } from "solid-icons/tb"
 import {
   Accessor,
-  createContext,
-  createSignal,
-  useContext,
-  Show,
   For,
-  Setter,
-  createEffect,
-  on,
   JSXElement,
+  Setter,
+  Show,
+  createContext,
+  createEffect,
+  createSignal,
+  on,
   onMount,
+  useContext,
 } from "solid-js"
+import { FolderGlyph } from "~/components/icons-tb"
+import { OlDialog } from "~/components/ui"
 import { useFetch, useT, useUtil } from "~/hooks"
-import { getMainColor, password } from "~/store"
+import { password } from "~/store"
 import { Obj } from "~/types"
 import {
-  pathBase,
+  createMatcher,
+  fsDirs,
+  fsMkdir,
   handleResp,
   handleRespWithNotifySuccess,
-  hoverColor,
-  pathJoin,
-  fsDirs,
-  createMatcher,
-  fsMkdir,
-  validateFilename,
   notify,
+  pathBase,
+  pathJoin,
+  validateFilename,
 } from "~/utils"
 
 export type FolderTreeHandler = {
   setPath: Setter<string>
   startCreateFolder: () => void
 }
+
 export interface FolderTreeProps {
   onChange: (path: string) => void
   forceRoot?: boolean
@@ -59,12 +43,15 @@ export interface FolderTreeProps {
   showEmptyIcon?: boolean
   showHiddenFolder?: boolean
 }
+
 interface FolderTreeContext extends Omit<FolderTreeProps, "handle"> {
   value: Accessor<string>
   creatingFolderPath: Accessor<string | null>
   setCreatingFolderPath: Setter<string | null>
 }
+
 const context = createContext<FolderTreeContext>()
+
 export const FolderTree = (props: FolderTreeProps) => {
   const [path, setPath] = createSignal("/")
   const [creatingFolderPath, setCreatingFolderPath] = createSignal<
@@ -81,7 +68,7 @@ export const FolderTree = (props: FolderTreeProps) => {
   })
 
   return (
-    <Box class="folder-tree-box" w="$full" overflowX="auto">
+    <div class="folder-tree-box ol-modern-scope ol-ftree">
       <context.Provider
         value={{
           value: path,
@@ -99,13 +86,14 @@ export const FolderTree = (props: FolderTreeProps) => {
       >
         <FolderTreeNode path="/" />
       </context.Provider>
-    </Box>
+    </div>
   )
 }
 
 const FolderTreeNode = (props: { path: string }) => {
   const { isHidePath } = useUtil()
   const [children, setChildren] = createSignal<Obj[]>()
+  const [isOpen, setIsOpen] = createSignal(false)
   const {
     value,
     onChange,
@@ -116,15 +104,17 @@ const FolderTreeNode = (props: { path: string }) => {
     creatingFolderPath,
     setCreatingFolderPath,
   } = useContext(context)!
+
   const emptyIconVisible = () =>
     Boolean(showEmptyIcon && children() !== undefined && !children()?.length)
   const [loading, fetchDirs] = useFetch(() =>
     fsDirs(props.path, password(), forceRoot),
   )
+
   let isLoaded = false
   const load = async (force = false) => {
     if (!force && children()?.length) return
-    const resp = await fetchDirs() // this api may return null
+    const resp = await fetchDirs()
     handleResp(
       resp,
       (data) => {
@@ -132,17 +122,18 @@ const FolderTreeNode = (props: { path: string }) => {
         setChildren(data)
       },
       () => {
-        if (isOpen()) onToggle() // close folder while failed
+        if (isOpen()) setIsOpen(false)
       },
     )
   }
-  const { isOpen, onToggle } = createDisclosure()
+
   const active = () => value() === props.path
   const isMatchedFolder = createMatcher(props.path)
+
   const checkIfShouldOpen = async (pathname: string) => {
     if (!autoOpen) return
     if (isMatchedFolder(pathname)) {
-      if (!isOpen()) onToggle()
+      if (!isOpen()) setIsOpen(true)
       if (!isLoaded) load()
     }
   }
@@ -150,63 +141,57 @@ const FolderTreeNode = (props: { path: string }) => {
 
   createEffect(() => {
     if (creatingFolderPath() === props.path) {
-      if (!isOpen()) onToggle()
+      if (!isOpen()) setIsOpen(true)
       if (!isLoaded) load()
     }
   })
 
   const isHiddenFolder = () =>
     isHidePath(props.path) && !isMatchedFolder(value())
+
   return (
     <Show when={showHiddenFolder || !isHiddenFolder()}>
-      <Box>
-        <HStack spacing="$2">
+      <div>
+        <div
+          class="ol-ftree__row"
+          data-active={active()}
+          onClick={() => onChange(props.path)}
+        >
           <Show
             when={!loading()}
-            fallback={<Spinner size="sm" color={getMainColor()} />}
+            fallback={<span class="ol-ui-spinner" aria-hidden="true" />}
           >
             <Show
               when={!emptyIconVisible()}
-              fallback={<Icon color={getMainColor()} as={BiSolidFolderOpen} />}
+              fallback={<span style={{ width: "22px", flex: "none" }} />}
             >
-              <Icon
-                color={getMainColor()}
-                as={BiSolidRightArrow}
-                transform={isOpen() ? "rotate(90deg)" : "none"}
-                transition="transform 0.2s"
-                cursor="pointer"
-                onClick={() => {
-                  onToggle()
-                  if (isOpen()) {
-                    load()
-                  }
+              <button
+                type="button"
+                class="ol-ftree__toggle"
+                aria-label={isOpen() ? "Collapse" : "Expand"}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  const next = !isOpen()
+                  setIsOpen(next)
+                  if (next) load()
                 }}
-              />
+              >
+                <TbChevronRight
+                  size={15}
+                  class="ol-ico ol-ftree__chevron"
+                  data-open={isOpen()}
+                />
+              </button>
             </Show>
           </Show>
-          <Text
-            css={{
-              // textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-            // overflow="hidden"
-            fontSize="$md"
-            cursor="pointer"
-            px="$1"
-            rounded="$md"
-            bgColor={active() ? "$info8" : "transparent"}
-            _hover={{
-              bgColor: active() ? "$info8" : hoverColor(),
-            }}
-            onClick={() => {
-              onChange(props.path)
-            }}
-          >
+          <FolderGlyph size={18} />
+          <span class="ol-ftree__label">
             {props.path === "/" ? "root" : pathBase(props.path)}
-          </Text>
-        </HStack>
+          </span>
+        </div>
+
         <Show when={isOpen()}>
-          <VStack mt="$1" pl="$4" alignItems="start" spacing="$1">
+          <div class="ol-ftree__children">
             <For each={children()}>
               {(item) => (
                 <FolderTreeNode path={pathJoin(props.path, item.name)} />
@@ -223,14 +208,12 @@ const FolderTreeNode = (props: { path: string }) => {
                 }}
               />
             </Show>
-          </VStack>
+          </div>
         </Show>
-      </Box>
+      </div>
     </Show>
   )
 }
-
-const FOCUS_DELAY_MS = 0 // allow DOM to mount before focusing
 
 const FolderNameInput = (props: {
   parentPath: string
@@ -255,34 +238,30 @@ const FolderNameInput = (props: {
     const resp = await mkdir(fullPath)
     handleRespWithNotifySuccess(
       resp,
-      () => {
-        props.onSuccess(fullPath)
-      },
-      () => {
-        props.onCancel()
-      },
+      () => props.onSuccess(fullPath),
+      () => props.onCancel(),
     )
   }
 
   let inputRef: HTMLInputElement | undefined
 
   onMount(() => {
-    setTimeout(() => {
+    window.setTimeout(() => {
       inputRef?.focus()
       inputRef?.select()
-    }, FOCUS_DELAY_MS)
+    }, 0)
   })
 
   return (
-    <HStack spacing="$2" w="$full" pl="$4" alignItems="center">
-      <Icon color={getMainColor()} as={BiSolidFolderOpen} />
-      <Input
+    <div class="ol-ftree__mkdir">
+      <FolderGlyph size={17} />
+      <input
         ref={(el) => (inputRef = el)}
+        class="ol-ui-input ol-ui-input--sm"
+        style={{ flex: 1 }}
         value={folderName()}
         onInput={(e) => setFolderName(e.currentTarget.value)}
         placeholder={t("home.toolbar.input_dir_name")}
-        size="sm"
-        flex="1"
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault()
@@ -302,36 +281,28 @@ const FolderNameInput = (props: {
       />
       <Show
         when={!loading()}
-        fallback={<Spinner size="sm" color={getMainColor()} />}
+        fallback={<span class="ol-ui-spinner" aria-hidden="true" />}
       >
-        <Button
+        <button
+          type="button"
+          class="ol-icon-btn"
           aria-label={t("global.ok")}
-          size="sm"
-          variant="ghost"
-          rounded="$md"
-          p="$1"
-          color="$success9"
           onClick={handleSubmit}
-          tabIndex={0}
           data-folder-action="true"
         >
-          <Icon as={TbCheck} boxSize="$6" />
-        </Button>
+          <TbCheck size={16} class="ol-ico" />
+        </button>
       </Show>
-      <Button
+      <button
+        type="button"
+        class="ol-icon-btn"
         aria-label={t("global.cancel")}
-        size="sm"
-        variant="ghost"
-        rounded="$md"
-        p="$1"
-        color="$danger9"
         onClick={props.onCancel}
-        tabIndex={0}
         data-folder-action="true"
       >
-        <Icon as={TbX} boxSize="$6" />
-      </Button>
-    </HStack>
+        <TbX size={16} class="ol-ico" />
+      </button>
+    </div>
   )
 }
 
@@ -347,14 +318,17 @@ export type ModalFolderChooseProps = {
   children?: JSXElement
   header: string
 }
+
 export const ModalFolderChoose = (props: ModalFolderChooseProps) => {
   const t = useT()
   const [value, setValue] = createSignal("/")
   const [handler, setHandler] = createSignal<FolderTreeHandler>()
+
   createEffect(() => {
     if (!props.opened) return
     handler()?.setPath(value())
   })
+
   if (typeof props.defaultValue === "function") {
     createEffect(() => {
       setValue((props.defaultValue as () => string)())
@@ -362,56 +336,43 @@ export const ModalFolderChoose = (props: ModalFolderChooseProps) => {
   } else if (typeof props.defaultValue === "string") {
     setValue(props.defaultValue)
   }
+
   return (
-    <Modal
-      size="xl"
-      blockScrollOnMount={false}
-      opened={props.opened}
+    <OlDialog
+      open={props.opened}
       onClose={props.onClose}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        {/* <ModalCloseButton /> */}
-        <ModalHeader w="$full" css={{ overflowWrap: "break-word" }}>
-          <HStack w="$full" justifyContent="space-between" alignItems="center">
-            <Box css={{ overflowWrap: "break-word" }}>{props.header}</Box>
-            <Show when={props.headerSlot && handler()}>
-              {props.headerSlot!(handler()!)}
-            </Show>
-          </HStack>
-        </ModalHeader>
-        <ModalBody>
-          {props.children}
-          <FolderTree
-            onChange={setValue}
-            handle={(h) => setHandler(h)}
-            autoOpen
-          />
-        </ModalBody>
-        <ModalFooter
-          display="flex"
-          w="$full"
-          gap="$4"
-          alignItems="flex-end"
-          justifyContent="flex-end"
-        >
+      size="lg"
+      title={props.header}
+      headerExtra={
+        <Show when={props.headerSlot && handler()}>
+          {props.headerSlot!(handler()!)}
+        </Show>
+      }
+      footer={
+        <>
           <Show when={props.footerSlot}>
-            <Box mr="auto">{props.footerSlot}</Box>
+            <div style={{ "margin-right": "auto" }}>{props.footerSlot}</div>
           </Show>
-          <HStack spacing="$2">
-            <Button onClick={props.onClose} colorScheme="neutral">
-              {t("global.cancel")}
-            </Button>
-            <Button
-              loading={props.loading}
-              onClick={() => props.onSubmit?.(value())}
-            >
-              {t("global.ok")}
-            </Button>
-          </HStack>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+          <button type="button" class="ol-btn" onClick={props.onClose}>
+            {t("global.cancel")}
+          </button>
+          <button
+            type="button"
+            class="ol-btn ol-btn--primary"
+            disabled={props.loading}
+            onClick={() => props.onSubmit?.(value())}
+          >
+            <Show when={props.loading}>
+              <span class="ol-ui-spinner" aria-hidden="true" />
+            </Show>
+            {t("global.ok")}
+          </button>
+        </>
+      }
+    >
+      {props.children}
+      <FolderTree onChange={setValue} handle={(h) => setHandler(h)} autoOpen />
+    </OlDialog>
   )
 }
 
@@ -421,7 +382,7 @@ export const FolderChooseInput = (props: {
   id?: string
   onlyFolder?: boolean
 }) => {
-  const { isOpen, onOpen, onClose } = createDisclosure()
+  const [open, setOpen] = createSignal(false)
   const t = useT()
   return (
     <>
@@ -431,7 +392,7 @@ export const FolderChooseInput = (props: {
           value={props.value}
           onInput={(e) => props.onChange(e.currentTarget.value)}
           readOnly={props.onlyFolder}
-          onClick={props.onlyFolder ? onOpen : () => {}}
+          onClick={props.onlyFolder ? () => setOpen(true) : undefined}
           placeholder={t(
             `global.${
               props.onlyFolder ? "choose_folder" : "choose_or_input_path"
@@ -439,22 +400,27 @@ export const FolderChooseInput = (props: {
           )}
         />
         <Show when={!props.onlyFolder}>
-          <Button onClick={onOpen}>{t("global.choose")}</Button>
+          <Button onClick={() => setOpen(true)}>{t("global.choose")}</Button>
         </Show>
       </HStack>
-      <Modal size="xl" opened={isOpen()} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalCloseButton />
-          <ModalHeader>{t("global.choose_folder")}</ModalHeader>
-          <ModalBody>
-            <FolderTree forceRoot onChange={props.onChange} />
-          </ModalBody>
-          <ModalFooter>
-            <Button onClick={onClose}>{t("global.confirm")}</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      <OlDialog
+        open={open()}
+        onClose={() => setOpen(false)}
+        size="lg"
+        showCloseButton
+        title={t("global.choose_folder")}
+        footer={
+          <button
+            type="button"
+            class="ol-btn ol-btn--primary"
+            onClick={() => setOpen(false)}
+          >
+            {t("global.confirm")}
+          </button>
+        }
+      >
+        <FolderTree forceRoot onChange={props.onChange} />
+      </OlDialog>
     </>
   )
 }

@@ -92,3 +92,57 @@
 - Real Go `dist_dir` SSR + Chrome CDP E2E (`127.0.0.1:5244` + mock ASMR.ONE/JMComic/GalGames/Alias): 25/25 assertions PASS, 0 JS page errors, verifying `window.__OPENLIST_BOOTSTRAP__` 0-RTT hydration, ad-free 4-tier SSR/SPA SEO + JSON-LD + semantic `<noscript>`, Markdown dark-mode contrast rescue / `flow-root` / Alerts / `#sponsor`, `Ctrl+K` Command Palette, `ASMR.ONE` `4:3` posters + Work Hero + WAV player + synced `.lrc`, `JMComic` `3:4` posters + `TagFolders` + Work Hero + `#121213` canvas reader, `AliasGalgames` passthrough, and 390px mobile responsiveness.
 - External verification screenshots (`C:\Users\SakuraPY\.gemini\antigravity\brain\49caf45b-3dd1-413d-bfec-45cbc4923c28\`):
   - `p2-01-root-light-glass-md.png`, `p2-02-root-dark-glass-md.png`, `p2-03-root-light-solid.png`, `p2-04-command-palette.png`, `p2-05-asmr-poster-grid.png`, `p2-06-asmr-work-player.png`, `p2-07-jm-poster-grid.png`, `p2-08-jm-tags.png`, `p2-09-jm-work-hero.png`, `p2-10-jm-reader.png`, `p2-11-galgames-alias.png`, `p2-12-mobile-asmr-work.png`, `p2-13-mobile-jm-work.png`.
+
+---
+
+## Phase 3 — Native ESM + Runtime CDN Build, Bundle Slimming, 5,000-Row Virtual Scrolling, and `@kobalte/core` UI Primitives
+
+### Key Decisions & Rationale
+
+1. **Native ESM Build & Runtime CDN Resolution (`vite.config.ts`, `index.html`, `package.json`)**
+   - **Decision**: Replace `vite-plugin-dynamic-base` (and `fixLegacyPolyfillDataSrc`) with `base: "/"` + Vite's `experimental.renderBuiltUrl` backed by `window.__openlistAssetUrl(p)` in `index.html`, and gate `@vitejs/plugin-legacy` behind `VITE_LEGACY=true` (`pnpm build:legacy`).
+   - **Rationale**: Emits native `<script type="module" crossorigin>` and `<link rel="modulepreload">` in `dist/index.html` instead of dynamic script-injection shims. When `window.OPENLIST_CONFIG.cdn` is empty (`""`, standard embedded Go binary), `window.__openlistAssetUrl` resolves root-relative `/assets/...` (or `<base_path>/assets/...`), preventing broken `/Galgames/assets/...` requests on deep SPA routes; when `cdn` is configured (`https://cdn.example.com`), dynamic JS chunks and asset URLs prefix with `cdn` automatically. Gating SystemJS legacy output speeds up `pnpm build` / `pnpm build:lite` by ~8.8x (`17.8s` -> `2.0s`).
+
+2. **Lazy Markdown Engine + `highlight.js/lib/core` + Scoped Parallel i18n (`src/components/markdown_engine.ts`, `src/components/Markdown.tsx`, `src/app/i18n.ts`, `src/app/App.tsx`)**
+   - **Decision**:
+     - Extract `unified`, `remark-*`, `rehype-*`, and `highlight.js/lib/core` (registering 16 high-frequency languages: `bash`, `shell`, `json`, `yaml`, `javascript`, `typescript`, `go`, `python`, `sql`, `xml`, `css`, `ini`, `markdown`, `diff`, `c`, `cpp`) out of `Markdown.tsx` into a dynamically imported `markdown_engine.ts` chunk.
+     - Refactor `src/app/i18n.ts` to load visitor namespaces (`global`, `home`, `login`, `init`, `shares`, `indexes`, `metas`, `notices`, `promotions`, `jmcomic`, `index`) for active locale + English fallback + `lang_extra` in a single parallel `Promise.all`, deferring heavy admin namespaces (`drivers.json` 61.8 KB, `settings`, `storages`, `manage`, `tasks`, `users`, `plugins`, `br`) until `/@manage` mounts via `ensureAdminI18nLoaded()`.
+   - **Rationale**: Previously, `components/index.ts` re-exported `Markdown.tsx` + full 190-language `highlight.js` into the root `index-*.js` entry (`1,379.64 KB` raw / `442.30 KB` gzip). Splitting `markdown_engine.ts` and switching to `highlight.js/lib/core` shrinks `index-*.js` by **91.8%** (`113.16 KB` raw / `37.93 KB` gzip) while `lightgallery` remains dynamically imported on demand.
+
+3. **Window-Scrolled Virtual File List (`@tanstack/solid-virtual` in `src/pages/home/folder/List.tsx`)**
+   - **Decision**: Engage `createWindowVirtualizer` automatically when visible directory entries exceed `100` (`overscan: 12`, `indexAttribute: "data-vindex"`, `ResizeObserver`-synced `scrollMargin`, `measureElement` height tracking), while keeping static `<For>` rendering for `<= 100` items.
+   - **Rationale**: Keeps mounted `.ol-row.list-item` DOM nodes strictly `< 60` (~30–48 nodes) even in 5,000-item directories while preserving full-page document scrolling, `@viselect/vanilla` rubber-band drag selection (`data-index`), `Shift+Click` range selection, native checkboxes, and in-place `.ol-selbar`.
+
+4. **`@kobalte/core` Accessible Primitives & Unified `--ol-*` Overlays (`src/components/ui/`, `ModalInput.tsx`, `ModalTwoInput.tsx`, `FolderTree.tsx`, `EnhancedFolderTree.tsx`, `context-menu.tsx`, `notify.tsx`, `TorrentFileList.tsx`)**
+   - **Decision**: Build `OlDialog` (`@kobalte/core/dialog`) and `OlToastRegion` / `showOlToast` (`@kobalte/core/toast`) in `src/components/ui/` styled exclusively with `--ol-*` warm-neutral tokens, migrating `ModalInput`, `ModalTwoInput`, `ModalFolderChoose` / `FolderChooseInput` / `FolderTree` / `EnhancedFolderTree`, `ContextMenu`, and `notify.{success,error,info,warning,render}` while preserving 100% of existing component props and imperative `notify.*` APIs. Replaced the final emoji glyphs in `TorrentFileList.tsx` with `FolderGlyph`, `FileIcon`, and Tabler chevrons.
+   - **Rationale**: Unifies dialogs, directory pickers, right-click menus, and toast notifications onto accessible focus-trapped primitives with consistent warm-grey surfaces in both Light and Dark themes.
+
+### Bundle Size Comparison (`pnpm build`, KiB = 1024 B)
+
+| Metric                                               |                  Phase 2 Baseline |                       Phase 3A Result |                                                                  Delta |
+| ---------------------------------------------------- | --------------------------------: | ------------------------------------: | ---------------------------------------------------------------------: |
+| Initial Entry Chunk (`index-*.js`)                   |    `1,379.64 KB` (`442.30 KB` gz) |       **`113.16 KB` (`37.93 KB` gz)** |                        **`-1,266.48 KB` (`-91.8%` raw / `-91.4%` gz)** |
+| Initial Boot JS (`index` + `store`)                  |    `1,875.19 KB` (`593.50 KB` gz) |      **`680.80 KB` (`204.64 KB` gz)** |                        **`-1,194.39 KB` (`-63.7%` raw / `-65.5%` gz)** |
+| Lazy Markdown + `hljs/core` (`markdown_engine-*.js`) |             Eager in `index-*.js` |      **`405.76 KB` (`124.33 KB` gz)** |                                     Deferred until `<Markdown>` mounts |
+| Total Modern JS (`dist/assets/*.js`)                 |  `7,027.39 KB` (`2,046.06 KB` gz) |  **`6,283.27 KB` (`1,803.54 KB` gz)** | **`-744.12 KB` (`-242.52 KB` gz)** (incl. `solid-virtual` + `kobalte`) |
+| Legacy SystemJS (`*-legacy-*.js`)                    |  `7,307.27 KB` (`2,137.74 KB` gz) |    **`0 KB`** (opt-in `build:legacy`) |                                 **`-7,307.27 KB` (`-2,137.74 KB` gz)** |
+| Total `dist/assets/*` (`254` -> `170` files)         | `19,027.54 KB` (`6,327.22 KB` gz) | **`10,981.69 KB` (`3,948.58 KB` gz)** |                        **`-8,045.85 KB` (`-42.3%` raw / `-37.6%` gz)** |
+| `dist/index.html`                                    |                         `4,540 B` |                         **`2,332 B`** |                      **`-2,208 B` (`-48.6%`)**, native `modulepreload` |
+| Production Build Time (`pnpm build`)                 |                         `17.83 s` |                          **`2.03 s`** |                                                      **`8.8x` faster** |
+
+### Deviations & Additions
+
+- Restored lightweight `"manage"` (~1.5 KB, required for breadcrumb `"首页"` / `"分享"`) and `"users"` namespaces into `VISITOR_NAMESPACES` in `src/app/i18n.ts` while keeping heavy admin namespaces (`drivers.json` 61.8 KB, `settings`, `storages`, `tasks`, `plugins`, `br`) strictly lazy-loaded until `/@manage` mounts.
+- Updated `<LinkWithPush onClick>` in `ListItem.tsx`, `GridItem.tsx`, and `PosterItem.tsx` plus added explicit `shift` range selection forwarding on row/tile/checkbox activation in `src/store/obj.ts` so `Shift+Click` reliably selects contiguous ranges in both virtualized and static views.
+
+### Phase 3 & Stage 4 Full Real-Stack Verification Summary (`verifier-neon`)
+
+- Backend (`OpenList`, branch `modernize/phase-3-perf-primitives`): `go build ./...`, `openlist migrate-modern --dry-run` CLI audit, and all 19 Go test packages PASS.
+- Frontend (`OpenList-Frontend`, branch `modernize/phase-3-perf-primitives`): `pnpm lint`, `pnpm build:lite`, and `pnpm build` (`1.71 s`) PASS; `dist/index.html` emits native `<script type="module" crossorigin src="/assets/index-*.js">` (`115.88 KB` raw / `38.87 KB` gz) with zero legacy bundles (`LEGACY_FILE_COUNT=0`).
+- Full Real Embedded-Binary E2E (`openlist.exe` embedding compiled `dist/` on `:5299` + local `JMComic`/`GalGames`/`ASMR.ONE` mock upstreams):
+  - 0-RTT `window.__OPENLIST_BOOTSTRAP__`, deep-route `/assets/*.js` HTTP 200 on direct reload, lazy `lightgallery` on gallery open.
+  - `/Local/Stress5000` (5,000 items): virtual scroller mounts `< 60` (`26`) DOM `.ol-row` elements smoothly; `Shift+Click` selects 5 contiguous rows into in-place `.ol-selbar`.
+  - Kobalte `OlDialog` (`ModalInput`) & `OlToastRegion` (`notify`), Chinese `"首页"` breadcrumb, zero Emoji UI glyphs, preserved `.obj-box`/`.list-item`/`.nav`/`.header`/`.footer` classes.
+  - `JMComic` `/标签` filter + `3:4` posters + Work Hero + collapsible Export + `#121213` canvas unscramble reader + range scrubber + chapter 2 persistence; `GalGames` & `/AliasGalgames` `DirInfo`, password pills & HTTP 302 downloads; `ASMR.ONE` & `/AliasASMR` `4:3` auto-poster + Work Hero + WAV `1.25x` inline player with synced `.lrc` + Dark Glass APlayer; SSR SEO/JSON-LD/`<noscript>` (0 ad leaks); Mobile `390x844` zero overflow or clipping; 0 JS `pageerror` and 0 failed 4xx/5xx requests.
+- External verification screenshots (`C:\Users\SakuraPY\.gemini\antigravity\brain\49caf45b-3dd1-413d-bfec-45cbc4923c28\`):
+  - `s4-01-stress5000-virtual.png`, `s4-02-kobalte-dialog-toast.png`, `s4-03-jm-today-posters.png`, `s4-04-jm-reader-page2.png`, `s4-05-asmr-player-125x.png`, `s4-06-dark-glass-aplayer.png`, `s4-07-root-dark-glass.png`, `s4-08-root-light-glass.png`, `s4-09-root-light-solid.png`, `s4-10-mobile-root.png`, `s4-11-mobile-jm-work.png`.

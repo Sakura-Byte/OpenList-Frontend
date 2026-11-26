@@ -1,3 +1,4 @@
+import { createWindowVirtualizer } from "@tanstack/solid-virtual"
 import {
   For,
   Show,
@@ -5,9 +6,11 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  onCleanup,
   onMount,
 } from "solid-js"
 import { IArrowDown, IArrowUp } from "~/components/icons-tb"
+import "~/components/ui/ui.css"
 import { useRouter, useT, useUtil } from "~/hooks"
 import {
   OrderBy,
@@ -18,6 +21,7 @@ import {
   selectAll,
   sortObjs,
 } from "~/store"
+import { StoreObj } from "~/types"
 import { bus } from "~/utils"
 import { ListItem } from "./ListItem"
 import { SelectionBar } from "./SelectionBar"
@@ -29,6 +33,8 @@ export interface SortState {
 }
 
 const SORT_KEY_PREFIX = "dir_sort_"
+const VIRTUALIZE_THRESHOLD = 100
+const VIRTUAL_OVERSCAN = 12
 
 export function saveSortState(dir: string, state: SortState) {
   try {
@@ -139,6 +145,107 @@ export const ListTitle = (props: {
   )
 }
 
+interface VisibleRowEntry {
+  obj: StoreObj
+  index: number
+}
+
+const VirtualizedRows = (props: { rows: VisibleRowEntry[] }) => {
+  let listRef: HTMLDivElement | undefined
+  const [scrollMargin, setScrollMargin] = createSignal(0)
+
+  const updateScrollMargin = () => {
+    if (!listRef || typeof window === "undefined") return
+    const next = Math.max(
+      0,
+      Math.round(listRef.getBoundingClientRect().top + window.scrollY),
+    )
+    if (next !== scrollMargin()) {
+      setScrollMargin(next)
+    }
+  }
+
+  onMount(() => {
+    updateScrollMargin()
+    window.addEventListener("resize", updateScrollMargin, { passive: true })
+
+    let ro: ResizeObserver | undefined
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => updateScrollMargin())
+      const sheet = listRef?.closest(".ol-sheet") ?? document.body
+      ro.observe(sheet)
+    }
+
+    onCleanup(() => {
+      window.removeEventListener("resize", updateScrollMargin)
+      ro?.disconnect()
+    })
+  })
+
+  createEffect(() => {
+    haveSelected()
+    props.rows.length
+    queueMicrotask(updateScrollMargin)
+  })
+
+  const estimateRowHeight = () => {
+    if (typeof window !== "undefined" && window.innerWidth <= 640) {
+      return 48
+    }
+    return 46
+  }
+
+  const virtualizer = createWindowVirtualizer({
+    get count() {
+      return props.rows.length
+    },
+    indexAttribute: "data-vindex",
+    estimateSize: estimateRowHeight,
+    overscan: VIRTUAL_OVERSCAN,
+    get scrollMargin() {
+      return scrollMargin()
+    },
+  })
+
+  return (
+    <div
+      ref={listRef}
+      class="ol-nav-body ol-virtual-list"
+      role="listbox"
+      aria-multiselectable="true"
+      data-virtualized="true"
+      style={{
+        height: `${virtualizer.getTotalSize()}px`,
+      }}
+    >
+      <For each={virtualizer.getVirtualItems()}>
+        {(vItem) => {
+          const entry = () => props.rows[vItem.index]
+          return (
+            <Show when={entry()}>
+              {(row) => (
+                <div
+                  class="ol-virtual-row"
+                  data-vindex={vItem.index}
+                  data-last={vItem.index === props.rows.length - 1}
+                  ref={(el) =>
+                    queueMicrotask(() => virtualizer.measureElement(el))
+                  }
+                  style={{
+                    transform: `translateY(${vItem.start - scrollMargin()}px)`,
+                  }}
+                >
+                  <ListItem obj={row().obj} index={row().index} />
+                </div>
+              )}
+            </Show>
+          )
+        }}
+      </For>
+    </div>
+  )
+}
+
 const ListLayout = () => {
   const t = useT()
   const { pathname } = useRouter()
@@ -170,9 +277,17 @@ const ListLayout = () => {
     }
   }
 
-  const visibleCount = createMemo(
-    () => objStore.objs.filter((o) => !isHide(o)).length,
-  )
+  const visibleRows = createMemo<VisibleRowEntry[]>(() => {
+    const out: VisibleRowEntry[] = []
+    const all = objStore.objs
+    for (let i = 0; i < all.length; i++) {
+      const obj = all[i]
+      if (!isHide(obj)) {
+        out.push({ obj, index: i })
+      }
+    }
+    return out
+  })
 
   return (
     <div
@@ -195,14 +310,21 @@ const ListLayout = () => {
       </Show>
 
       <Show
-        when={visibleCount() > 0}
+        when={visibleRows().length > 0}
         fallback={<div class="ol-empty">{t("home.empty_dir")}</div>}
       >
-        <div class="ol-nav-body" role="listbox" aria-multiselectable="true">
-          <For each={objStore.objs}>
-            {(obj, i) => <ListItem obj={obj} index={i()} />}
-          </For>
-        </div>
+        <Show
+          when={visibleRows().length > VIRTUALIZE_THRESHOLD}
+          fallback={
+            <div class="ol-nav-body" role="listbox" aria-multiselectable="true">
+              <For each={visibleRows()}>
+                {(row) => <ListItem obj={row.obj} index={row.index} />}
+              </For>
+            </div>
+          }
+        >
+          <VirtualizedRows rows={visibleRows()} />
+        </Show>
       </Show>
     </div>
   )

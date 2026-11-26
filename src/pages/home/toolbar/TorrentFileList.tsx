@@ -1,7 +1,9 @@
-import { Box, Checkbox, HStack, Text, VStack, Button } from "@hope-ui/solid"
-import { createSignal, For, Show, createMemo } from "solid-js"
-import { TorrentFile } from "~/types"
+import { Box, Checkbox, HStack, Text, VStack } from "@hope-ui/solid"
+import { TbChevronDown, TbChevronRight } from "solid-icons/tb"
+import { For, Show, createMemo, createSignal } from "solid-js"
+import { FileIcon, FolderGlyph, fileKind } from "~/components/icons-tb"
 import { useT } from "~/hooks"
+import { TorrentFile } from "~/types"
 
 // 树节点类型
 interface TreeNode {
@@ -30,7 +32,6 @@ function buildFileTree(files: TorrentFile[]): TreeNode[] {
 
     parts.forEach((part, i) => {
       if (i === parts.length - 1) {
-        // 叶子节点（文件）
         current.children.push({
           name: part,
           path: file.path,
@@ -40,7 +41,6 @@ function buildFileTree(files: TorrentFile[]): TreeNode[] {
           fileIndex: index,
         })
       } else {
-        // 目录节点
         let dirNode = current.children.find((c) => c.isDir && c.name === part)
         if (!dirNode) {
           dirNode = {
@@ -57,7 +57,6 @@ function buildFileTree(files: TorrentFile[]): TreeNode[] {
     })
   })
 
-  // 计算目录大小并缓存目录的所有子文件索引
   function calcDirMetadata(node: TreeNode): number {
     if (!node.isDir) return node.size
     node.size = node.children.reduce(
@@ -69,7 +68,6 @@ function buildFileTree(files: TorrentFile[]): TreeNode[] {
   }
   root.children.forEach(calcDirMetadata)
 
-  // 如果只有一个根目录，直接返回其子节点
   if (root.children.length === 1 && root.children[0].isDir) {
     return root.children
   }
@@ -84,7 +82,6 @@ function formatFileSize(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
 }
 
-// 获取目录下所有文件的索引
 function getAllFileIndices(node: TreeNode): number[] {
   if (!node.isDir) {
     return node.fileIndex !== undefined ? [node.fileIndex] : []
@@ -102,8 +99,6 @@ export const TorrentFileList = (props: TorrentFileListProps) => {
   const t = useT()
 
   const tree = createMemo(() => buildFileTree(props.files))
-
-  // 使用 Set 加速成员检测
   const selectedSet = createMemo(() => new Set(props.selectedFiles))
 
   const allSelected = createMemo(
@@ -145,7 +140,6 @@ export const TorrentFileList = (props: TorrentFileListProps) => {
 
   return (
     <VStack spacing="$1" alignItems="stretch">
-      {/* 全选/统计 */}
       <HStack justifyContent="space-between" alignItems="center" p="$1">
         <Checkbox
           checked={allSelected()}
@@ -167,7 +161,6 @@ export const TorrentFileList = (props: TorrentFileListProps) => {
         </Text>
       </HStack>
 
-      {/* 文件树 */}
       <Box
         maxH="300px"
         overflowY="auto"
@@ -191,7 +184,6 @@ export const TorrentFileList = (props: TorrentFileListProps) => {
   )
 }
 
-// 树节点组件
 function TreeNodeItem(props: {
   node: TreeNode
   selectedSet: Set<number>
@@ -226,25 +218,28 @@ function TreeNodeItem(props: {
         borderRadius="$xs"
         px="$1"
       >
-        {/* 展开/折叠按钮 */}
         <Show when={props.node.isDir}>
           <Box
             cursor="pointer"
             onClick={() => setExpanded(!expanded())}
             w="16px"
-            textAlign="center"
-            fontSize="$xs"
+            display="inline-grid"
+            style={{ "place-items": "center" }}
             color="$neutral10"
             flexShrink={0}
           >
-            {expanded() ? "▼" : "▶"}
+            <Show
+              when={expanded()}
+              fallback={<TbChevronRight size={13} class="ol-ico" />}
+            >
+              <TbChevronDown size={13} class="ol-ico" />
+            </Show>
           </Box>
         </Show>
         <Show when={!props.node.isDir}>
           <Box w="16px" flexShrink={0} />
         </Show>
 
-        {/* 复选框 */}
         <Checkbox
           size="sm"
           checked={isChecked()}
@@ -258,12 +253,17 @@ function TreeNodeItem(props: {
           }}
         />
 
-        {/* 图标 */}
-        <Text fontSize="$sm" flexShrink={0}>
-          {props.node.isDir ? "📁" : "📄"}
-        </Text>
+        <span style={{ display: "inline-flex", "flex-shrink": 0 }}>
+          <Show
+            when={props.node.isDir}
+            fallback={
+              <FileIcon kind={fileKind(props.node.name, false)} size={16} />
+            }
+          >
+            <FolderGlyph size={16} />
+          </Show>
+        </span>
 
-        {/* 文件名 */}
         <Text
           fontSize="$sm"
           flex={1}
@@ -277,13 +277,11 @@ function TreeNodeItem(props: {
           {props.node.name}
         </Text>
 
-        {/* 文件大小 */}
         <Text fontSize="$xs" color="$neutral10" flexShrink={0}>
           {formatFileSize(props.node.size)}
         </Text>
       </HStack>
 
-      {/* 子节点 */}
       <Show when={props.node.isDir && expanded()}>
         <For each={props.node.children}>
           {(child) => (

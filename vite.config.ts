@@ -2,59 +2,27 @@ import path from "path"
 import { defineConfig } from "vite"
 import solidPlugin from "vite-plugin-solid"
 import legacy from "@vitejs/plugin-legacy"
-import { dynamicBase } from "vite-plugin-dynamic-base"
 import { viteStaticCopy } from "vite-plugin-static-copy"
-import type { Plugin } from "vite"
 
-// vite-plugin-dynamic-base converts data-src → src in its generateBundle hook,
-// but @vitejs/plugin-legacy expects data-src on vite-legacy-polyfill so the
-// legacy detection script can read it.  This plugin runs its generateBundle
-// after dynamicBase (enforce:post, registered last) and restores data-src.
-function fixLegacyPolyfillDataSrc(): Plugin {
-  return {
-    name: "fix-legacy-polyfill-data-src",
-    enforce: "post",
-    apply: "build",
-    generateBundle(_, bundle) {
-      for (const chunk of Object.values(bundle)) {
-        if (
-          chunk.type === "asset" &&
-          chunk.fileName.endsWith(".html") &&
-          typeof chunk.source === "string"
-        ) {
-          chunk.source = chunk.source.replace(
-            /("id"\s*:\s*"vite-legacy-polyfill"[^}]*?)"src"\s*:/,
-            (match) => match.replace(/"src"\s*:/, '"data-src":'),
-          )
-        }
-      }
-    },
-  }
-}
+const rootDir = import.meta.dirname
+const isLegacy = process.env.VITE_LEGACY === "true"
+const isLite = process.env.VITE_LITE === "true"
 
 export default defineConfig({
   resolve: {
     alias: {
-      "~": path.resolve(__dirname, "src"),
-      // "@solidjs/router": path.resolve(__dirname, "solid-router/src"),
-      "solid-icons": path.resolve(__dirname, "node_modules/solid-icons"),
+      "~": path.resolve(rootDir, "src"),
+      "solid-icons": path.resolve(rootDir, "node_modules/solid-icons"),
     },
   },
   plugins: [
     solidPlugin(),
-    legacy({
-      targets: ["defaults"],
-    }),
-    dynamicBase({
-      // dynamic public path var string, default window.__dynamic_base__
-      publicPath: "window.__dynamic_base__",
-      // dynamic load resources on index.html, default false. maybe change default true
-      transformIndexHtml: true,
-      transformIndexHtmlConfig: {
-        insertBodyAfter: true,
-      },
-    }),
-    process.env.VITE_LITE !== "true"
+    isLegacy
+      ? legacy({
+          targets: ["defaults"],
+        })
+      : null,
+    !isLite
       ? viteStaticCopy({
           targets: [
             {
@@ -88,32 +56,28 @@ export default defineConfig({
           ],
         })
       : null,
-    fixLegacyPolyfillDataSrc(),
   ],
-  base: process.env.NODE_ENV === "production" ? "/__dynamic_base__/" : "/",
-  // base: "/",
-  build: {
-    // target: "es2015", //next
-    // polyfillDynamicImport: false,
+  base: "/",
+  experimental: {
+    renderBuiltUrl(filename, { hostType }) {
+      const clean = filename.replace(/^\/+/, "")
+      if (hostType === "js") {
+        return {
+          runtime: `window.__openlistAssetUrl(${JSON.stringify(clean)})`,
+        }
+      }
+      if (hostType === "css") {
+        return { relative: true }
+      }
+      return `/${clean}`
+    },
   },
-  // experimental: {
-  //   renderBuiltUrl: (filename, { type, hostId, hostType }) => {
-  //     if (type === "asset") {
-  //       return { runtime: `window.OPENLIST_CONFIG.cdn/${filename}` };
-  //     }
-  //     return { relative: true };
-  //   },
-  // },
   server: {
     host: "0.0.0.0",
     proxy: {
       "/api": {
-        // DEV_PROXY_TARGET 允许 dev 时对接不同后端：
-        //   Go 版 OpenList 后端   -> 默认 http://localhost:5244
-        //   OpenListNext(TS) 后端 -> DEV_PROXY_TARGET=http://localhost:8787
         target: process.env.DEV_PROXY_TARGET || "http://localhost:5244",
         changeOrigin: true,
-        // rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
   },

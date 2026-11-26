@@ -26,7 +26,18 @@
         api: undefined,
         main_color: undefined,
       }
-      window.__dynamic_base__ = window.OPENLIST_CONFIG.cdn || ""
+      window.__dynamic_base__ = String(
+        window.OPENLIST_CONFIG.cdn || "",
+      ).replace(/\/+$/, "")
+      window.__openlistAssetUrl = function (p) {
+        var cfg = window.OPENLIST_CONFIG || {}
+        var c = String(cfg.cdn || "").replace(/\/+$/, "")
+        var b = String(cfg.base_path || "").replace(/\/+$/, "")
+        var prefix = c || b
+        return (
+          (prefix ? prefix + "/" : "/") + String(p || "").replace(/^\/+/, "")
+        )
+      }
     </script>
   </head>
   <body>

@@ -241,7 +241,11 @@ export const VideoBox = (props: {
                   <Image
                     m="0 auto"
                     boxSize="$8"
-                    src={`${window.__dynamic_base__}/images/${item.icon}.webp`}
+                    src={
+                      window.__openlistAssetUrl
+                        ? window.__openlistAssetUrl(`images/${item.icon}.webp`)
+                        : `/images/${item.icon}.webp`
+                    }
                   />
                 </Anchor>
               </Tooltip>

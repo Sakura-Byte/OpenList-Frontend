@@ -1,9 +1,11 @@
-import { HStack, Icon, Image, Text, useColorMode } from "@hope-ui/solid"
+import { useColorMode } from "@hope-ui/solid"
 import axios from "axios"
 import { Item, Menu, Submenu } from "solid-contextmenu"
 import "solid-contextmenu/dist/style.css"
 import { TbPlayerPlay } from "solid-icons/tb"
 import { For, Show, createMemo } from "solid-js"
+import { Dynamic } from "solid-js/web"
+import "~/components/ui/ui.css"
 import { useCopyLink, useDownload, useLink, useRouter, useT } from "~/hooks"
 import {
   getSettingBool,
@@ -23,16 +25,17 @@ import { operations } from "../toolbar/operations"
 
 const ItemContent = (props: { name: string }) => {
   const t = useT()
+  const op = () => operations[props.name]
   return (
-    <HStack spacing="$2">
-      <Icon
-        as={operations[props.name].icon}
-        boxSize="$5"
+    <span class="ol-ctx-item">
+      <Dynamic
+        component={op().icon}
+        size={17}
         class="ol-ico"
-        color={operations[props.name].color}
+        style={op().color ? { color: op().color } : undefined}
       />
-      <Text>{t(`home.toolbar.${props.name}`)}</Text>
-    </HStack>
+      <span>{t(`home.toolbar.${props.name}`)}</span>
+    </span>
   )
 }
 
@@ -54,12 +57,14 @@ export const ContextMenu = () => {
     if (obj.is_dir) return []
     return getPreviews({ ...obj, provider: objStore.provider })
   })
+
   return (
     <Menu
       id={1}
       animation="scale"
+      class="ol-context-menu"
       theme={colorMode() !== "dark" ? "light" : "dark"}
-      style="z-index: var(--hope-zIndices-popover)"
+      style="z-index: 1600"
     >
       <Show when={openWithPreviews().length > 0}>
         <Submenu label={<ItemContent name="open_with" />}>
@@ -191,10 +196,10 @@ export const ContextMenu = () => {
             return props.type !== ObjType.VIDEO
           }}
           label={
-            <HStack spacing="$2">
-              <Icon as={TbPlayerPlay} boxSize="$5" class="ol-ico" />
-              <Text>{t("home.preview.play_with")}</Text>
-            </HStack>
+            <span class="ol-ctx-item">
+              <TbPlayerPlay size={17} class="ol-ico" />
+              <span>{t("home.preview.play_with")}</span>
+            </span>
           }
         >
           <For each={players}>
@@ -209,14 +214,20 @@ export const ContextMenu = () => {
                   window.open(href, "_self")
                 }}
               >
-                <HStack spacing="$2">
-                  <Image
-                    m="0 auto"
-                    boxSize="$6"
-                    src={`${window.__dynamic_base__ || ""}/images/${player.icon}.webp`}
+                <span class="ol-ctx-item">
+                  <img
+                    class="ol-ctx-player-icon"
+                    alt={player.name}
+                    src={
+                      window.__openlistAssetUrl
+                        ? window.__openlistAssetUrl(
+                            `images/${player.icon}.webp`,
+                          )
+                        : `/images/${player.icon}.webp`
+                    }
                   />
-                  <Text>{player.name}</Text>
-                </HStack>
+                  <span>{player.name}</span>
+                </span>
               </Item>
             )}
           </For>

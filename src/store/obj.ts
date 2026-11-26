@@ -116,11 +116,16 @@ const lastChecked = {
   end: -1,
 }
 
-export const selectIndex = (index: number, checked: boolean, one?: boolean) => {
+export const selectIndex = (
+  index: number,
+  checked: boolean,
+  one?: boolean,
+  shift?: boolean,
+) => {
   if (one) {
     selectAll(false)
   }
-  if (keyPressed["Shift"]) {
+  if (shift || keyPressed["Shift"]) {
     if (lastChecked.start < 0) {
       for (
         let i = 0;

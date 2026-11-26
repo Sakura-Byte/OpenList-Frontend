@@ -1,27 +1,21 @@
-import { Box, HStack, Icon, Spinner, Text, VStack } from "@hope-ui/solid"
-import { BiSolidRightArrow, BiSolidFolderOpen } from "solid-icons/bi"
-import { TbFile, TbFolder } from "solid-icons/tb"
+import { TbChevronRight } from "solid-icons/tb"
 import {
   Accessor,
-  createContext,
-  createSignal,
-  useContext,
-  Show,
   For,
   Setter,
+  Show,
+  createContext,
   createEffect,
+  createSignal,
   on,
+  useContext,
 } from "solid-js"
-import { useFetch, useT, useUtil } from "~/hooks"
-import { getMainColor, password } from "~/store"
+import { FileIcon, FolderGlyph, fileKind } from "~/components/icons-tb"
+import "~/components/ui/ui.css"
+import { useFetch, useUtil } from "~/hooks"
+import { password } from "~/store"
 import { Obj } from "~/types"
-import {
-  pathBase,
-  handleResp,
-  hoverColor,
-  pathJoin,
-  createMatcher,
-} from "~/utils"
+import { createMatcher, handleResp, pathBase, pathJoin } from "~/utils"
 import { fsList } from "~/utils/api"
 
 export type EnhancedFolderTreeHandler = {
@@ -50,7 +44,7 @@ export const EnhancedFolderTree = (props: EnhancedFolderTreeProps) => {
   const [path, setPath] = createSignal("/")
   props.handle?.({ setPath })
   return (
-    <Box class="folder-tree-box" w="$full" overflowX="auto">
+    <div class="folder-tree-box ol-modern-scope ol-ftree">
       <context.Provider
         value={{
           value: path,
@@ -66,21 +60,16 @@ export const EnhancedFolderTree = (props: EnhancedFolderTreeProps) => {
       >
         <EnhancedFolderTreeNode path="/" />
       </context.Provider>
-    </Box>
+    </div>
   )
 }
 
 const EnhancedFolderTreeNode = (props: { path: string }) => {
   const { isHidePath } = useUtil()
   const [items, setItems] = createSignal<Obj[]>()
-  const {
-    value,
-    onChange,
-    forceRoot,
-    autoOpen,
-    showEmptyIcon,
-    showHiddenFolder,
-  } = useContext(context)!
+  const [isOpen, setIsOpen] = createSignal(false)
+  const { value, onChange, autoOpen, showEmptyIcon, showHiddenFolder } =
+    useContext(context)!
 
   const emptyIconVisible = () =>
     Boolean(showEmptyIcon && items() !== undefined && !items()?.length)
@@ -101,19 +90,18 @@ const EnhancedFolderTreeNode = (props: { path: string }) => {
         setItems(data.content || [])
       },
       () => {
-        if (isOpen()) onToggle()
+        if (isOpen()) setIsOpen(false)
       },
     )
   }
 
-  const { isOpen, onToggle } = createDisclosure()
   const active = () => value() === props.path
   const isMatchedFolder = createMatcher(props.path)
 
   const checkIfShouldOpen = async (pathname: string) => {
     if (!autoOpen) return
     if (isMatchedFolder(pathname)) {
-      if (!isOpen()) onToggle()
+      if (!isOpen()) setIsOpen(true)
       if (!isLoaded) load()
     }
   }
@@ -128,56 +116,47 @@ const EnhancedFolderTreeNode = (props: { path: string }) => {
 
   return (
     <Show when={showHiddenFolder || !isHiddenFolder()}>
-      <Box>
-        <HStack spacing="$2">
+      <div>
+        <div
+          class="ol-ftree__row"
+          data-active={active()}
+          onClick={() => onChange(props.path)}
+        >
           <Show
             when={!loading()}
-            fallback={<Spinner size="sm" color={getMainColor()} />}
+            fallback={<span class="ol-ui-spinner" aria-hidden="true" />}
           >
             <Show
               when={!emptyIconVisible()}
-              fallback={<Icon color={getMainColor()} as={BiSolidFolderOpen} />}
+              fallback={<span style={{ width: "22px", flex: "none" }} />}
             >
-              <Icon
-                color={getMainColor()}
-                as={BiSolidRightArrow}
-                transform={isOpen() ? "rotate(90deg)" : "none"}
-                transition="transform 0.2s"
-                cursor="pointer"
-                onClick={() => {
-                  onToggle()
-                  if (isOpen()) {
-                    load()
-                  }
+              <button
+                type="button"
+                class="ol-ftree__toggle"
+                aria-label={isOpen() ? "Collapse" : "Expand"}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  const next = !isOpen()
+                  setIsOpen(next)
+                  if (next) load()
                 }}
-              />
+              >
+                <TbChevronRight
+                  size={15}
+                  class="ol-ico ol-ftree__chevron"
+                  data-open={isOpen()}
+                />
+              </button>
             </Show>
           </Show>
-          <Icon color={getMainColor()} as={TbFolder} cursor="pointer" />
-          <Text
-            css={{
-              whiteSpace: "nowrap",
-            }}
-            fontSize="$md"
-            cursor="pointer"
-            px="$1"
-            rounded="$md"
-            bgColor={active() ? "$info8" : "transparent"}
-            _hover={
-              {
-                bgColor: active() ? "$info8" : hoverColor(),
-              } as any
-            }
-            onClick={() => {
-              onChange(props.path)
-            }}
-          >
+          <FolderGlyph size={18} />
+          <span class="ol-ftree__label">
             {props.path === "/" ? "root" : pathBase(props.path)}
-          </Text>
-        </HStack>
+          </span>
+        </div>
 
         <Show when={isOpen()}>
-          <VStack mt="$1" pl="$4" alignItems="start" spacing="$1">
+          <div class="ol-ftree__children">
             <For each={folders()}>
               {(item) => (
                 <EnhancedFolderTreeNode
@@ -187,53 +166,27 @@ const EnhancedFolderTreeNode = (props: { path: string }) => {
             </For>
 
             <For each={files()}>
-              {(item) => (
-                <HStack spacing="$2" w="$full">
-                  <Box w="16px" />
-                  <Icon color={getMainColor()} as={TbFile} cursor="pointer" />
-                  <Text
-                    css={{
-                      whiteSpace: "nowrap",
-                    }}
-                    fontSize="$md"
-                    cursor="pointer"
-                    px="$1"
-                    rounded="$md"
-                    bgColor={
-                      value() === pathJoin(props.path, item.name)
-                        ? "$info8"
-                        : "transparent"
-                    }
-                    _hover={
-                      {
-                        bgColor:
-                          value() === pathJoin(props.path, item.name)
-                            ? "$info8"
-                            : hoverColor(),
-                      } as any
-                    }
-                    onClick={() => {
-                      onChange(pathJoin(props.path, item.name))
-                    }}
+              {(item) => {
+                const fullPath = pathJoin(props.path, item.name)
+                return (
+                  <div
+                    class="ol-ftree__row"
+                    data-active={value() === fullPath}
+                    onClick={() => onChange(fullPath)}
                   >
-                    {item.name}
-                  </Text>
-                </HStack>
-              )}
+                    <span style={{ width: "22px", flex: "none" }} />
+                    <FileIcon
+                      kind={fileKind(item.name, false, item.type)}
+                      size={17}
+                    />
+                    <span class="ol-ftree__label">{item.name}</span>
+                  </div>
+                )
+              }}
             </For>
-          </VStack>
+          </div>
         </Show>
-      </Box>
+      </div>
     </Show>
   )
-}
-
-function createDisclosure() {
-  const [isOpen, setIsOpen] = createSignal(false)
-  return {
-    isOpen,
-    onToggle: () => setIsOpen(!isOpen()),
-    onOpen: () => setIsOpen(true),
-    onClose: () => setIsOpen(false),
-  }
 }

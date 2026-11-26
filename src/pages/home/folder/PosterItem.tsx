@@ -45,10 +45,12 @@ export const PosterItem = (props: { obj: StoreObj; index: number }) => {
     fileKind(props.obj.name, props.obj.is_dir, props.obj.type),
   )
 
+  let lastCheckShift = false
+
   const handleActivate = (e: MouseEvent) => {
     if (openWithDoubleClick()) return
     if (e.ctrlKey || e.metaKey || e.shiftKey) {
-      selectIndex(props.index, !props.obj.selected)
+      selectIndex(props.index, !props.obj.selected, false, e.shiftKey)
       return
     }
     if (!restoreSelectionCache()) return
@@ -96,7 +98,15 @@ export const PosterItem = (props: { obj: StoreObj; index: number }) => {
             class="ol-checkbox"
             aria-label={props.obj.name}
             checked={!!props.obj.selected}
-            onChange={(e) => selectIndex(props.index, e.currentTarget.checked)}
+            onClick={(e: MouseEvent) => {
+              lastCheckShift = e.shiftKey
+              e.stopPropagation()
+            }}
+            onChange={(e) => {
+              const shift = lastCheckShift
+              lastCheckShift = false
+              selectIndex(props.index, e.currentTarget.checked, false, shift)
+            }}
           />
         </span>
 
@@ -125,7 +135,7 @@ export const PosterItem = (props: { obj: StoreObj; index: number }) => {
         class="ol-poster__title poster-title"
         href={props.obj.name}
         onClick={(e: MouseEvent) => {
-          if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+          if (e.button === 0 && !e.ctrlKey && !e.metaKey) {
             e.preventDefault()
             e.stopPropagation()
             handleActivate(e)
