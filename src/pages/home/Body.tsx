@@ -383,14 +383,16 @@ export const Body = () => {
                     />
                   </Show>
                   <span class="ol-adslot__text">
-                    <span class="ol-adslot__title">{ad.title}</span>
+                    <span class="ol-adslot__head">
+                      <span class="ol-adslot__title">{ad.title}</span>
+                      <span class="ol-ad-label">{t("home.ad_label")}</span>
+                    </span>
                     <Show when={ad.subtitle || ad.body}>
                       <span class="ol-adslot__desc">
                         {ad.subtitle || ad.body}
                       </span>
                     </Show>
                   </span>
-                  <span class="ol-ad-label">{t("home.ad_label")}</span>
                 </a>
               )}
             </For>
@@ -441,42 +443,53 @@ export const Body = () => {
 
       <Show when={readmeSponsorAds().length > 0 || adRecruitAds().length > 0}>
         <div class="ol-promo-stack" data-nosnippet>
-          <For each={readmeSponsorAds()}>
-            {(ad) => (
-              <div class="ol-promo-card">
-                <a
-                  class="ol-adslot__item"
-                  href={ad.cta_url || "#"}
-                  target="_blank"
-                  rel="noopener sponsored"
-                  referrerpolicy="strict-origin-when-cross-origin"
-                  data-track-content=""
-                  data-content-name={ad.track_name || "readme_sponsor"}
-                  data-content-piece={
-                    ad.track_piece || ad.title || `promo-${ad.id}`
-                  }
-                >
-                  <Show when={ad.image}>
-                    <img
-                      class="ol-adslot__img"
-                      src={ad.image}
-                      alt=""
-                      loading="lazy"
-                    />
-                  </Show>
-                  <span class="ol-adslot__text">
-                    <span class="ol-adslot__title">{ad.title}</span>
-                    <Show when={ad.subtitle || ad.body}>
-                      <span class="ol-adslot__desc">
-                        {ad.subtitle || ad.body}
-                      </span>
+          <Show when={readmeSponsorAds().length > 0}>
+            <div
+              class={clsx(
+                "ol-promo-grid",
+                readmeSponsorAds().length === 1 && "ol-promo-grid--single",
+              )}
+            >
+              <For each={readmeSponsorAds()}>
+                {(ad) => (
+                  <a
+                    class="ol-promo-card ol-promo-banner"
+                    href={ad.cta_url || "#"}
+                    target="_blank"
+                    rel="noopener sponsored"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    data-track-content=""
+                    data-content-name={ad.track_name || "readme_sponsor"}
+                    data-content-piece={
+                      ad.track_piece || ad.title || `promo-${ad.id}`
+                    }
+                  >
+                    <Show when={ad.image}>
+                      <div class="ol-promo-banner__media">
+                        <img
+                          class="ol-promo-banner__img"
+                          src={ad.image}
+                          alt=""
+                          loading="lazy"
+                        />
+                      </div>
                     </Show>
-                  </span>
-                  <span class="ol-ad-label">{t("home.ad_label")}</span>
-                </a>
-              </div>
-            )}
-          </For>
+                    <div class="ol-promo-banner__bar">
+                      <div class="ol-promo-banner__meta">
+                        <span class="ol-promo-banner__title">{ad.title}</span>
+                        <Show when={ad.subtitle || ad.body}>
+                          <span class="ol-promo-banner__desc">
+                            {ad.subtitle || ad.body}
+                          </span>
+                        </Show>
+                      </div>
+                      <span class="ol-ad-label">{t("home.ad_label")}</span>
+                    </div>
+                  </a>
+                )}
+              </For>
+            </div>
+          </Show>
           <For each={adRecruitAds()}>
             {(ad) => {
               const content = (
