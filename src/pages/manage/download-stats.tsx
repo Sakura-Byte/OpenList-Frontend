@@ -1,26 +1,15 @@
 import {
-  Anchor,
-  Box,
-  Button,
-  ButtonGroup,
-  Center,
-  Heading,
-  HStack,
-  Input,
-  SimpleGrid,
-  Table,
-  Tbody,
-  Td,
-  Text,
-  Th,
-  Thead,
-  Tr,
-  VStack,
-} from "@hope-ui/solid"
+  TbArrowDown,
+  TbDatabase,
+  TbDownload,
+  TbExternalLink,
+  TbRefresh,
+  TbSearch,
+  TbUsers,
+} from "solid-icons/tb"
 import { createMemo, createSignal, For, JSX, Show } from "solid-js"
 import { FullLoading } from "~/components"
 import { useFetch, useManageTitle, useT } from "~/hooks"
-import { getMainColor } from "~/store"
 import { PResp } from "~/types"
 import { encodePath, getFileSize, handleResp, joinBase, r } from "~/utils"
 
@@ -36,42 +25,56 @@ const AREA = "/3D"
 const DAY_OPTIONS = [1, 7, 30, 90]
 const LIMIT_OPTIONS = [50, 100, 500]
 
-const Choice = <T extends number>(props: {
+const SegmentedChoice = <T extends number>(props: {
   options: T[]
   value: T
   label: (option: T) => string
   onChange: (option: T) => void
 }) => (
-  <ButtonGroup attached size="sm" variant="subtle">
-    <For each={props.options}>
-      {(option) => (
-        <Button
-          colorScheme={props.value === option ? "primary" : "neutral"}
-          aria-pressed={props.value === option}
-          onClick={() => props.onChange(option)}
-        >
-          {props.label(option)}
-        </Button>
-      )}
-    </For>
-  </ButtonGroup>
-)
-
-const Tile = (props: { label: string; value: string }) => (
-  <VStack
-    alignItems="flex-start"
-    spacing="$1"
-    p="$4"
-    rounded="$lg"
-    bgColor="$neutral3"
+  <div
+    role="group"
+    style={{
+      display: "inline-flex",
+      "align-items": "center",
+      gap: "2px",
+      padding: "2px",
+      background: "var(--ol-surface-2)",
+      border: "1px solid var(--ol-border)",
+      "border-radius": "var(--ol-radius-sm)",
+    }}
   >
-    <Text size="sm" color="$neutral11">
-      {props.label}
-    </Text>
-    <Text size="2xl" fontWeight="$semibold">
-      {props.value}
-    </Text>
-  </VStack>
+    <For each={props.options}>
+      {(option) => {
+        const active = () => props.value === option
+        return (
+          <button
+            type="button"
+            aria-pressed={active()}
+            onClick={() => props.onChange(option)}
+            class="ol-tabular"
+            style={{
+              height: "28px",
+              padding: "0 10px",
+              border: "0",
+              "border-radius": "var(--ol-radius-xs)",
+              background: active() ? "var(--ol-surface-card)" : "transparent",
+              color: active()
+                ? "var(--ol-accent-text)"
+                : "var(--ol-text-secondary)",
+              "font-family": "var(--ol-font)",
+              "font-size": "12.5px",
+              "font-weight": active() ? 600 : 500,
+              cursor: "pointer",
+              "box-shadow": active() ? "var(--ol-shadow-xs)" : "none",
+              transition: "background-color 0.12s ease, color 0.12s ease",
+            }}
+          >
+            {props.label(option)}
+          </button>
+        )
+      }}
+    </For>
+  </div>
 )
 
 const SortHeader = (props: {
@@ -79,14 +82,25 @@ const SortHeader = (props: {
   onClick: () => void
   children: JSX.Element
 }) => (
-  <Th
+  <th
     aria-sort={props.active ? "descending" : "none"}
-    css={{ cursor: "pointer", whiteSpace: "nowrap" }}
+    style={{ cursor: "pointer", "user-select": "none" }}
     onClick={props.onClick}
   >
-    {props.children}
-    {props.active ? " ↓" : ""}
-  </Th>
+    <span
+      style={{
+        display: "inline-flex",
+        "align-items": "center",
+        gap: "4px",
+        color: props.active ? "var(--ol-accent-text)" : "inherit",
+      }}
+    >
+      <span>{props.children}</span>
+      <Show when={props.active}>
+        <TbArrowDown size={14} class="ol-ico" />
+      </Show>
+    </span>
+  </th>
 )
 
 const DownloadStats = () => {
@@ -138,81 +152,112 @@ const DownloadStats = () => {
   }
 
   return (
-    <VStack w="$full" alignItems="stretch" spacing="$4">
-      <VStack alignItems="flex-start" spacing="$1">
-        <Heading size="lg">{t("manage.download_stats.title")}</Heading>
-        <Text size="sm" color="$neutral11">
-          {t("manage.download_stats.description")}
-        </Text>
-      </VStack>
-      <HStack spacing="$3" flexWrap="wrap" rowGap="$2">
-        <Choice
-          options={DAY_OPTIONS}
-          value={days()}
-          label={(day) => t("manage.download_stats.days", { days: day })}
-          onChange={(day) => {
-            setDays(day)
-            refresh()
-          }}
-        />
-        <Choice
-          options={LIMIT_OPTIONS}
-          value={limit()}
-          label={(count) => t("manage.download_stats.top", { count: count })}
-          onChange={(count) => {
-            setLimit(count)
-            refresh()
-          }}
-        />
-        <Input
-          size="sm"
-          maxW="$56"
-          placeholder={t("manage.download_stats.search")}
-          value={search()}
-          onInput={(e) => setSearch(e.currentTarget.value)}
-        />
-        <Button
-          size="sm"
-          variant="subtle"
-          loading={loading()}
-          onClick={refresh}
-        >
-          {t("global.refresh")}
-        </Button>
-      </HStack>
-      <SimpleGrid columns={{ "@initial": 1, "@sm": 3 }} gap="$3">
-        <Tile
-          label={t("manage.download_stats.authors")}
-          value={rows().length.toLocaleString()}
-        />
-        <Tile
-          label={t("manage.download_stats.downloads")}
-          value={totalCount().toLocaleString()}
-        />
-        <Tile
-          label={t("manage.download_stats.estimated")}
-          value={getFileSize(totalBytes())}
-        />
-      </SimpleGrid>
+    <div class="ol-admin-page">
+      <div class="ol-admin-head">
+        <div class="ol-admin-head__main">
+          <h1 class="ol-admin-title">{t("manage.download_stats.title")}</h1>
+          <p class="ol-admin-subtitle">
+            {t("manage.download_stats.description")}
+          </p>
+        </div>
+        <div class="ol-admin-head__actions">
+          <button
+            type="button"
+            class="ol-btn"
+            disabled={loading()}
+            onClick={refresh}
+          >
+            <TbRefresh size={15} class="ol-ico" />
+            <span>{t("global.refresh")}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="ol-admin-stat-grid">
+        <div class="ol-admin-stat">
+          <div class="ol-admin-stat__head">
+            <span>{t("manage.download_stats.authors")}</span>
+            <TbUsers size={17} class="ol-ico" />
+          </div>
+          <div class="ol-admin-stat__value ol-tabular">
+            {rows().length.toLocaleString()}
+          </div>
+        </div>
+
+        <div class="ol-admin-stat">
+          <div class="ol-admin-stat__head">
+            <span>{t("manage.download_stats.downloads")}</span>
+            <TbDownload size={17} class="ol-ico" />
+          </div>
+          <div class="ol-admin-stat__value ol-tabular">
+            {totalCount().toLocaleString()}
+          </div>
+        </div>
+
+        <div class="ol-admin-stat">
+          <div class="ol-admin-stat__head">
+            <span>{t("manage.download_stats.estimated")}</span>
+            <TbDatabase size={17} class="ol-ico" />
+          </div>
+          <div class="ol-admin-stat__value ol-tabular">
+            {getFileSize(totalBytes())}
+          </div>
+        </div>
+      </div>
+
+      <div class="ol-admin-toolbar">
+        <div class="ol-admin-toolbar__left">
+          <SegmentedChoice
+            options={DAY_OPTIONS}
+            value={days()}
+            label={(day) => t("manage.download_stats.days", { days: day })}
+            onChange={(day) => {
+              setDays(day)
+              refresh()
+            }}
+          />
+          <SegmentedChoice
+            options={LIMIT_OPTIONS}
+            value={limit()}
+            label={(count) => t("manage.download_stats.top", { count: count })}
+            onChange={(count) => {
+              setLimit(count)
+              refresh()
+            }}
+          />
+        </div>
+        <div class="ol-admin-toolbar__right">
+          <div class="ol-admin-search">
+            <TbSearch size={15} class="ol-ico" />
+            <input
+              type="search"
+              placeholder={t("manage.download_stats.search")}
+              value={search()}
+              onInput={(e) => setSearch(e.currentTarget.value)}
+            />
+          </div>
+        </div>
+      </div>
+
       <Show when={loaded()} fallback={<FullLoading />}>
-        <Show
-          when={visible().length > 0}
-          fallback={
-            <Center py="$10">
-              <Text color="$neutral11">
+        <div class="ol-admin-table-wrap">
+          <Show
+            when={visible().length > 0}
+            fallback={
+              <div class="ol-admin-empty">
                 {rows().length > 0
                   ? t("manage.download_stats.no_match")
                   : t("manage.download_stats.empty")}
-              </Text>
-            </Center>
-          }
-        >
-          <Box w="$full" overflowX="auto">
-            <Table dense highlightOnHover>
-              <Thead>
-                <Tr>
-                  <Th>#</Th>
-                  <Th>{t("manage.download_stats.author")}</Th>
+              </div>
+            }
+          >
+            <table class="ol-admin-table">
+              <thead>
+                <tr>
+                  <th class="ol-tabular" style={{ width: "56px" }}>
+                    #
+                  </th>
+                  <th>{t("manage.download_stats.author")}</th>
                   <SortHeader
                     active={sortKey() === "count"}
                     onClick={() => setSortKey("count")}
@@ -225,70 +270,110 @@ const DownloadStats = () => {
                   >
                     {t("manage.download_stats.estimated")}
                   </SortHeader>
-                  <Th css={{ minWidth: "160px" }}>
+                  <th style={{ "min-width": "180px" }}>
                     {t("manage.download_stats.share")}
-                  </Th>
-                </Tr>
-              </Thead>
-              <Tbody>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
                 <For each={visible()}>
                   {({ row, rank }) => (
-                    <Tr>
-                      <Td color="$neutral11">{rank}</Td>
-                      <Td css={{ minWidth: "180px", overflowWrap: "anywhere" }}>
-                        <Anchor
+                    <tr>
+                      <td
+                        class="ol-tabular"
+                        style={{ color: "var(--ol-text-muted)" }}
+                      >
+                        {rank}
+                      </td>
+                      <td
+                        style={{
+                          "min-width": "180px",
+                          "overflow-wrap": "anywhere",
+                        }}
+                      >
+                        <a
                           href={joinBase(
                             encodePath(`${AREA}/${row.author}`, true),
                           )}
-                          external
-                          px="$0"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: "inline-flex",
+                            "align-items": "center",
+                            gap: "5px",
+                            color: "var(--ol-text-primary)",
+                            "font-weight": 500,
+                            "text-decoration": "none",
+                          }}
                         >
-                          {row.author}
-                        </Anchor>
-                      </Td>
-                      <Td css={{ fontVariantNumeric: "tabular-nums" }}>
-                        {row.count.toLocaleString()}
-                      </Td>
-                      <Td css={{ whiteSpace: "nowrap" }}>
+                          <span>{row.author}</span>
+                          <TbExternalLink
+                            size={13}
+                            class="ol-ico"
+                            style={{
+                              color: "var(--ol-text-muted)",
+                              "flex-shrink": 0,
+                            }}
+                          />
+                        </a>
+                      </td>
+                      <td class="ol-tabular">{row.count.toLocaleString()}</td>
+                      <td
+                        class="ol-tabular"
+                        style={{ "white-space": "nowrap" }}
+                      >
                         {getFileSize(row.bytes)}
-                      </Td>
-                      <Td>
-                        <HStack spacing="$2" title={share(row)}>
-                          <Box
-                            flex="1"
-                            h="$2"
-                            minW="$16"
-                            rounded="$full"
-                            bgColor="$neutral4"
-                            overflow="hidden"
+                      </td>
+                      <td>
+                        <div
+                          title={share(row)}
+                          style={{
+                            display: "flex",
+                            "align-items": "center",
+                            gap: "10px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              flex: 1,
+                              height: "6px",
+                              "min-width": "72px",
+                              "border-radius": "999px",
+                              background: "var(--ol-surface-2)",
+                              overflow: "hidden",
+                            }}
                           >
-                            <Box
-                              h="$full"
-                              rounded="$full"
-                              bgColor={getMainColor()}
+                            <div
                               style={{
+                                height: "100%",
                                 width: `${(row[sortKey()] / barMax()) * 100}%`,
+                                "border-radius": "999px",
+                                background: "var(--ol-accent)",
                               }}
                             />
-                          </Box>
-                          <Text
-                            size="sm"
-                            color="$neutral11"
-                            css={{ fontVariantNumeric: "tabular-nums" }}
+                          </div>
+                          <span
+                            class="ol-tabular"
+                            style={{
+                              "font-size": "12.5px",
+                              color: "var(--ol-text-secondary)",
+                              "min-width": "42px",
+                              "text-align": "right",
+                            }}
                           >
                             {share(row)}
-                          </Text>
-                        </HStack>
-                      </Td>
-                    </Tr>
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
                   )}
                 </For>
-              </Tbody>
-            </Table>
-          </Box>
-        </Show>
+              </tbody>
+            </table>
+          </Show>
+        </div>
       </Show>
-    </VStack>
+    </div>
   )
 }
 
