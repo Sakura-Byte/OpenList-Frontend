@@ -1,19 +1,17 @@
-import { Type } from "~/types"
-import { useT } from "~/hooks"
 import {
   Center,
   FormControl,
   FormLabel,
-  HStack,
-  IconButton,
   Input,
   Select,
   Switch as HopeSwitch,
   Textarea,
 } from "@hope-ui/solid"
-import { Match, Show, Switch } from "solid-js"
-import { SelectOptions, MultiPathInput } from "~/components"
 import { TbRefresh } from "solid-icons/tb"
+import { Match, Show, Switch } from "solid-js"
+import { MultiPathInput, SelectOptions } from "~/components"
+import { useT } from "~/hooks"
+import { Type } from "~/types"
 
 export type ItemProps = {
   name: string
@@ -74,7 +72,14 @@ const Item = (props: ItemProps) => {
       </FormLabel>
       <Switch fallback={<Center>{t("settings.unknown_type")}</Center>}>
         <Match when={props.type === Type.String}>
-          <HStack w="$full" spacing="$2">
+          <div
+            style={{
+              display: "flex",
+              "align-items": "center",
+              gap: "8px",
+              width: "100%",
+            }}
+          >
             <Input
               id={props.name}
               type="text"
@@ -89,18 +94,21 @@ const Item = (props: ItemProps) => {
               }
             />
             <Show when={props.type === Type.String && props.random}>
-              <IconButton
-                colorScheme="neutral"
+              <button
+                type="button"
+                class="ol-btn"
                 aria-label="random"
-                icon={<TbRefresh />}
+                title={t("global.refresh")}
                 onClick={
                   props.type === Type.String
                     ? () => props.onChange?.(props.random!())
                     : undefined
                 }
-              />
+              >
+                <TbRefresh size={15} class="ol-ico" />
+              </button>
             </Show>
-          </HStack>
+          </div>
         </Match>
         <Match when={props.type === Type.Number}>
           <Input
@@ -133,21 +141,30 @@ const Item = (props: ItemProps) => {
           />
         </Match>
         <Match when={props.type === Type.Bool}>
-          <HopeSwitch
-            id={props.name}
-            readOnly={props.readonly}
-            defaultChecked={props.value as boolean}
-            invalid={!props.valid}
-            onChange={
-              props.type === Type.Bool
-                ? (e: any) => props.onChange?.(e.currentTarget.checked)
-                : undefined
-            }
-          />
+          <div
+            style={{
+              display: "flex",
+              "align-items": "center",
+              "min-height": "36px",
+            }}
+          >
+            <HopeSwitch
+              id={props.name}
+              readOnly={props.readonly}
+              checked={Boolean(props.value)}
+              invalid={!props.valid}
+              onChange={
+                props.type === Type.Bool
+                  ? (e: any) => props.onChange?.(e.currentTarget.checked)
+                  : undefined
+              }
+            />
+          </div>
         </Match>
         <Match when={props.type === Type.Text}>
           <Textarea
             id={props.name}
+            rows={3}
             readOnly={props.readonly}
             value={props.value as string}
             invalid={!props.valid}

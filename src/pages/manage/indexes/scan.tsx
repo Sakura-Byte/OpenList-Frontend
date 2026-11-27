@@ -1,19 +1,11 @@
-import {
-  Badge,
-  Button,
-  FormControl,
-  FormLabel,
-  Heading,
-  Input,
-  Text,
-  useColorModeValue,
-  VStack,
-} from "@hope-ui/solid"
-import { useFetch, useT } from "~/hooks"
-import { createSignal, Show } from "solid-js"
-import { Flag, PEmptyResp, PResp, Type } from "~/types"
-import { formatDate, handleResp, handleRespWithNotifySuccess, r } from "~/utils"
+import { FormControl, FormLabel, Input } from "@hope-ui/solid"
+import { TbPlayerPlay, TbPlayerStop, TbRefresh } from "solid-icons/tb"
+import { createSignal, onCleanup, Show } from "solid-js"
 import { FolderChooseInput } from "~/components"
+import { useFetch, useT } from "~/hooks"
+import { PEmptyResp, PResp } from "~/types"
+import { handleResp, handleRespWithNotifySuccess, r } from "~/utils"
+import { IndexFileIcon } from "./icons"
 
 type Progress = {
   obj_count: number
@@ -27,6 +19,7 @@ const Scan = () => {
     r.get("/admin/scan/progress"),
   )
   const [refreshTimeout, setRefreshTimeout] = createSignal<number | undefined>()
+
   const resetRefreshTimeout = (run: boolean) => {
     if (refreshTimeout()) {
       clearTimeout(refreshTimeout())
@@ -37,6 +30,13 @@ const Scan = () => {
       setRefreshTimeout(undefined)
     }
   }
+
+  onCleanup(() => {
+    if (refreshTimeout()) {
+      clearTimeout(refreshTimeout())
+    }
+  })
+
   const refreshProgress = async () => {
     const resp = await getProgressReq()
     handleResp(
@@ -51,6 +51,7 @@ const Scan = () => {
     )
   }
   refreshProgress()
+
   const [stopLoading, stopReq] = useFetch((): PEmptyResp =>
     r.post("/admin/scan/stop"),
   )
@@ -59,6 +60,7 @@ const Scan = () => {
     handleRespWithNotifySuccess(resp)
     refreshProgress()
   }
+
   const [scanPath, setScanPath] = createSignal<string>("/")
   const [rateLimit, setRateLimit] = createSignal<number>(0.0)
   const [startLoading, startReq] = useFetch((): PEmptyResp =>
@@ -69,66 +71,110 @@ const Scan = () => {
     handleRespWithNotifySuccess(resp)
     refreshProgress()
   }
+
   return (
-    <>
-      <Heading>{t("indexes.scan_header")}</Heading>
-      <Show when={progress()}>
-        <VStack
-          alignItems="start"
-          spacing="$2"
-          w="fit-content"
-          p="$2"
-          shadow="$md"
-          rounded="$lg"
-          bg={useColorModeValue("", "$neutral3")()}
-        >
-          <Text>
-            {t("indexes.task_status")}:
-            <Badge
-              colorScheme={progress()?.is_done ? "accent" : "success"}
-              ml="$2"
+    <section class="ol-admin-card">
+      <div class="ol-admin-card__head">
+        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+          <IndexFileIcon size={18} />
+          <h2 class="ol-admin-card__title">{t("indexes.scan_header")}</h2>
+        </div>
+
+        <Show when={progress()}>
+          {(p) => (
+            <div
+              style={{
+                display: "flex",
+                "align-items": "center",
+                "flex-wrap": "wrap",
+                gap: "10px",
+              }}
             >
-              {progress()?.is_done ? t("indexes.idle") : t("indexes.running")}
-            </Badge>
-          </Text>
-          <Text>
-            {t("indexes.obj_count")}:
-            <Badge colorScheme="info" ml="$2">
-              {progress()?.obj_count}
-            </Badge>
-          </Text>
-          <Button
-            colorScheme="danger"
-            onClick={stop}
-            loading={stopLoading()}
-            disabled={progress()?.is_done}
+              <span class="ol-status">
+                <span
+                  class="ol-status-dot"
+                  data-status={p().is_done ? "disabled" : "work"}
+                />
+                <span>
+                  {t("indexes.task_status")}:{" "}
+                  {p().is_done ? t("indexes.idle") : t("indexes.running")}
+                </span>
+              </span>
+              <span class="ol-pill ol-tabular">
+                {t("indexes.obj_count")}: {p().obj_count.toLocaleString()}
+              </span>
+            </div>
+          )}
+        </Show>
+      </div>
+
+      <div class="ol-admin-form-stack">
+        <div class="ol-admin-form-grid">
+          <FormControl w="$full" display="flex" flexDirection="column">
+            <FormLabel display="flex" alignItems="center">
+              {t("indexes.path_to_scan")}
+            </FormLabel>
+            <FolderChooseInput
+              value={scanPath()}
+              onChange={(path) => setScanPath(path)}
+            />
+          </FormControl>
+
+          <FormControl w="$full" display="flex" flexDirection="column">
+            <FormLabel display="flex" alignItems="center">
+              {t("indexes.rate_limit")}
+            </FormLabel>
+            <Input
+              type="number"
+              value={rateLimit()}
+              step={0.1}
+              onInput={(e) =>
+                setRateLimit(parseFloat(e.currentTarget.value) || 0)
+              }
+            />
+          </FormControl>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            "align-items": "center",
+            "flex-wrap": "wrap",
+            gap: "8px",
+          }}
+        >
+          <button
+            type="button"
+            class="ol-btn ol-btn--primary"
+            disabled={startLoading()}
+            onClick={start}
           >
-            {t("indexes.stop")}
-          </Button>
-        </VStack>
-      </Show>
-      <FormControl w="100%" display="flex" flexDirection="column">
-        <FormLabel display="flex" alignItems="center">
-          {t("indexes.path_to_scan")}
-        </FormLabel>
-        <FolderChooseInput
-          value={scanPath()}
-          onChange={(path) => setScanPath(path)}
-        />
-        <FormLabel display="flex" alignItems="center">
-          {t("indexes.rate_limit")}
-        </FormLabel>
-        <Input
-          type="number"
-          value={rateLimit()}
-          step={0.1}
-          onInput={(e) => setRateLimit(parseFloat(e.currentTarget.value))}
-        />
-      </FormControl>
-      <Button colorScheme="info" onClick={start} loading={startLoading()}>
-        {t("indexes.start")}
-      </Button>
-    </>
+            <TbPlayerPlay size={15} class="ol-ico" />
+            <span>{t("indexes.start")}</span>
+          </button>
+
+          <button
+            type="button"
+            class="ol-btn ol-btn--danger"
+            disabled={stopLoading() || progress()?.is_done}
+            onClick={stop}
+          >
+            <TbPlayerStop size={15} class="ol-ico" />
+            <span>{t("indexes.stop")}</span>
+          </button>
+
+          <button
+            type="button"
+            class="ol-btn"
+            disabled={progressLoading()}
+            onClick={() => refreshProgress()}
+          >
+            <TbRefresh size={15} class="ol-ico" />
+            <span>{t("global.refresh")}</span>
+          </button>
+        </div>
+      </div>
+    </section>
   )
 }
 

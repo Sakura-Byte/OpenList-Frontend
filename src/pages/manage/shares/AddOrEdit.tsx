@@ -1,18 +1,19 @@
-import { useFetch, useRouter, useT } from "~/hooks"
-import { PResp, Share, ShareInfo, ShareUpdate, Type } from "~/types"
-import { handleResp, notify, r, randomPwd, getExpireDate } from "~/utils"
-import { createStore } from "solid-js/store"
-import { Button, Heading } from "@hope-ui/solid"
-import { MaybeLoading } from "~/components"
-import { ResponsiveGrid } from "../common/ResponsiveGrid"
+import { TbArrowLeft, TbCheck } from "solid-icons/tb"
 import { batch, createSignal, Show } from "solid-js"
-import { Item } from "./Item"
+import { createStore } from "solid-js/store"
+import { MaybeLoading } from "~/components"
+import { useFetch, useManageTitle, useRouter, useT } from "~/hooks"
 import { me } from "~/store"
+import { PResp, Share, ShareInfo, ShareUpdate, Type } from "~/types"
+import { getExpireDate, handleResp, notify, r, randomPwd } from "~/utils"
+import { Item } from "./Item"
 
 const AddOrEdit = () => {
   const t = useT()
   const { params, to } = useRouter()
   const { id } = params
+  useManageTitle(`global.${id ? "edit" : "add"}`)
+
   const [shareLoading, loadShare] = useFetch(
     (): PResp<ShareInfo> => r.get(`/share/get?id=${id}`),
     true,
@@ -22,6 +23,7 @@ const AddOrEdit = () => {
   const [filesValid, setFilesValid] = createSignal(false)
   const [expireString, setExpireString] = createSignal("")
   const [expireValid, setExpireValid] = createSignal(true)
+
   const initEdit = async () => {
     const shareResp = await loadShare()
     handleResp(shareResp, (shareData) => {
@@ -35,175 +37,238 @@ const AddOrEdit = () => {
       })
     })
   }
+
   if (id) {
     initEdit()
   }
+
   const [okLoading, ok] = useFetch((): PResp<ShareInfo> => {
     return r.post(`/share/${id ? "update" : "create"}`, share)
   })
+
   return (
     <MaybeLoading loading={id ? shareLoading() : false}>
-      <Heading mb="$2">{t(`global.${id ? "edit" : "add"}`)}</Heading>
-      <ResponsiveGrid>
-        <Item
-          name="id"
-          type={Type.String}
-          value={id ? ((share as ShareUpdate).new_id ?? id) : (share.id ?? "")}
-          valid
-          placeholder={id ? id : t("shares.id_placeholder")}
-          onChange={(v) => {
-            if (id) {
-              setShare({ ...share, new_id: v } as any)
-            } else {
-              setShare({ ...share, id: v } as any)
-            }
-          }}
-        />
-        <Item
-          name="files"
-          type={Type.MultiPath}
-          value={files()}
-          valid={filesValid()}
-          basePath={me().base_path}
-          required
-          onChange={(f) => {
-            setFiles(f)
-            setFilesValid(f.length > 0)
-            setShare("files", f.split("\n"))
-          }}
-        />
-        <Item
-          name="remark"
-          type={Type.Text}
-          value={share.remark}
-          valid
-          onChange={(r) => {
-            setShare("remark", r)
-          }}
-        />
-        <Item
-          name="extract_folder"
-          type={Type.Select}
-          value={share.extract_folder}
-          valid
-          options="front,back"
-          onChange={(o: any) => {
-            setShare("extract_folder", o)
-          }}
-        />
-        <Item
-          name="order_by"
-          type={Type.Select}
-          value={share.order_by}
-          valid
-          options="name,size,modified"
-          onChange={(o: any) => {
-            setShare("order_by", o)
-          }}
-        />
-        <Item
-          name="order_direction"
-          type={Type.Select}
-          value={share.order_direction}
-          valid
-          options="asc,desc"
-          onChange={(o: any) => {
-            setShare("order_direction", o)
-          }}
-        />
-        <Item
-          name="pwd"
-          type={Type.String}
-          value={share.pwd}
-          valid
-          onChange={(p) => {
-            setShare("pwd", p)
-          }}
-          random={randomPwd}
-        />
-        <Item
-          name="max_accessed"
-          type={Type.Number}
-          value={share.max_accessed}
-          valid
-          onChange={(m) => {
-            setShare("max_accessed", m)
-          }}
-        />
-        <Show when={id}>
-          <Item
-            name="accessed"
-            type={Type.Number}
-            value={(share as ShareUpdate).accessed}
-            valid
-            onChange={(a) => {
-              setShare({ ...share, accessed: a })
+      <div class="ol-admin-page">
+        <div class="ol-admin-head">
+          <div class="ol-admin-head__main">
+            <h1 class="ol-admin-title">
+              {t(`global.${id ? "edit" : "add"}`)} —{" "}
+              {t("manage.sidemenu.shares")}
+            </h1>
+            <Show when={id}>
+              <p
+                class="ol-admin-subtitle"
+                style={{ "font-family": "var(--ol-font-mono)" }}
+              >
+                {id}
+              </p>
+            </Show>
+          </div>
+          <div class="ol-admin-head__actions">
+            <button
+              type="button"
+              class="ol-btn ol-btn--ghost"
+              onClick={() => to("/@manage/shares")}
+            >
+              <TbArrowLeft size={15} class="ol-ico" />
+              <span>{t("global.back")}</span>
+            </button>
+          </div>
+        </div>
+
+        <section class="ol-admin-card">
+          <div class="ol-admin-card__head">
+            <h2 class="ol-admin-card__title">{t("shares.files")}</h2>
+          </div>
+          <div class="ol-admin-form-stack">
+            <Item
+              name="files"
+              type={Type.MultiPath}
+              value={files()}
+              valid={filesValid()}
+              basePath={me().base_path}
+              required
+              onChange={(f) => {
+                setFiles(f)
+                setFilesValid(f.length > 0)
+                setShare("files", f.split("\n"))
+              }}
+            />
+
+            <div class="ol-admin-form-grid">
+              <Item
+                name="id"
+                type={Type.String}
+                value={
+                  id ? ((share as ShareUpdate).new_id ?? id) : (share.id ?? "")
+                }
+                valid
+                placeholder={id ? id : t("shares.id_placeholder")}
+                onChange={(v) => {
+                  if (id) {
+                    setShare({ ...share, new_id: v } as any)
+                  } else {
+                    setShare({ ...share, id: v } as any)
+                  }
+                }}
+              />
+              <Item
+                name="pwd"
+                type={Type.String}
+                value={share.pwd}
+                valid
+                onChange={(p) => {
+                  setShare("pwd", p)
+                }}
+                random={randomPwd}
+              />
+              <Item
+                name="expires"
+                type={Type.String}
+                value={expireString()}
+                valid={expireValid()}
+                placeholder="yyyy-MM-dd HH:mm:ss or +1w1d1H1m1s1ms"
+                onChange={(e) => {
+                  setExpireString(e)
+                  if (e === "") {
+                    setExpireValid(true)
+                    setShare("expires", null)
+                    return
+                  }
+                  const date = getExpireDate(e)
+                  if (isNaN(date.getTime())) {
+                    setExpireValid(false)
+                  } else {
+                    setExpireValid(true)
+                    setShare("expires", date.toISOString())
+                  }
+                }}
+              />
+              <Item
+                name="max_accessed"
+                type={Type.Number}
+                value={share.max_accessed}
+                valid
+                onChange={(m) => {
+                  setShare("max_accessed", m)
+                }}
+              />
+              <Show when={id}>
+                <Item
+                  name="accessed"
+                  type={Type.Number}
+                  value={(share as ShareUpdate).accessed}
+                  valid
+                  onChange={(a) => {
+                    setShare({ ...share, accessed: a })
+                  }}
+                />
+              </Show>
+              <Item
+                name="extract_folder"
+                type={Type.Select}
+                value={share.extract_folder}
+                valid
+                options="front,back"
+                onChange={(o: any) => {
+                  setShare("extract_folder", o)
+                }}
+              />
+              <Item
+                name="order_by"
+                type={Type.Select}
+                value={share.order_by}
+                valid
+                options="name,size,modified"
+                onChange={(o: any) => {
+                  setShare("order_by", o)
+                }}
+              />
+              <Item
+                name="order_direction"
+                type={Type.Select}
+                value={share.order_direction}
+                valid
+                options="asc,desc"
+                onChange={(o: any) => {
+                  setShare("order_direction", o)
+                }}
+              />
+            </div>
+          </div>
+        </section>
+
+        <section class="ol-admin-card">
+          <div class="ol-admin-card__head">
+            <h2 class="ol-admin-card__title">
+              {t("shares.remark")} · {t("shares.readme")}
+            </h2>
+          </div>
+          <div class="ol-admin-form-stack">
+            <Item
+              name="remark"
+              type={Type.Text}
+              value={share.remark}
+              valid
+              onChange={(r) => {
+                setShare("remark", r)
+              }}
+            />
+            <Item
+              name="header"
+              type={Type.Text}
+              value={share.header}
+              valid
+              onChange={(h) => {
+                setShare("header", h)
+              }}
+            />
+            <Item
+              name="readme"
+              type={Type.Text}
+              value={share.readme}
+              valid
+              onChange={(r) => {
+                setShare("readme", r)
+              }}
+            />
+          </div>
+        </section>
+
+        <div class="ol-sticky-actions">
+          <button
+            type="button"
+            class="ol-btn"
+            disabled={okLoading()}
+            onClick={() => to("/@manage/shares")}
+          >
+            <span>{t("global.cancel")}</span>
+          </button>
+          <button
+            type="button"
+            class="ol-btn ol-btn--primary"
+            disabled={!expireValid() || !filesValid() || okLoading()}
+            onClick={async () => {
+              const resp = await ok()
+              handleResp(
+                resp,
+                () => {
+                  notify.success(t("global.save_success"))
+                  to("/@manage/shares", false, { replace: true })
+                },
+                () => {
+                  if (resp.data?.id) {
+                    to(`/@manage/shares/edit/${resp.data.id}`)
+                  }
+                },
+              )
             }}
-          />
-        </Show>
-        <Item
-          name="expires"
-          type={Type.String}
-          value={expireString()}
-          valid={expireValid()}
-          placeholder="yyyy-MM-dd HH:mm:ss or +1w1d1H1m1s1ms"
-          onChange={(e) => {
-            setExpireString(e)
-            if (e === "") {
-              setExpireValid(true)
-              setShare("expires", null)
-              return
-            }
-            const date = getExpireDate(e)
-            if (isNaN(date.getTime())) {
-              setExpireValid(false)
-            } else {
-              setExpireValid(true)
-              setShare("expires", date.toISOString())
-            }
-          }}
-        />
-        <Item
-          name="readme"
-          type={Type.Text}
-          value={share.readme}
-          valid
-          onChange={(r) => {
-            setShare("readme", r)
-          }}
-        />
-        <Item
-          name="header"
-          type={Type.Text}
-          value={share.header}
-          valid
-          onChange={(h) => {
-            setShare("header", h)
-          }}
-        />
-      </ResponsiveGrid>
-      <Button
-        mt="$2"
-        disabled={!expireValid() || !filesValid()}
-        loading={okLoading()}
-        onClick={async () => {
-          const resp = await ok()
-          handleResp(
-            resp,
-            () => {
-              notify.success(t("global.save_success"))
-              to("/@manage/shares", false, { replace: true })
-            },
-            (_msg, _code) => {
-              if (resp.data.id) {
-                to(`/@manage/shares/edit/${resp.data.id}`)
-              }
-            },
-          )
-        }}
-      >
-        {t(`global.${id ? "save" : "add"}`)}
-      </Button>
+          >
+            <TbCheck size={15} class="ol-ico" />
+            <span>{t(`global.${id ? "save" : "add"}`)}</span>
+          </button>
+        </div>
+      </div>
     </MaybeLoading>
   )
 }

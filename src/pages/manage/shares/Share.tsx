@@ -1,6 +1,8 @@
-import { PEmptyResp, ShareInfo, UserMethods } from "~/types"
+import { TbCopy, TbEdit, TbPlayerPause, TbPlayerPlay } from "solid-icons/tb"
+import { Show } from "solid-js"
 import { useFetch, useRouter, useT, useUtil } from "~/hooks"
-import { Badge, Button, HStack, Td, Tr } from "@hope-ui/solid"
+import { getSetting, me } from "~/store"
+import { PEmptyResp, ShareInfo, UserMethods } from "~/types"
 import {
   handleResp,
   handleRespWithNotifySuccess,
@@ -10,8 +12,6 @@ import {
   r,
 } from "~/utils"
 import { DeletePopover } from "../common/DeletePopover"
-import { getSetting, me } from "~/store"
-import { Show } from "solid-js"
 
 interface ShareProps {
   share: ShareInfo
@@ -19,10 +19,42 @@ interface ShareProps {
   canShare: boolean
 }
 
+export type ShareStatusKind = "work" | "disabled" | "invalid" | "denied"
+
+export const getShareStatus = (
+  share: ShareInfo,
+  canShare: boolean,
+): ShareStatusKind => {
+  if (share.disabled) {
+    return "disabled"
+  }
+  if (
+    (share.max_accessed > 0 && share.accessed >= share.max_accessed) ||
+    share.files.length === 0 ||
+    (share.expires && new Date(share.expires) < new Date())
+  ) {
+    return "invalid"
+  }
+  if (share.creator === me().username && !canShare) {
+    return "denied"
+  }
+  return "work"
+}
+
+const statusDotMap: Record<
+  ShareStatusKind,
+  "work" | "disabled" | "warn" | "error"
+> = {
+  work: "work",
+  disabled: "disabled",
+  invalid: "warn",
+  denied: "error",
+}
+
 function ShareOp(props: ShareProps) {
   const t = useT()
   const { to } = useRouter()
-  const [deleteLoading, deleteStorage] = useFetch((): PEmptyResp =>
+  const [deleteLoading, deleteShare] = useFetch((): PEmptyResp =>
     r.post(`/share/delete?id=${props.share.id}`),
   )
   const [enableOrDisableLoading, enableOrDisable] = useFetch((): PEmptyResp =>
@@ -32,17 +64,21 @@ function ShareOp(props: ShareProps) {
   )
   return (
     <>
-      <Button
+      <button
+        type="button"
+        class="ol-btn"
         disabled={!props.canShare}
         onClick={() => {
           to(`/@manage/shares/edit/${props.share.id}`)
         }}
       >
-        {t("global.edit")}
-      </Button>
-      <Button
-        loading={enableOrDisableLoading()}
-        colorScheme={props.share.disabled ? "success" : "warning"}
+        <TbEdit size={14} class="ol-ico" />
+        <span>{t("global.edit")}</span>
+      </button>
+      <button
+        type="button"
+        class="ol-btn"
+        disabled={enableOrDisableLoading()}
         onClick={async () => {
           const resp = await enableOrDisable()
           handleRespWithNotifySuccess(resp, () => {
@@ -50,13 +86,20 @@ function ShareOp(props: ShareProps) {
           })
         }}
       >
-        {t(`global.${props.share.disabled ? "enable" : "disable"}`)}
-      </Button>
+        {props.share.disabled ? (
+          <TbPlayerPlay size={14} class="ol-ico" />
+        ) : (
+          <TbPlayerPause size={14} class="ol-ico" />
+        )}
+        <span>
+          {t(`global.${props.share.disabled ? "enable" : "disable"}`)}
+        </span>
+      </button>
       <DeletePopover
         name={props.share.id}
         loading={deleteLoading()}
         onClick={async () => {
-          const resp = await deleteStorage()
+          const resp = await deleteShare()
           handleResp(resp, () => {
             notify.success(t("global.delete_success"))
             props.refresh()
@@ -69,23 +112,25 @@ function ShareOp(props: ShareProps) {
 
 const Creator = (props: { name: string; role: number }) => {
   if (props.role < 0) return null
-  const roleColors = ["info", "neutral", "accent"]
   return (
-    <Badge
-      colorScheme={roleColors[props.role] as any}
-      css={{
+    <span
+      class="ol-pill"
+      style={{
+        "max-width": "160px",
         overflow: "hidden",
-        whiteSpace: "nowrap",
-        textOverflow: "ellipsis",
+        "text-overflow": "ellipsis",
       }}
+      title={props.name}
     >
       {props.name}
-    </Badge>
+    </span>
   )
 }
 
 export function ShareListItem(props: ShareProps) {
   const t = useT()
+  const { copy } = useUtil()
+
   const path = () => {
     if (props.share.files.length === 0) {
       return ""
@@ -98,50 +143,76 @@ export function ShareListItem(props: ShareProps) {
     }
     return p
   }
+
   const accessed = () => {
     return props.share.max_accessed > 0
       ? `${props.share.accessed} / ${props.share.max_accessed}`
       : `${props.share.accessed}`
   }
-  const status = () => {
-    if (props.share.disabled) {
-      return "disabled"
-    }
-    if (
-      (props.share.max_accessed > 0 &&
-        props.share.accessed >= props.share.max_accessed) ||
-      props.share.files.length === 0 ||
-      (props.share.expires && new Date(props.share.expires) < new Date())
-    ) {
-      return "invalid"
-    }
-    if (props.share.creator === me().username && !props.canShare) {
-      return "denied"
-    }
-    return "work"
-  }
-  const { copy } = useUtil()
+
+  const status = () => getShareStatus(props.share, props.canShare)
+
   return (
-    <Tr>
-      <Td>{path()}</Td>
-      <Td>{props.share.id}</Td>
+    <tr>
+      <td
+        style={{
+          "font-family": "var(--ol-font-mono)",
+          "font-weight": "500",
+          "word-break": "break-all",
+          "min-width": "180px",
+        }}
+      >
+        {path() || "—"}
+      </td>
+      <td>
+        <span class="ol-pill" style={{ "font-family": "var(--ol-font-mono)" }}>
+          {props.share.id}
+        </span>
+      </td>
       <Show when={UserMethods.is_admin(me())}>
-        <Td>
+        <td>
           <Creator name={props.share.creator} role={props.share.creator_role} />
-        </Td>
+        </td>
       </Show>
-      <Td>
+      <td
+        class="ol-tabular"
+        style={{
+          color: "var(--ol-text-secondary)",
+          "white-space": "nowrap",
+        }}
+      >
         {props.share.expires
           ? new Date(props.share.expires).toLocaleString()
-          : ""}
-      </Td>
-      <Td>{accessed()}</Td>
-      <Td>{t(`shares.status_list.${status()}`)}</Td>
-      <Td>{props.share.remark}</Td>
-      <Td>
-        <HStack spacing="$2">
-          <Button
-            colorScheme="primary"
+          : "—"}
+      </td>
+      <td class="ol-tabular">{accessed()}</td>
+      <td>
+        <span class="ol-status">
+          <span class="ol-status-dot" data-status={statusDotMap[status()]} />
+          <span>{t(`shares.status_list.${status()}`)}</span>
+        </span>
+      </td>
+      <td
+        style={{
+          color: "var(--ol-text-secondary)",
+          "max-width": "220px",
+          "word-break": "break-word",
+        }}
+      >
+        {props.share.remark || "—"}
+      </td>
+      <td>
+        <div
+          style={{
+            display: "flex",
+            "align-items": "center",
+            "flex-wrap": "wrap",
+            gap: "6px",
+          }}
+        >
+          <button
+            type="button"
+            class="ol-btn"
             onClick={() => {
               const templateData = makeTemplateData(props.share, {
                 site_title: getSetting("site_title"),
@@ -153,11 +224,12 @@ export function ShareListItem(props: ShareProps) {
               copy(msg)
             }}
           >
-            {t("shares.copy_msg")}
-          </Button>
+            <TbCopy size={14} class="ol-ico" />
+            <span>{t("shares.copy_msg")}</span>
+          </button>
           <ShareOp {...props} />
-        </HStack>
-      </Td>
-    </Tr>
+        </div>
+      </td>
+    </tr>
   )
 }
