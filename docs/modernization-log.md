@@ -146,3 +146,32 @@
   - `JMComic` `/标签` filter + `3:4` posters + Work Hero + collapsible Export + `#121213` canvas unscramble reader + range scrubber + chapter 2 persistence; `GalGames` & `/AliasGalgames` `DirInfo`, password pills & HTTP 302 downloads; `ASMR.ONE` & `/AliasASMR` `4:3` auto-poster + Work Hero + WAV `1.25x` inline player with synced `.lrc` + Dark Glass APlayer; SSR SEO/JSON-LD/`<noscript>` (0 ad leaks); Mobile `390x844` zero overflow or clipping; 0 JS `pageerror` and 0 failed 4xx/5xx requests.
 - External verification screenshots (`C:\Users\SakuraPY\.gemini\antigravity\brain\49caf45b-3dd1-413d-bfec-45cbc4923c28\`):
   - `s4-01-stress5000-virtual.png`, `s4-02-kobalte-dialog-toast.png`, `s4-03-jm-today-posters.png`, `s4-04-jm-reader-page2.png`, `s4-05-asmr-player-125x.png`, `s4-06-dark-glass-aplayer.png`, `s4-07-root-dark-glass.png`, `s4-08-root-light-glass.png`, `s4-09-root-light-solid.png`, `s4-10-mobile-root.png`, `s4-11-mobile-jm-work.png`.
+
+---
+
+## Phase 4 — Admin Console & Login v2 Overhaul
+
+### Key Decisions & Rationale
+
+1. **Unified `.ol-admin` Shell, 5 Flat Semantic Navigation Groups & HopeUI Token Harmonization (`src/pages/manage/manage.css`, `index.tsx`, `SideMenu.tsx`, `sidemenu_items.tsx`, `Header.tsx`, `routes.tsx`)**
+   - **Decision**: Replace the legacy HopeUI shadow sidebar and nested accordion menus with a 232px hairline `.ol-admin-sidebar` organized into 5 flat semantic groups (`Overview`, `Content & Storage`, `Operations`, `Tasks & Users`, `System`), sticky brand header, and sticky utility footer (visitor home link, language switch, theme transition toggle, docs, logout), paired with a `< 768px` sticky `.ol-admin-mobile-bar` and slide-over drawer. Remap `--hope-colors-*` and `.hope-{input,textarea,select,button,badge,switch,checkbox,table,modal,popover,menu}` inside `.ol-admin`, `.ol-login`, and `body[data-ol-admin-portal="true"]` to `--site-main` / `--ol-*` warm neutrals while keeping 100% of existing `/@manage/*` URLs backward compatible.
+   - **Rationale**: Flattening top-level navigation eliminates nested sidebar accordions (moving Settings and Tasks subroutes into horizontal `.ol-admin-tabs`), while CSS-variable harmonization gives every dynamic driver input and modal crisp 1px borders and dark/light contrast without rainbow badges or gradients.
+
+2. **Real Admin Overview & Clean `/@login` Sheet (`Dashboard.tsx`, `About.tsx`, `src/pages/login/index.tsx`, `SSOLogin.tsx`)**
+   - **Decision**:
+     - Upgrade `Dashboard.tsx` (`/@manage` for admins; non-admins render `<Profile />`, with `/@manage/profile` available to admins) to fetch `/admin/storage/list`, `/admin/meta/list`, `/admin/user/list`, and (on Go backend) `/public/notices` + `/public/promotions` in parallel, displaying 4 `.ol-tabular` metric cards, Quick Actions tiles, and a Recent Storages Health summary with `6px` `.ol-status-dot` indicators.
+     - Remove cartoon `LoginBg` SVG blobs from `/@login` and render a centered `.ol-sheet` over `--ol-bg-canvas` with optional GPU-composited `appearance_wallpaper` + `appearance_surface_mode` glass backdrop, `SiteLogo`, and full password-hash, LDAP, 2FA OTP, WebAuthn (`TbFingerprint`), SSO (`solid-icons/tb`), Remember Me, and Guest browse flows.
+   - **Rationale**: Gives site operators immediate visibility into broken storage mounts and active operational/commercial channels upon opening `/@manage`, and aligns `/@login` visually with the visitor workspace.
+
+3. **Workspace Overhauls Across Storages, Metas, Shares, Indexes, Operations, Tasks, Users & System (`src/pages/manage/**`)**
+   - **Decision**:
+     - **Content & Storage (`storages/*`, `metas/*`, `shares/*`, `indexes/*`)**: Status filter `.ol-admin-tabs`, `.ol-admin-search` + driver filter + Grid/Table switcher, quiet `.ol-status-dot` / `.ol-pill` cards, ASMR.ONE & JMComic sync modals, ID-reconciled `Metas` grid/batch-replace editor with `.ol-sticky-actions`, and `solid-icons/tb` search index progress & scan cards.
+     - **Operations & Access (`notices/*`, `promotions/*`, `download-stats.tsx`, `users/*`)**: Live `.ol-notice` banner preview in Notice editor, aspect-safe (`object-fit: contain`) Promotion thumbnails & preview, `.ol-tabular` Download Stats ranking bars, and localized `users.roles.*` pills with compact `X / Y` permission summaries, rate-limit cards, 2FA, SSO, WebAuthn, and SSH key management.
+     - **System & Tasks (`SettingsShell.tsx`, `settings/*`, `TasksShell.tsx`, `tasks/*`, `backup-restore.tsx`, `plugins/*`, `messenger/*`)**: Horizontal `.ol-admin-tabs` across all 10 Settings groups (with instant keyword filter in `Common.tsx` and `.ol-sticky-actions`) and all 5 Task queues (`.ol-status` dots + `.ol-tabular` progress), emoji-free `TbCircleCheck`/`TbCircleX`/`TbInfoCircle` Backup & Restore log stream, and v2 Plugins/Messenger panels.
+     - **Strict Tabler Iconography**: Replaced 100% of `solid-icons/{bs,fi,si,cg,oc,io,fa,ti,bi,ai}` imports and UI emojis across `src/pages/manage` and `src/pages/login` with `solid-icons/tb` (`.ol-ico`).
+   - **Rationale**: Delivers a cohesive, quiet, high-density operator console across all management modules with zero icon-family fragmentation or decorative clutter.
+
+### Phase 4 Verification Summary
+
+- Icon & Emoji Audit: `rg` across `src/pages/manage` and `src/pages/login` confirms `0` non-`solid-icons/tb` icon imports and `0` Emoji UI glyphs.
+- Typecheck & Production Build (`modernize/phase-4-admin-console`): `npx tsc --noEmit`, `pnpm lint`, and `pnpm build` PASS cleanly.
