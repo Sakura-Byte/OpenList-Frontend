@@ -1,63 +1,79 @@
-import { Icon } from "@hope-ui/solid"
-import { FiGithub, FiLogIn } from "solid-icons/fi"
-import { BsMicrosoft } from "solid-icons/bs"
-import { AiOutlineGoogle, AiOutlineDingtalk } from "solid-icons/ai"
-import { base_path, changeToken, r } from "~/utils"
+import {
+  TbBrandGithub,
+  TbBrandGoogle,
+  TbBrandWindows,
+  TbLogin,
+  TbMessageCircle,
+} from "solid-icons/tb"
+import { onCleanup, Show } from "solid-js"
+import { Dynamic } from "solid-js/web"
+import { useRouter, useT } from "~/hooks"
 import { getSetting, getSettingBool } from "~/store"
-import { useRouter } from "~/hooks"
-import { onCleanup } from "solid-js"
+import { base_path, changeToken, r } from "~/utils"
 
 const SSOLogin = () => {
+  const t = useT()
   const ssoSignEnabled = getSettingBool("sso_login_enabled")
   const loginPlatform = getSetting("sso_login_platform")
   const useCompatibility = getSettingBool("sso_compatibility_mode")
   const { searchParams, to } = useRouter()
+
   const token = searchParams["token"]
-  if (token != undefined && token != "") {
+  if (token !== undefined && token !== "") {
     changeToken(token)
     to(decodeURIComponent(searchParams.redirect || base_path || "/"), true)
   }
+
   function messageEvent(event: MessageEvent) {
     const data = event.data
-    if (data.token) {
+    if (data && typeof data === "object" && data.token) {
       changeToken(data.token)
       to(decodeURIComponent(searchParams.redirect || base_path || "/"), true)
     }
   }
+
   window.addEventListener("message", messageEvent)
   onCleanup(() => {
     window.removeEventListener("message", messageEvent)
   })
-  if (ssoSignEnabled) {
-    const login = () => {
-      const url = r.getUri() + "/auth/sso?method=sso_get_token"
-      if (useCompatibility) {
-        window.location.href = url
-        return
-      }
-      window.open(url, "authPopup", "width=500,height=600")
+
+  const login = () => {
+    const url = r.getUri() + "/auth/sso?method=sso_get_token"
+    if (useCompatibility) {
+      window.location.href = url
+      return
     }
-    let icon
+    window.open(url, "authPopup", "width=500,height=600")
+  }
+
+  const resolveIcon = () => {
     switch (loginPlatform) {
       case "Github":
-        icon = FiGithub
-        break
+        return TbBrandGithub
       case "Microsoft":
-        icon = BsMicrosoft
-        break
+        return TbBrandWindows
       case "Google":
-        icon = AiOutlineGoogle
-        break
+        return TbBrandGoogle
       case "Dingtalk":
-        icon = AiOutlineDingtalk
-        break
+        return TbMessageCircle
       default:
-        icon = FiLogIn
+        return TbLogin
     }
-    return (
-      <Icon cursor="pointer" boxSize="$8" as={icon} p="$0_5" onclick={login} />
-    )
   }
+
+  return (
+    <Show when={ssoSignEnabled}>
+      <button
+        type="button"
+        class="ol-icon-btn"
+        onClick={login}
+        title={t("users.sso_login")}
+        aria-label={t("users.sso_login")}
+      >
+        <Dynamic component={resolveIcon()} size={18} class="ol-ico" />
+      </button>
+    </Show>
+  )
 }
 
 export { SSOLogin }

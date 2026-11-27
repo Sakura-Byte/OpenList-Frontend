@@ -1,0 +1,1405 @@
+/* ==========================================================================
+   OpenList — Admin Console & Login v2 Styles (Phase 4)
+   Scoped strictly under .ol-admin, .ol-login, and body[data-ol-admin-portal="true"].
+   Single accent (--site-main / --ol-accent) + warm neutral surfaces (--ol-*).
+   Zero gradients, zero cartoon blobs, zero rainbow badges, zero emoji icons.
+   ========================================================================== */
+
+.ol-admin,
+.ol-login,
+body[data-ol-admin-portal="true"] {
+  /* Remap HopeUI tokens to v2 single-accent + warm neutrals so unedited
+     HopeUI forms, driver inputs, tables, and overlays inherit v2 cleanly. */
+  --hope-colors-background: var(--ol-bg-canvas);
+  --hope-colors-loContrast: var(--ol-surface-card);
+  --hope-colors-hiContrast: var(--ol-text-primary);
+
+  --hope-colors-neutral1: var(--ol-bg-canvas);
+  --hope-colors-neutral2: var(--ol-surface-2);
+  --hope-colors-neutral3: var(--ol-surface-2);
+  --hope-colors-neutral4: var(--ol-surface-hover);
+  --hope-colors-neutral5: var(--ol-surface-hover);
+  --hope-colors-neutral6: var(--ol-border);
+  --hope-colors-neutral7: var(--ol-border-strong);
+  --hope-colors-neutral8: var(--ol-border-strong);
+  --hope-colors-neutral9: var(--ol-text-muted);
+  --hope-colors-neutral10: var(--ol-text-secondary);
+  --hope-colors-neutral11: var(--ol-text-secondary);
+  --hope-colors-neutral12: var(--ol-text-primary);
+
+  /* Primary & Info -> single site accent */
+  --hope-colors-info1: var(--ol-surface-card);
+  --hope-colors-info2: var(--ol-accent-soft);
+  --hope-colors-info3: var(--ol-accent-soft);
+  --hope-colors-info4: color-mix(in oklab, var(--ol-accent) 16%, transparent);
+  --hope-colors-info5: color-mix(in oklab, var(--ol-accent) 22%, transparent);
+  --hope-colors-info6: var(--ol-border-focus);
+  --hope-colors-info7: var(--ol-border-focus);
+  --hope-colors-info8: var(--ol-accent);
+  --hope-colors-info9: var(--ol-accent);
+  --hope-colors-info10: var(--ol-accent-hover);
+  --hope-colors-info11: var(--ol-accent-text);
+  --hope-colors-info12: var(--ol-text-primary);
+
+  --hope-colors-primary1: var(--ol-surface-card);
+  --hope-colors-primary2: var(--ol-accent-soft);
+  --hope-colors-primary3: var(--ol-accent-soft);
+  --hope-colors-primary4: color-mix(
+    in oklab,
+    var(--ol-accent) 16%,
+    transparent
+  );
+  --hope-colors-primary5: color-mix(
+    in oklab,
+    var(--ol-accent) 22%,
+    transparent
+  );
+  --hope-colors-primary6: var(--ol-border-focus);
+  --hope-colors-primary7: var(--ol-border-focus);
+  --hope-colors-primary8: var(--ol-accent);
+  --hope-colors-primary9: var(--ol-accent);
+  --hope-colors-primary10: var(--ol-accent-hover);
+  --hope-colors-primary11: var(--ol-accent-text);
+  --hope-colors-primary12: var(--ol-text-primary);
+
+  /* Accent / Warning / Success -> quiet warm neutrals (no purple/yellow/green rainbow) */
+  --hope-colors-accent1: var(--ol-surface-card);
+  --hope-colors-accent2: var(--ol-surface-2);
+  --hope-colors-accent3: var(--ol-surface-2);
+  --hope-colors-accent4: var(--ol-surface-hover);
+  --hope-colors-accent5: var(--ol-surface-hover);
+  --hope-colors-accent6: var(--ol-border);
+  --hope-colors-accent7: var(--ol-border-strong);
+  --hope-colors-accent8: var(--ol-border-strong);
+  --hope-colors-accent9: var(--ol-text-secondary);
+  --hope-colors-accent10: var(--ol-text-primary);
+  --hope-colors-accent11: var(--ol-text-primary);
+  --hope-colors-accent12: var(--ol-text-primary);
+
+  --hope-colors-warning1: var(--ol-surface-card);
+  --hope-colors-warning2: var(--ol-warn-soft);
+  --hope-colors-warning3: var(--ol-surface-2);
+  --hope-colors-warning4: var(--ol-surface-hover);
+  --hope-colors-warning5: var(--ol-warn-soft);
+  --hope-colors-warning6: var(--ol-border);
+  --hope-colors-warning7: var(--ol-border-strong);
+  --hope-colors-warning8: var(--ol-warn);
+  --hope-colors-warning9: var(--ol-warn);
+  --hope-colors-warning10: var(--ol-warn);
+  --hope-colors-warning11: var(--ol-text-primary);
+  --hope-colors-warning12: var(--ol-text-primary);
+
+  --hope-colors-success1: var(--ol-surface-card);
+  --hope-colors-success2: var(--ol-surface-2);
+  --hope-colors-success3: var(--ol-surface-2);
+  --hope-colors-success4: var(--ol-surface-hover);
+  --hope-colors-success5: var(--ol-surface-hover);
+  --hope-colors-success6: var(--ol-border);
+  --hope-colors-success7: var(--ol-border-strong);
+  --hope-colors-success8: var(--ol-type-image);
+  --hope-colors-success9: var(--ol-type-image);
+  --hope-colors-success10: var(--ol-type-image);
+  --hope-colors-success11: var(--ol-text-primary);
+  --hope-colors-success12: var(--ol-text-primary);
+
+  /* Danger -> muted semantic danger */
+  --hope-colors-danger1: var(--ol-surface-card);
+  --hope-colors-danger2: var(--ol-danger-soft);
+  --hope-colors-danger3: var(--ol-danger-soft);
+  --hope-colors-danger4: color-mix(in oklab, var(--ol-danger) 16%, transparent);
+  --hope-colors-danger5: color-mix(in oklab, var(--ol-danger) 22%, transparent);
+  --hope-colors-danger6: color-mix(in oklab, var(--ol-danger) 35%, transparent);
+  --hope-colors-danger7: var(--ol-danger);
+  --hope-colors-danger8: var(--ol-danger);
+  --hope-colors-danger9: var(--ol-danger);
+  --hope-colors-danger10: var(--ol-danger);
+  --hope-colors-danger11: var(--ol-danger);
+  --hope-colors-danger12: var(--ol-text-primary);
+}
+
+.ol-admin,
+.ol-login {
+  width: 100%;
+  min-height: 100vh;
+  font-family: var(--ol-font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ol-text-primary);
+  background: var(--ol-bg-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.ol-admin *,
+.ol-admin *::before,
+.ol-admin *::after,
+.ol-login *,
+.ol-login *::before,
+.ol-login *::after {
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   1. Admin Shell & Sidebar Navigation
+   ========================================================================== */
+
+.ol-admin-shell {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--ol-bg-canvas);
+}
+
+.ol-admin-sidebar {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  width: 232px;
+  flex: 0 0 232px;
+  height: 100vh;
+  background: var(--ol-surface-card);
+  border-right: 1px solid var(--ol-border);
+  overflow: hidden;
+}
+
+.ol-admin-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ol-row-line);
+  color: var(--ol-text-primary);
+  text-decoration: none;
+  flex: none;
+  transition: background-color 0.12s ease;
+}
+
+.ol-admin-sidebar__brand:hover {
+  background: var(--ol-surface-hover);
+  text-decoration: none;
+}
+
+.ol-admin-sidebar__brand-text {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ol-admin-sidebar__brand-title {
+  font-size: 14.5px;
+  font-weight: 650;
+  line-height: 1.25;
+  color: var(--ol-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ol-admin-sidebar__brand-sub {
+  font-size: 11.5px;
+  line-height: 1.25;
+  color: var(--ol-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ol-admin-sidebar__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 10px;
+  scrollbar-width: thin;
+}
+
+.ol-admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.ol-admin-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ol-admin-nav-group__label {
+  padding: 0 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ol-text-muted);
+  user-select: none;
+}
+
+.ol-admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--ol-radius-sm);
+  background: transparent;
+  color: var(--ol-text-secondary);
+  font-family: var(--ol-font);
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.ol-admin-nav-item:hover {
+  background: var(--ol-surface-hover);
+  color: var(--ol-text-primary);
+  text-decoration: none;
+}
+
+.ol-admin-nav-item:focus-visible {
+  outline: 2px solid var(--ol-border-focus);
+  outline-offset: 1px;
+}
+
+.ol-admin-nav-item .ol-ico {
+  color: var(--ol-text-muted);
+  transition: color 0.12s ease;
+}
+
+.ol-admin-nav-item:hover .ol-ico {
+  color: var(--ol-text-primary);
+}
+
+.ol-admin-nav-item[data-active="true"] {
+  background: var(--ol-accent-soft);
+  color: var(--ol-accent-text);
+  font-weight: 600;
+}
+
+.ol-admin-nav-item[data-active="true"] .ol-ico {
+  color: var(--ol-accent);
+}
+
+.ol-admin-nav-item__label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ol-admin-nav-item__ext {
+  margin-left: auto;
+  opacity: 0.65;
+}
+
+.ol-admin-sidebar__footer {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px 10px;
+  border-top: 1px solid var(--ol-row-line);
+  background: var(--ol-surface-card);
+}
+
+.ol-admin-sidebar__tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 2px 2px 0;
+}
+
+.ol-admin-sidebar__tools-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ol-admin-sidebar__user {
+  font-size: 12px;
+  color: var(--ol-text-muted);
+  max-width: 92px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 6px;
+}
+
+.ol-icon-btn--danger:hover {
+  background: var(--ol-danger-soft);
+  color: var(--ol-danger);
+}
+
+/* Main workspace column */
+.ol-admin-main {
+  flex: 1;
+  min-width: 0;
+  padding: 24px 28px 44px;
+  background: var(--ol-bg-canvas);
+}
+
+/* Mobile Header Bar & Drawer (< 768px) */
+.ol-admin-mobile-bar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  height: 52px;
+  padding: 0 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--ol-surface-card);
+  border-bottom: 1px solid var(--ol-border);
+}
+
+.ol-admin-mobile-bar__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ol-admin-mobile-bar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--ol-text-primary);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.ol-admin-mobile-bar__brand span:last-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ol-admin-mobile-bar__right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.ol-admin-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  background: rgba(10, 10, 12, 0.45);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  animation: ol-admin-fade 150ms var(--ol-ease-out);
+}
+
+.ol-admin-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1401;
+  width: min(268px, calc(100vw - 44px));
+  display: flex;
+  flex-direction: column;
+  background: var(--ol-surface-card);
+  border-right: 1px solid var(--ol-border);
+  box-shadow: var(--ol-shadow-sheet);
+  overflow: hidden;
+  animation: ol-admin-slide-in 180ms var(--ol-ease-out);
+}
+
+.ol-admin-drawer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 52px;
+  padding: 8px 10px 8px 14px;
+  border-bottom: 1px solid var(--ol-row-line);
+}
+
+@media (max-width: 767.98px) {
+  .ol-admin-shell {
+    flex-direction: column;
+  }
+
+  .ol-admin-sidebar {
+    display: none;
+  }
+
+  .ol-admin-mobile-bar {
+    display: flex;
+  }
+
+  .ol-admin-main {
+    padding: 16px 14px 36px;
+  }
+}
+
+/* ==========================================================================
+   2. Reusable Admin Page Primitives (Stage 1 & Stage 2 Shared Contract)
+   ========================================================================== */
+
+.ol-admin-page {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ol-admin-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+.ol-admin-head__main,
+.ol-admin-head__titles {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ol-admin-title,
+.ol-admin-head__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--ol-text-primary);
+}
+
+.ol-admin-subtitle,
+.ol-admin-head__subtitle {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ol-text-muted);
+}
+
+.ol-admin-head__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Horizontal Tab Strip (Settings, Tasks, Filter Views) */
+.ol-admin-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--ol-border);
+}
+
+.ol-admin-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.ol-admin-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 12px;
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--ol-text-secondary);
+  font-family: var(--ol-font);
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.ol-admin-tab:hover {
+  color: var(--ol-text-primary);
+  text-decoration: none;
+}
+
+.ol-admin-tab[data-active="true"],
+.ol-admin-tab[aria-selected="true"] {
+  color: var(--ol-accent-text);
+  border-bottom-color: var(--ol-accent);
+  font-weight: 600;
+}
+
+/* Search + Filters + View Switch Toolbar */
+.ol-admin-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  padding: 10px 14px;
+  border-radius: var(--ol-radius-md);
+  background: var(--ol-surface-card);
+  border: 1px solid var(--ol-border);
+}
+
+.ol-admin-toolbar__left,
+.ol-admin-toolbar__right,
+.ol-admin-toolbar__group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ol-admin-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: min(240px, 100%);
+}
+
+.ol-admin-search > .ol-ico {
+  position: absolute;
+  left: 10px;
+  color: var(--ol-text-muted);
+  pointer-events: none;
+}
+
+.ol-admin-search > input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px 0 32px;
+  border-radius: var(--ol-radius-sm);
+  border: 1px solid var(--ol-border-strong);
+  background: var(--ol-surface-card);
+  color: var(--ol-text-primary);
+  font: inherit;
+  font-size: 13px;
+}
+
+.ol-admin-search > input:focus {
+  outline: none;
+  border-color: var(--ol-accent);
+  box-shadow: 0 0 0 3px var(--ol-accent-soft);
+}
+
+/* Cards */
+.ol-admin-card {
+  border-radius: var(--ol-radius-lg);
+  background: var(--ol-surface-card);
+  border: 1px solid var(--ol-border);
+  padding: 18px 20px;
+  color: var(--ol-text-primary);
+}
+
+.ol-admin-card--flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+.ol-admin-card--interactive {
+  text-decoration: none;
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.ol-admin-card--interactive:hover {
+  border-color: var(--ol-border-strong);
+  text-decoration: none;
+}
+
+.ol-admin-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 14px;
+}
+
+.ol-admin-card--flush > .ol-admin-card__head {
+  padding: 14px 18px;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--ol-row-line);
+}
+
+.ol-admin-card__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 620;
+  line-height: 1.35;
+  color: var(--ol-text-primary);
+}
+
+.ol-admin-card__subtitle {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--ol-text-muted);
+}
+
+.ol-admin-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ol-row-line);
+}
+
+/* Metric / Stat Grid */
+.ol-admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.ol-admin-stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: var(--ol-radius-lg);
+  background: var(--ol-surface-card);
+  border: 1px solid var(--ol-border);
+  color: var(--ol-text-primary);
+  text-decoration: none;
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease;
+}
+
+a.ol-admin-stat:hover {
+  border-color: var(--ol-border-strong);
+  background: var(--ol-surface-elevated);
+  text-decoration: none;
+}
+
+.ol-admin-stat__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ol-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ol-admin-stat__value {
+  font-size: 26px;
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ol-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.ol-admin-stat__sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ol-text-muted);
+}
+
+/* Responsive Card & Form Grids */
+.ol-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.ol-admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+  gap: 14px 16px;
+  width: 100%;
+}
+
+.ol-admin-form-stack {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  width: 100%;
+}
+
+/* Quick Action Tiles */
+.ol-admin-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.ol-admin-quick-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: var(--ol-radius-md);
+  border: 1px solid var(--ol-border);
+  background: var(--ol-surface-card);
+  color: var(--ol-text-primary);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.ol-admin-quick-link:hover {
+  border-color: var(--ol-border-strong);
+  background: var(--ol-surface-2);
+  text-decoration: none;
+}
+
+.ol-admin-quick-link__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--ol-radius-sm);
+  background: var(--ol-surface-2);
+  color: var(--ol-accent-text);
+  flex: none;
+}
+
+.ol-admin-quick-link__text {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ol-admin-quick-link__arrow {
+  color: var(--ol-text-faint);
+  flex: none;
+}
+
+/* Hairline Row List (Recent Storages Health, etc.) */
+.ol-admin-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.ol-admin-list__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--ol-row-line);
+  color: var(--ol-text-primary);
+  text-decoration: none;
+  font-size: 13.5px;
+  transition: background-color 0.12s ease;
+}
+
+.ol-admin-list__row:last-child {
+  border-bottom: 0;
+}
+
+a.ol-admin-list__row:hover {
+  background: var(--ol-surface-hover);
+  text-decoration: none;
+}
+
+.ol-admin-list__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ol-admin-list__path {
+  font-family: var(--ol-font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ol-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ol-admin-list__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  font-size: 12.5px;
+  color: var(--ol-text-secondary);
+}
+
+/* Table Wrapper & Native Tables */
+.ol-admin-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--ol-radius-lg);
+  background: var(--ol-surface-card);
+  border: 1px solid var(--ol-border);
+}
+
+.ol-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  text-align: left;
+}
+
+.ol-admin-table th {
+  padding: 10px 14px;
+  background: var(--ol-surface-2);
+  color: var(--ol-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--ol-border);
+  white-space: nowrap;
+}
+
+.ol-admin-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ol-row-line);
+  color: var(--ol-text-primary);
+  vertical-align: middle;
+}
+
+.ol-admin-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.ol-admin-table tbody tr:hover td {
+  background: var(--ol-surface-hover);
+}
+
+/* Status Dots & Quiet Neutral Pills */
+.ol-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ol-text-secondary);
+}
+
+.ol-status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--ol-text-faint);
+}
+
+.ol-status-dot[data-status="work"] {
+  background: var(--ol-type-image);
+}
+
+.ol-status-dot[data-status="disabled"] {
+  background: var(--ol-text-faint);
+}
+
+.ol-status-dot[data-status="error"] {
+  background: var(--ol-danger);
+}
+
+.ol-status-dot[data-status="info"] {
+  background: var(--ol-accent);
+}
+
+.ol-status-dot[data-status="warn"] {
+  background: var(--ol-warn);
+}
+
+.ol-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--ol-border);
+  background: var(--ol-surface-2);
+  color: var(--ol-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ol-pill[data-tone="accent"] {
+  border-color: color-mix(in oklab, var(--ol-accent) 28%, transparent);
+  background: var(--ol-accent-soft);
+  color: var(--ol-accent-text);
+}
+
+.ol-pill[data-tone="warn"] {
+  border-color: color-mix(in oklab, var(--ol-warn) 28%, transparent);
+  background: var(--ol-warn-soft);
+  color: var(--ol-warn);
+}
+
+.ol-pill[data-tone="danger"] {
+  border-color: color-mix(in oklab, var(--ol-danger) 28%, transparent);
+  background: var(--ol-danger-soft);
+  color: var(--ol-danger);
+}
+
+/* Sticky Save / Action Footer Bar */
+.ol-sticky-actions {
+  position: sticky;
+  bottom: 12px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--ol-radius-md);
+  background: color-mix(in srgb, var(--ol-surface-card) 92%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--ol-border);
+  box-shadow: var(--ol-shadow-sm);
+}
+
+.ol-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.ol-admin-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 36px 20px;
+  text-align: center;
+  color: var(--ol-text-muted);
+  font-size: 13.5px;
+}
+
+/* ==========================================================================
+   3. Login Screen (.ol-login)
+   ========================================================================== */
+
+.ol-login {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px 16px;
+  isolation: isolate;
+}
+
+.ol-login[data-wallpaper="on"] {
+  background: transparent;
+}
+
+.ol-login[data-surface="glass"] .ol-sheet {
+  background: var(--ol-sheet);
+  -webkit-backdrop-filter: blur(var(--ol-wallpaper-blur, 18px)) saturate(140%);
+  backdrop-filter: blur(var(--ol-wallpaper-blur, 18px)) saturate(140%);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: var(--ol-shadow-sheet);
+}
+
+.ol-login[data-modern-theme="dark"][data-surface="glass"] .ol-sheet {
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+.ol-login__card {
+  width: min(392px, 100%);
+  padding: 28px 26px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ol-login__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.ol-login__title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--ol-text-primary);
+}
+
+.ol-login__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.ol-login__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ol-text-secondary);
+}
+
+.ol-login__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ol-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ol-login__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.ol-login__actions > .ol-btn {
+  flex: 1;
+  height: 36px;
+  font-size: 13.5px;
+}
+
+.ol-login__guest {
+  width: 100%;
+  height: 35px;
+}
+
+.ol-login__footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ol-row-line);
+}
+
+/* ==========================================================================
+   4. HopeUI Controls Harmonization inside .ol-admin & .ol-login
+   ========================================================================== */
+
+.ol-admin .hope-input,
+.ol-admin .hope-textarea,
+.ol-admin .hope-select__trigger,
+.ol-login .hope-input,
+.ol-login .hope-textarea,
+.ol-login .hope-select__trigger,
+body[data-ol-admin-portal="true"] .hope-input,
+body[data-ol-admin-portal="true"] .hope-textarea,
+body[data-ol-admin-portal="true"] .hope-select__trigger {
+  background: var(--ol-surface-card) !important;
+  border: 1px solid var(--ol-border-strong) !important;
+  border-radius: var(--ol-radius-sm) !important;
+  color: var(--ol-text-primary) !important;
+  font-family: var(--ol-font);
+  font-size: 13.5px;
+  box-shadow: none;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.ol-admin .hope-input:hover,
+.ol-admin .hope-textarea:hover,
+.ol-admin .hope-select__trigger:hover,
+.ol-login .hope-input:hover,
+.ol-login .hope-textarea:hover,
+.ol-login .hope-select__trigger:hover,
+body[data-ol-admin-portal="true"] .hope-input:hover,
+body[data-ol-admin-portal="true"] .hope-textarea:hover,
+body[data-ol-admin-portal="true"] .hope-select__trigger:hover {
+  border-color: color-mix(
+    in oklab,
+    var(--ol-text-muted) 45%,
+    var(--ol-border-strong)
+  ) !important;
+}
+
+.ol-admin .hope-input:focus,
+.ol-admin .hope-textarea:focus,
+.ol-admin .hope-select__trigger:focus,
+.ol-login .hope-input:focus,
+.ol-login .hope-textarea:focus,
+.ol-login .hope-select__trigger:focus,
+body[data-ol-admin-portal="true"] .hope-input:focus,
+body[data-ol-admin-portal="true"] .hope-textarea:focus,
+body[data-ol-admin-portal="true"] .hope-select__trigger:focus {
+  outline: none !important;
+  border-color: var(--ol-accent) !important;
+  box-shadow: 0 0 0 3px var(--ol-accent-soft) !important;
+}
+
+.ol-admin .hope-input::placeholder,
+.ol-admin .hope-textarea::placeholder,
+.ol-login .hope-input::placeholder {
+  color: var(--ol-text-muted);
+}
+
+.ol-admin .hope-form-label,
+body[data-ol-admin-portal="true"] .hope-form-label {
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--ol-text-primary);
+  margin-bottom: 5px;
+}
+
+.ol-admin .hope-form-helper-text,
+body[data-ol-admin-portal="true"] .hope-form-helper-text {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ol-text-muted);
+}
+
+.ol-admin .hope-button,
+.ol-login .hope-button,
+body[data-ol-admin-portal="true"] .hope-button {
+  border-radius: var(--ol-radius-sm) !important;
+  font-family: var(--ol-font);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--ol-border);
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    transform 140ms var(--ol-ease-out);
+}
+
+.ol-admin .hope-button:active:not(:disabled),
+.ol-login .hope-button:active:not(:disabled),
+body[data-ol-admin-portal="true"] .hope-button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Quiet neutral badges (zero rainbow) */
+.ol-admin .hope-badge,
+body[data-ol-admin-portal="true"] .hope-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--ol-border) !important;
+  background: var(--ol-surface-2) !important;
+  color: var(--ol-text-secondary) !important;
+  font-family: var(--ol-font);
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+/* Switch & Checkbox controls */
+.ol-admin .hope-switch__control,
+.ol-login .hope-switch__control,
+body[data-ol-admin-portal="true"] .hope-switch__control {
+  background: var(--ol-surface-2) !important;
+  border: 1px solid var(--ol-border-strong) !important;
+}
+
+.ol-admin .hope-switch__control[data-checked],
+.ol-login .hope-switch__control[data-checked],
+body[data-ol-admin-portal="true"] .hope-switch__control[data-checked] {
+  background: var(--ol-accent) !important;
+  border-color: var(--ol-accent) !important;
+}
+
+.ol-admin .hope-checkbox__control,
+.ol-login .hope-checkbox__control,
+body[data-ol-admin-portal="true"] .hope-checkbox__control {
+  background: var(--ol-surface-card) !important;
+  border: 1px solid var(--ol-border-strong) !important;
+  border-radius: 4px !important;
+}
+
+.ol-admin .hope-checkbox__control[data-checked],
+.ol-admin .hope-checkbox__control[data-indeterminate],
+.ol-login .hope-checkbox__control[data-checked],
+body[data-ol-admin-portal="true"] .hope-checkbox__control[data-checked],
+body[data-ol-admin-portal="true"] .hope-checkbox__control[data-indeterminate] {
+  background: var(--ol-accent) !important;
+  border-color: var(--ol-accent) !important;
+  color: var(--ol-accent-fg) !important;
+}
+
+/* HopeUI Table */
+.ol-admin .hope-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--ol-surface-card);
+  font-family: var(--ol-font);
+  font-size: 13.5px;
+}
+
+.ol-admin .hope-table th {
+  padding: 10px 14px !important;
+  background: var(--ol-surface-2) !important;
+  color: var(--ol-text-muted) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  border-bottom: 1px solid var(--ol-border) !important;
+  white-space: nowrap;
+}
+
+.ol-admin .hope-table td {
+  padding: 10px 14px !important;
+  border-bottom: 1px solid var(--ol-row-line) !important;
+  color: var(--ol-text-primary);
+  vertical-align: middle;
+}
+
+.ol-admin .hope-table tbody tr:last-child td {
+  border-bottom: 0 !important;
+}
+
+.ol-admin .hope-table tbody tr:hover td {
+  background: var(--ol-surface-hover) !important;
+}
+
+/* HopeUI Portaled Overlays (Select, Menu, Popover, Modal, Drawer) */
+.ol-admin .hope-select__content,
+.ol-login .hope-select__content,
+body[data-ol-admin-portal="true"] .hope-select__content,
+.ol-admin .hope-menu__content,
+.ol-login .hope-menu__content,
+body[data-ol-admin-portal="true"] .hope-menu__content,
+.ol-admin .hope-popover__content,
+body[data-ol-admin-portal="true"] .hope-popover__content {
+  background: var(--ol-surface-elevated) !important;
+  border: 1px solid var(--ol-border) !important;
+  border-radius: var(--ol-radius-md) !important;
+  box-shadow: var(--ol-shadow-md) !important;
+  color: var(--ol-text-primary) !important;
+  font-family: var(--ol-font);
+}
+
+body[data-ol-admin-portal="true"] .hope-popover__header {
+  border-bottom: 1px solid var(--ol-row-line) !important;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ol-text-primary);
+}
+
+body[data-ol-admin-portal="true"] .hope-popover__arrow {
+  background: var(--ol-surface-elevated) !important;
+}
+
+body[data-ol-admin-portal="true"] .hope-select__option,
+body[data-ol-admin-portal="true"] .hope-menu__item {
+  border-radius: var(--ol-radius-xs) !important;
+  color: var(--ol-text-primary) !important;
+  font-size: 13.5px;
+}
+
+body[data-ol-admin-portal="true"] .hope-select__option[data-highlighted],
+body[data-ol-admin-portal="true"] .hope-menu__item[data-highlighted],
+body[data-ol-admin-portal="true"] .hope-menu__item:hover {
+  background: var(--ol-surface-hover) !important;
+}
+
+body[data-ol-admin-portal="true"] .hope-select__option[data-selected] {
+  background: var(--ol-accent-soft) !important;
+  color: var(--ol-accent-text) !important;
+  font-weight: 550;
+}
+
+body[data-ol-admin-portal="true"] .hope-modal__overlay {
+  background: rgba(10, 10, 12, 0.45) !important;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+body[data-ol-admin-portal="true"] .hope-modal__content,
+body[data-ol-admin-portal="true"] .hope-drawer__content {
+  background: var(--ol-surface-elevated) !important;
+  border: 1px solid var(--ol-border) !important;
+  border-radius: var(--ol-radius-lg) !important;
+  box-shadow: var(--ol-shadow-glass) !important;
+  color: var(--ol-text-primary) !important;
+  font-family: var(--ol-font);
+}
+
+body[data-ol-admin-portal="true"] .hope-modal__header {
+  border-bottom: 1px solid var(--ol-row-line);
+  font-size: 16px;
+  font-weight: 650;
+}
+
+body[data-ol-admin-portal="true"] .hope-modal__footer {
+  border-top: 1px solid var(--ol-row-line);
+}
+
+@keyframes ol-admin-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ol-admin-slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ol-admin-drawer-backdrop,
+  .ol-admin-drawer {
+    animation: none;
+  }
+}

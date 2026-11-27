@@ -1,23 +1,11 @@
-import { Grid } from "@hope-ui/solid"
 import { JSXElement } from "solid-js"
 import { getSetting } from "~/store"
 
 export const ResponsiveGrid = (props: { children: JSXElement }) => {
-  const layout = getSetting("settings_layout")
-  let v
-  if (layout === "responsive") {
-    v = "repeat(auto-fill, minmax(424px, 1fr))"
-  }
+  const isResponsive = () => getSetting("settings_layout") === "responsive"
   return (
-    <Grid
-      w="$full"
-      gap="$2"
-      templateColumns={{
-        "@initial": "1fr",
-        "@lg": v,
-      }}
-    >
+    <div class={isResponsive() ? "ol-admin-form-grid" : "ol-admin-form-stack"}>
       {props.children}
-    </Grid>
+    </div>
   )
 }

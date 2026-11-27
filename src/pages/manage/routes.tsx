@@ -1,12 +1,77 @@
-import { lazy } from "solid-js"
-import { Center, Heading } from "@hope-ui/solid"
+import { Component, lazy, onMount } from "solid-js"
+import { useManageTitle, useRouter, useT } from "~/hooks"
+import { me } from "~/store"
+import { UserMethods } from "~/types"
 import { trimLeft } from "~/utils"
-import { SideMenuItem, side_menu_items } from "./sidemenu_items"
-import { useManageTitle } from "~/hooks"
+import { BackendKind } from "~/utils/backend"
+import {
+  settings_sub_items,
+  side_menu_groups,
+  SideMenuItem,
+  task_sub_items,
+} from "./sidemenu_items"
 
-type Route = Pick<SideMenuItem, "to" | "component" | "backend">
+type RouteDef = {
+  to: string
+  component: Component
+  backend?: BackendKind[]
+}
 
-const hide_routes: Route[] = [
+const DashboardPage = lazy(() => import("./Dashboard"))
+const ProfilePage = lazy(() => import("./users/Profile"))
+
+const OverviewOrProfile: Component = () => {
+  return UserMethods.is_admin(me()) ? <DashboardPage /> : <ProfilePage />
+}
+
+const RedirectTo = (props: { target: string }) => {
+  const { to } = useRouter()
+  onMount(() => {
+    to(props.target, false, { replace: true })
+  })
+  return null
+}
+
+const Placeholder = (props: { title: string; to: string }) => {
+  const t = useT()
+  useManageTitle(props.title)
+  return (
+    <div class="ol-admin-page">
+      <div class="ol-admin-empty">{t(props.title)}</div>
+    </div>
+  )
+}
+
+const explicit_routes: RouteDef[] = [
+  {
+    to: "",
+    component: OverviewOrProfile,
+  },
+  {
+    to: "/profile",
+    component: ProfilePage,
+  },
+  {
+    to: "/settings",
+    component: () => <RedirectTo target="/@manage/settings/site" />,
+  },
+  ...settings_sub_items.map((item) => ({
+    to: trimLeft(item.to, "/@manage"),
+    backend: item.backend,
+    component:
+      item.component || (() => <Placeholder title={item.title} to={item.to} />),
+  })),
+  {
+    to: "/tasks",
+    backend: ["go"],
+    component: () => <RedirectTo target="/@manage/tasks/offline_download" />,
+  },
+  ...task_sub_items.map((item) => ({
+    to: trimLeft(item.to, "/@manage"),
+    backend: item.backend,
+    component:
+      item.component || (() => <Placeholder title={item.title} to={item.to} />),
+  })),
   {
     to: "/storages/add",
     component: lazy(() => import("./storages/AddOrEdit")),
@@ -79,31 +144,34 @@ const hide_routes: Route[] = [
   },
 ]
 
-const Placeholder = (props: { title: string; to: string }) => {
-  useManageTitle(props.title)
-  return (
-    <Center h="$full">
-      <Heading>{props.title}</Heading>
-    </Center>
-  )
-}
+const buildRoutes = (): RouteDef[] => {
+  const seen = new Set<string>(explicit_routes.map((r) => r.to))
+  const list: RouteDef[] = [...explicit_routes]
 
-const get_routes = (items: SideMenuItem[], acc: Route[] = []) => {
-  items.forEach((item) => {
-    if (item.children) {
-      get_routes(item.children, acc)
-    } else {
-      acc.push({
-        to: trimLeft(item.to!, "/@manage"),
+  const addFromItems = (items: SideMenuItem[]) => {
+    for (const item of items) {
+      if (item.children) {
+        addFromItems(item.children)
+        continue
+      }
+      if (!item.component) continue
+      const rel = trimLeft(item.to, "/@manage")
+      if (seen.has(rel)) continue
+      seen.add(rel)
+      list.push({
+        to: rel,
         backend: item.backend,
-        component:
-          item.component ||
-          (() => <Placeholder title={item.title} to={item.to || "empty"} />),
+        component: item.component,
       })
     }
-  })
-  return acc
+  }
+
+  for (const group of side_menu_groups) {
+    addFromItems(group.items)
+  }
+
+  return list
 }
 
-const routes = get_routes(side_menu_items).concat(hide_routes)
+const routes = buildRoutes()
 export { routes }

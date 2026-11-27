@@ -1,19 +1,25 @@
-import { Box, Flex, Heading, HStack, Icon, VStack } from "@hope-ui/solid"
-import { createMemo, createSignal, For, Match, Show, Switch } from "solid-js"
-import { useRouter, useT } from "~/hooks"
-import { BiSolidRightArrow } from "solid-icons/bi"
-import { onClose } from "./Header"
-import { UserMethods, UserRole } from "~/types"
-import { me } from "~/store"
-import { AnchorWithBase } from "~/components"
 import { Link } from "@solidjs/router"
-import { hoverColor, joinBase } from "~/utils"
-import { BackendKind, getBackendKind } from "~/utils/backend"
 import { IconTypes } from "solid-icons"
+import { TbExternalLink } from "solid-icons/tb"
+import { createMemo, For, Show } from "solid-js"
+import { Dynamic } from "solid-js/web"
+import { useRouter, useT } from "~/hooks"
+import { me } from "~/store"
+import { UserMethods, UserRole } from "~/types"
+import { joinBase } from "~/utils"
+import { BackendKind, getBackendKind } from "~/utils/backend"
+import { onClose } from "./Header"
+import { SideMenuGroup, side_menu_groups } from "./sidemenu_items"
 
 export interface SideMenuItemProps {
   title: string
   to: string
+  /** Optional override path when current user is not an admin (e.g. Profile at /@manage) */
+  nonAdminTo?: string
+  /** Highlight active when pathname starts with this prefix */
+  matchPrefix?: string
+  /** Require exact path match */
+  exact?: boolean
   icon?: IconTypes
   children?: SideMenuItemProps[]
   role?: number
@@ -23,118 +29,146 @@ export interface SideMenuItemProps {
   backend?: BackendKind[]
 }
 
-const SideMenuItem = (props: SideMenuItemProps) => {
-  const ifShow = createMemo(() => {
-    if (props.backend && !props.backend.includes(getBackendKind())) return false
-    if (!UserMethods.is_admin(me())) {
-      if (props.role === undefined) return false
-      else if (props.role === UserRole.GENERAL && !UserMethods.is_general(me()))
-        return false
+export function isSideMenuItemVisible(item: SideMenuItemProps): boolean {
+  if (item.backend && !item.backend.includes(getBackendKind())) return false
+  if (!UserMethods.is_admin(me())) {
+    if (item.role === undefined) return false
+    if (item.role === UserRole.GENERAL && !UserMethods.is_general(me())) {
+      return false
     }
-    return true
+  }
+  return true
+}
+
+function normalizePath(p: string): string {
+  if (!p) return "/"
+  const trimmed = p.replace(/\/+$/, "")
+  return trimmed || "/"
+}
+
+const SideMenuRow = (props: SideMenuItemProps) => {
+  const { pathname } = useRouter()
+  const t = useT()
+
+  const resolvedTo = createMemo(() => {
+    if (!UserMethods.is_admin(me()) && props.nonAdminTo) {
+      return props.nonAdminTo
+    }
+    return props.to
   })
-  return (
-    <Switch fallback={<SideMenuItemWithTo {...props} />}>
-      <Match when={!ifShow()}>{null}</Match>
-      <Match when={props.children}>
-        <SideMenuItemWithChildren {...props} />
-      </Match>
-    </Switch>
-  )
-}
 
-const SideMenuItemWithTo = (props: SideMenuItemProps) => {
-  const { pathname } = useRouter()
-  const t = useT()
-  const isActive = () => pathname() === props.to
+  const isActive = createMemo(() => {
+    const cur = normalizePath(pathname())
+    const target = normalizePath(resolvedTo())
+    if (!UserMethods.is_admin(me()) && props.nonAdminTo) {
+      return (
+        cur === normalizePath(props.nonAdminTo) ||
+        cur === normalizePath(props.to)
+      )
+    }
+    if (props.exact) {
+      return cur === target
+    }
+    if (props.matchPrefix) {
+      const pref = normalizePath(props.matchPrefix)
+      return cur === pref || cur.startsWith(`${pref}/`)
+    }
+    return cur === target
+  })
+
+  const isExternal = () =>
+    Boolean(props.external || resolvedTo().startsWith("http"))
+
+  const href = () => (isExternal() ? resolvedTo() : joinBase(resolvedTo()))
+
+  const handleClick = (e: MouseEvent) => {
+    onClose()
+    if (props.refresh) {
+      e.stopPropagation()
+      e.preventDefault()
+      window.open(href(), "_self")
+    }
+  }
+
   return (
-    <AnchorWithBase
-      cancelBase={props.to.startsWith("http")}
-      display="flex"
-      as={Link}
-      href={props.to}
-      onClick={(e: any) => {
-        // to(props.to!);
-        onClose()
-        if (props.refresh) {
-          e.stopPropagation?.()
-          e.preventDefault?.()
-          let to = props.to
-          if (!to.startsWith("http")) {
-            to = joinBase(to)
-          }
-          window.open(to, "_self")
-        }
-      }}
-      w="$full"
-      alignItems="center"
-      _hover={{
-        bgColor: isActive() ? "$info4" : hoverColor(),
-        textDecoration: "none",
-      }}
-      px="$2"
-      py="$1_5"
-      rounded="$md"
-      cursor="pointer"
-      bgColor={isActive() ? "$info4" : ""}
-      color={isActive() ? "$info11" : ""}
-      external={props.external}
-      // _active={{ transform: "scale(.95)", transition: "0.1s" }}
+    <Show
+      when={!isExternal() && !props.refresh}
+      fallback={
+        <a
+          class="ol-admin-nav-item"
+          href={href()}
+          target={isExternal() ? "_blank" : undefined}
+          rel={isExternal() ? "noopener noreferrer" : undefined}
+          onClick={handleClick}
+        >
+          <Show when={props.icon}>
+            <Dynamic component={props.icon} size={17} class="ol-ico" />
+          </Show>
+          <span class="ol-admin-nav-item__label">{t(props.title)}</span>
+          <Show when={isExternal()}>
+            <TbExternalLink size={14} class="ol-ico ol-admin-nav-item__ext" />
+          </Show>
+        </a>
+      }
     >
-      <Show when={props.icon}>{<Icon mr="$2" as={props.icon} />}</Show>
-      <Heading>{t(props.title)}</Heading>
-    </AnchorWithBase>
-  )
-}
-
-const SideMenuItemWithChildren = (props: SideMenuItemProps) => {
-  const { pathname } = useRouter()
-  const [open, setOpen] = createSignal(pathname().includes(props.to))
-  const t = useT()
-  return (
-    <Box w="$full">
-      <Flex
-        justifyContent="space-between"
-        onClick={() => {
-          setOpen(!open())
-        }}
-        w="$full"
-        alignItems="center"
-        _hover={{
-          bgColor: hoverColor(),
-        }}
-        px="$2"
-        py="$1_5"
-        rounded="$md"
-        cursor="pointer"
+      <Link
+        class="ol-admin-nav-item"
+        href={href()}
+        data-active={isActive() ? "true" : "false"}
+        onClick={handleClick}
       >
-        <HStack>
-          <Show when={props.icon}>{<Icon mr="$2" as={props.icon} />}</Show>
-          <Heading>{t(props.title)}</Heading>
-        </HStack>
-        <Icon
-          as={BiSolidRightArrow}
-          transform={open() ? "rotate(90deg)" : "none"}
-          transition="transform 0.2s"
-        />
-      </Flex>
-      <Show when={open()}>
-        <Box pl="$2">
-          <SideMenu items={props.children!} />
-        </Box>
-      </Show>
-    </Box>
+        <Show when={props.icon}>
+          <Dynamic component={props.icon} size={17} class="ol-ico" />
+        </Show>
+        <span class="ol-admin-nav-item__label">{t(props.title)}</span>
+      </Link>
+    </Show>
   )
 }
 
-export const SideMenu = (props: { items: SideMenuItemProps[] }) => {
+const SideMenuGroupSection = (props: { group: SideMenuGroup }) => {
+  const t = useT()
+  const visibleItems = createMemo(() => {
+    if (
+      props.group.backend &&
+      !props.group.backend.includes(getBackendKind())
+    ) {
+      return []
+    }
+    return props.group.items.filter(isSideMenuItemVisible)
+  })
+
   return (
-    <VStack p="$2" w="$full" color="$neutral11" spacing="$1">
-      <For each={props.items}>
-        {(item) => {
-          return <SideMenuItem {...item} />
-        }}
-      </For>
-    </VStack>
+    <Show when={visibleItems().length > 0}>
+      <div class="ol-admin-nav-group">
+        <div class="ol-admin-nav-group__label">{t(props.group.title)}</div>
+        <For each={visibleItems()}>{(item) => <SideMenuRow {...item} />}</For>
+      </div>
+    </Show>
+  )
+}
+
+export const SideMenu = (props: {
+  items?: SideMenuItemProps[]
+  groups?: SideMenuGroup[]
+}) => {
+  const groups = () => props.groups ?? side_menu_groups
+  return (
+    <nav class="ol-admin-nav" aria-label="Admin navigation">
+      <Show
+        when={!props.items || props.groups}
+        fallback={
+          <div class="ol-admin-nav-group">
+            <For each={(props.items ?? []).filter(isSideMenuItemVisible)}>
+              {(item) => <SideMenuRow {...item} />}
+            </For>
+          </div>
+        }
+      >
+        <For each={groups()}>
+          {(group) => <SideMenuGroupSection group={group} />}
+        </For>
+      </Show>
+    </nav>
   )
 }

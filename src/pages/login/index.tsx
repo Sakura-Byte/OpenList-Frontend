@@ -1,47 +1,75 @@
-import {
-  Image,
-  Center,
-  Flex,
-  Heading,
-  Text,
-  Input,
-  Button,
-  useColorModeValue,
-  HStack,
-  VStack,
-  Checkbox,
-  Icon,
-} from "@hope-ui/solid"
-import { createMemo, createSignal, Show, onMount, onCleanup } from "solid-js"
-import { SwitchColorMode, SwitchLanguageWhite } from "~/components"
-import { useFetch, useLoading, useT, useTitle, useRouter } from "~/hooks"
-import {
-  changeToken,
-  r,
-  notify,
-  handleRespWithoutAuthAndNotify,
-  base_path,
-  handleResp,
-  hashPwd,
-} from "~/utils"
-import { PResp, Resp } from "~/types"
-import LoginBg from "./LoginBg"
+import { useColorMode } from "@hope-ui/solid"
 import { createStorageSignal } from "@solid-primitives/storage"
+import {
+  TbArrowLeft,
+  TbFingerprint,
+  TbLanguage,
+  TbMoon,
+  TbSun,
+} from "solid-icons/tb"
+import { createMemo, createSignal, onCleanup, onMount, Show } from "solid-js"
+import { SwitchLanguage } from "~/components"
+import { SiteLogo } from "~/components/icons-tb"
+import { useFetch, useLoading, useRouter, useT, useTitle } from "~/hooks"
 import { getSetting, getSettingBool } from "~/store"
+import { PResp, Resp } from "~/types"
+import {
+  base_path,
+  changeToken,
+  handleResp,
+  handleRespWithoutAuthAndNotify,
+  hashPwd,
+  notify,
+  r,
+} from "~/utils"
+import { toggleThemeWithTransition } from "~/utils/theme_sync"
+import "../manage/manage.css"
 import { SSOLogin } from "./SSOLogin"
-import { IoFingerPrint } from "solid-icons/io"
+
 const supported = () =>
   !!globalThis.PublicKeyCredential?.parseRequestOptionsFromJSON
 
 const Login = () => {
-  const logos = getSetting("logo").split("\n")
-  const logo = useColorModeValue(logos[0], logos.pop())
   const t = useT()
+  const { colorMode, toggleColorMode } = useColorMode()
+  const isDark = () => colorMode() === "dark"
+
+  const siteTitle = () => getSetting("site_title") || "OpenList"
+
+  const logoUrl = createMemo(() => {
+    const raw = (getSetting("logo") || "").trim()
+    if (!raw) return ""
+    const lines = raw
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (lines.length === 0) return ""
+    if (isDark() && lines.length > 1) return lines[lines.length - 1]
+    return lines[0]
+  })
+
+  const wallpaperUrl = createMemo(() => {
+    const raw = (getSetting("appearance_wallpaper") || "").trim()
+    if (!raw) return ""
+    const lines = raw
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+    if (lines.length === 0) return ""
+    if (isDark() && lines[1]) return lines[1]
+    return lines[0]
+  })
+
+  const surfaceMode = createMemo<"glass" | "solid">(() => {
+    const raw = (getSetting("appearance_surface_mode") || "solid").trim()
+    return raw === "glass" ? "glass" : "solid"
+  })
+
   const title = createMemo(() => {
-    return `${t("login.login_to")} ${getSetting("site_title")}`
+    return `${t("login.login_to")} ${siteTitle()}`
   })
   useTitle(title)
-  const bgColor = useColorModeValue("white", "$neutral1")
+
   const [username, setUsername] = createSignal(
     localStorage.getItem("username") || "",
   )
@@ -52,6 +80,7 @@ const Login = () => {
   const [useauthn, setuseauthn] = createSignal(false)
   const [remember, setRemember] = createStorageSignal("remember-pwd", "false")
   const [useLdap, setUseLdap] = createSignal(false)
+
   const [loading, data] = useLoading(
     async (): Promise<Resp<{ token: string }>> => {
       if (useLdap()) {
@@ -60,59 +89,65 @@ const Login = () => {
           password: password(),
           otp_code: opt(),
         })
-      } else {
-        return r.post("/auth/login/hash", {
-          username: username(),
-          password: hashPwd(password()),
-          otp_code: opt(),
-        })
       }
+      return r.post("/auth/login/hash", {
+        username: username(),
+        password: hashPwd(password()),
+        otp_code: opt(),
+      })
     },
   )
+
   const [, postauthnlogin] = useFetch(
     (
       session: string,
       credentials: PublicKeyCredential,
-      username: string,
+      user: string,
       signal: AbortSignal | undefined,
     ): Promise<Resp<{ token: string }>> =>
       r.post(
-        "/authn/webauthn_finish_login?username=" + username,
+        "/authn/webauthn_finish_login?username=" + user,
         JSON.stringify(credentials.toJSON()),
         {
           headers: {
-            session: session,
+            session,
           },
           signal,
         },
       ),
   )
+
   interface WebAuthnTemp {
     session: string
     options: { publicKey: PublicKeyCredentialRequestOptionsJSON }
   }
+
   const [, getauthntemp] = useFetch(
-    (username, signal: AbortSignal | undefined): PResp<WebAuthnTemp> =>
-      r.get("/authn/webauthn_begin_login?username=" + username, {
+    (user: string, signal: AbortSignal | undefined): PResp<WebAuthnTemp> =>
+      r.get("/authn/webauthn_begin_login?username=" + user, {
         signal,
       }),
   )
+
   const { searchParams, to } = useRouter()
+
   const isAuthnConditionalAvailable = async (): Promise<boolean> => {
     if (
-      PublicKeyCredential &&
+      globalThis.PublicKeyCredential &&
       "isConditionalMediationAvailable" in PublicKeyCredential
     ) {
       return await PublicKeyCredential.isConditionalMediationAvailable()
-    } else {
-      return false
     }
+    return false
   }
+
   const AuthnSignEnabled = getSettingBool("webauthn_login_enabled")
-  const AuthnSwitch = async () => {
+  const AuthnSwitch = () => {
     setuseauthn(!useauthn())
   }
+
   let AuthnSignal: AbortController | null = null
+
   const AuthnLogin = async (conditional?: boolean) => {
     if (!supported()) {
       if (!conditional) {
@@ -126,18 +161,18 @@ const Login = () => {
     AuthnSignal?.abort()
     const controller = new AbortController()
     AuthnSignal = controller
-    const username_login: string = conditional ? "" : username()
+    const usernameLogin: string = conditional ? "" : username()
     if (!conditional && remember() === "true") {
       localStorage.setItem("username", username())
-    } else {
+    } else if (!conditional) {
       localStorage.removeItem("username")
     }
-    const resp = await getauthntemp(username_login, controller.signal)
-    handleResp(resp, async (data) => {
+    const resp = await getauthntemp(usernameLogin, controller.signal)
+    handleResp(resp, async (respData) => {
       try {
         const requestOptions: CredentialRequestOptions = {
           publicKey: PublicKeyCredential.parseRequestOptionsFromJSON(
-            data.options.publicKey,
+            respData.options.publicKey,
           ),
           signal: controller.signal,
         }
@@ -147,17 +182,17 @@ const Login = () => {
         const credentials = (await navigator.credentials.get(
           requestOptions,
         )) as PublicKeyCredential
-        const resp = await postauthnlogin(
-          data.session,
+        const finishResp = await postauthnlogin(
+          respData.session,
           credentials,
-          username_login,
+          usernameLogin,
           controller.signal,
         )
         handleRespWithoutAuthAndNotify(
-          resp,
-          (data) => {
+          finishResp,
+          (loginData) => {
             notify.success(t("login.success"))
-            changeToken(data.token)
+            changeToken(loginData.token)
             to(
               decodeURIComponent(searchParams.redirect || base_path || "/"),
               true,
@@ -168,24 +203,37 @@ const Login = () => {
           },
         )
       } catch (error: unknown) {
-        if (error instanceof Error && error.name != "AbortError")
+        if (error instanceof Error && error.name !== "AbortError") {
           notify.error(error.message)
+        }
       }
     })
   }
+
   const AuthnCleanUpHandler = () => AuthnSignal?.abort()
+
   onMount(() => {
+    document.body.dataset.olAdminPortal = "true"
     if (AuthnSignEnabled) {
       window.addEventListener("beforeunload", AuthnCleanUpHandler)
       AuthnLogin(true)
     }
   })
+
   onCleanup(() => {
+    delete document.body.dataset.olAdminPortal
     AuthnSignal?.abort()
     window.removeEventListener("beforeunload", AuthnCleanUpHandler)
   })
 
-  const Login = async () => {
+  const [needOpt, setNeedOpt] = createSignal(false)
+  const ldapLoginEnabled = getSettingBool("ldap_login_enabled")
+  const ldapLoginTips = getSetting("ldap_login_tips")
+  if (ldapLoginEnabled) {
+    setUseLdap(true)
+  }
+
+  const submitLogin = async () => {
     if (!useauthn()) {
       if (remember() === "true") {
         localStorage.setItem("username", username())
@@ -197,9 +245,9 @@ const Login = () => {
       const resp = await data()
       handleRespWithoutAuthAndNotify(
         resp,
-        (data) => {
+        (resData) => {
           notify.success(t("login.success"))
-          changeToken(data.token)
+          changeToken(resData.token)
           to(
             decodeURIComponent(searchParams.redirect || base_path || "/"),
             true,
@@ -217,155 +265,210 @@ const Login = () => {
       await AuthnLogin()
     }
   }
-  const [needOpt, setNeedOpt] = createSignal(false)
-  const ldapLoginEnabled = getSettingBool("ldap_login_enabled")
-  const ldapLoginTips = getSetting("ldap_login_tips")
-  if (ldapLoginEnabled) {
-    setUseLdap(true)
-  }
 
   return (
-    <Center zIndex="$docked" w="$full" h="100vh">
-      <VStack
-        bgColor={bgColor()}
-        rounded="$xl"
-        p="24px"
-        w={{
-          "@initial": "90%",
-          "@sm": "364px",
-        }}
-        spacing="$4"
-      >
-        <Flex alignItems="center" justifyContent="space-around">
-          <Image mr="$2" boxSize="$12" src={logo()} />
-          <Heading color="$info9" fontSize="$2xl">
-            {title()}
-          </Heading>
-        </Flex>
-        <Show
-          when={!needOpt()}
-          fallback={
-            <Input
-              id="totp"
-              name="otp"
-              placeholder={t("login.otp-tips")}
-              value={opt()}
-              onInput={(e) => setOpt(e.currentTarget.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  Login()
-                }
-              }}
-            />
-          }
-        >
-          <Input
-            name="username"
-            placeholder={t("login.username-tips")}
-            value={username()}
-            onInput={(e) => setUsername(e.currentTarget.value)}
-          />
-          <Show when={!useauthn()}>
-            <Input
-              name="password"
-              placeholder={t("login.password-tips")}
-              type="password"
-              value={password()}
-              onInput={(e) => setPassword(e.currentTarget.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  Login()
-                }
-              }}
-            />
-          </Show>
-          <Flex
-            px="$1"
-            w="$full"
-            fontSize="$sm"
-            color="$neutral10"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Checkbox
-              checked={remember() === "true"}
-              onChange={() =>
-                setRemember(remember() === "true" ? "false" : "true")
-              }
-            >
-              {t("login.remember")}
-            </Checkbox>
-            <Text as="a" target="_blank" href={t("login.forget_url")}>
-              {t("login.forget")}
-            </Text>
-          </Flex>
-        </Show>
-        <HStack w="$full" spacing="$2">
-          <Show when={!useauthn()}>
-            <Button
-              colorScheme="primary"
-              w="$full"
-              onClick={() => {
-                if (needOpt()) {
-                  setOpt("")
-                } else {
-                  setUsername("")
-                  setPassword("")
-                }
-              }}
-            >
-              {t("login.clear")}
-            </Button>
-          </Show>
-          <Button w="$full" loading={loading()} onClick={Login}>
-            {t("login.login")}
-          </Button>
-        </HStack>
-        <Show when={ldapLoginEnabled}>
-          <Checkbox
-            w="$full"
-            checked={useLdap() === true}
-            onChange={() => setUseLdap(!useLdap())}
-          >
-            {ldapLoginTips}
-          </Checkbox>
-        </Show>
-        <Button
-          w="$full"
-          colorScheme="accent"
-          onClick={() => {
-            changeToken()
-            to(
-              decodeURIComponent(searchParams.redirect || base_path || "/"),
-              true,
-            )
+    <div
+      class="ol-modern-scope ol-login"
+      data-modern-theme={isDark() ? "dark" : "light"}
+      data-wallpaper={wallpaperUrl() ? "on" : "off"}
+      data-surface={surfaceMode()}
+    >
+      <Show when={wallpaperUrl()}>
+        <div
+          class="ol-home__wallpaper"
+          style={{ "background-image": `url("${wallpaperUrl()}")` }}
+        />
+      </Show>
+
+      <div class="ol-sheet ol-login__card">
+        <div class="ol-login__header">
+          <SiteLogo src={logoUrl()} title={siteTitle()} size={42} />
+          <h1 class="ol-login__title">{title()}</h1>
+        </div>
+
+        <form
+          class="ol-login__form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            submitLogin()
           }}
         >
-          {t("login.use_guest")}
-        </Button>
-        <Flex
-          mt="$2"
-          justifyContent="space-evenly"
-          alignItems="center"
-          color="$neutral10"
-          w="$full"
-        >
-          <SwitchLanguageWhite />
-          <SwitchColorMode />
-          <SSOLogin />
-          <Show when={AuthnSignEnabled}>
-            <Icon
-              cursor="pointer"
-              boxSize="$8"
-              as={IoFingerPrint}
-              p="$0_5"
-              onclick={AuthnSwitch}
+          <Show
+            when={!needOpt()}
+            fallback={
+              <>
+                <div class="ol-login__row">
+                  <button
+                    type="button"
+                    class="ol-btn ol-btn--ghost"
+                    onClick={() => {
+                      setNeedOpt(false)
+                      setOpt("")
+                    }}
+                  >
+                    <TbArrowLeft size={15} class="ol-ico" />
+                    <span>{t("login.login")}</span>
+                  </button>
+                </div>
+                <input
+                  id="totp"
+                  name="otp"
+                  class="ol-ui-input"
+                  autocomplete="one-time-code"
+                  placeholder={t("login.otp-tips")}
+                  value={opt()}
+                  onInput={(e) => setOpt(e.currentTarget.value)}
+                />
+              </>
+            }
+          >
+            <input
+              name="username"
+              class="ol-ui-input"
+              autocomplete="username webauthn"
+              placeholder={t("login.username-tips")}
+              value={username()}
+              onInput={(e) => setUsername(e.currentTarget.value)}
             />
+
+            <Show when={!useauthn()}>
+              <input
+                name="password"
+                type="password"
+                class="ol-ui-input"
+                autocomplete="current-password"
+                placeholder={t("login.password-tips")}
+                value={password()}
+                onInput={(e) => setPassword(e.currentTarget.value)}
+              />
+            </Show>
+
+            <div class="ol-login__row">
+              <label class="ol-login__check">
+                <input
+                  type="checkbox"
+                  class="ol-checkbox"
+                  checked={remember() === "true"}
+                  onChange={() =>
+                    setRemember(remember() === "true" ? "false" : "true")
+                  }
+                />
+                <span>{t("login.remember")}</span>
+              </label>
+              <a
+                class="ol-link-btn"
+                target="_blank"
+                rel="noopener noreferrer"
+                href={t("login.forget_url")}
+              >
+                {t("login.forget")}
+              </a>
+            </div>
           </Show>
-        </Flex>
-      </VStack>
-      <LoginBg />
-    </Center>
+
+          <Show when={ldapLoginEnabled && !needOpt() && !useauthn()}>
+            <label class="ol-login__check">
+              <input
+                type="checkbox"
+                class="ol-checkbox"
+                checked={useLdap() === true}
+                onChange={() => setUseLdap(!useLdap())}
+              />
+              <span>{ldapLoginTips}</span>
+            </label>
+          </Show>
+
+          <div class="ol-login__actions">
+            <Show when={!useauthn()}>
+              <button
+                type="button"
+                class="ol-btn"
+                onClick={() => {
+                  if (needOpt()) {
+                    setOpt("")
+                  } else {
+                    setUsername("")
+                    setPassword("")
+                  }
+                }}
+              >
+                {t("login.clear")}
+              </button>
+            </Show>
+            <button
+              type="submit"
+              class="ol-btn ol-btn--primary"
+              disabled={loading()}
+            >
+              <Show when={loading()}>
+                <span class="ol-ui-spinner" />
+              </Show>
+              <Show when={useauthn()}>
+                <TbFingerprint size={16} class="ol-ico" />
+              </Show>
+              <span>{t("login.login")}</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="ol-btn ol-login__guest"
+            onClick={() => {
+              changeToken()
+              to(
+                decodeURIComponent(searchParams.redirect || base_path || "/"),
+                true,
+              )
+            }}
+          >
+            <TbArrowLeft size={15} class="ol-ico" />
+            <span>{t("login.use_guest")}</span>
+          </button>
+        </form>
+
+        <div class="ol-login__footer">
+          <SwitchLanguage
+            as="button"
+            type="button"
+            class="ol-icon-btn"
+            aria-label="Language"
+            title="Language"
+          >
+            <TbLanguage size={18} class="ol-ico" />
+          </SwitchLanguage>
+
+          <button
+            type="button"
+            class="ol-icon-btn"
+            title={t("home.toolbar.toggle_theme")}
+            aria-label={t("home.toolbar.toggle_theme")}
+            onClick={() => toggleThemeWithTransition(toggleColorMode)}
+          >
+            {isDark() ? (
+              <TbSun size={18} class="ol-ico" />
+            ) : (
+              <TbMoon size={18} class="ol-ico" />
+            )}
+          </button>
+
+          <SSOLogin />
+
+          <Show when={AuthnSignEnabled}>
+            <button
+              type="button"
+              class="ol-icon-btn"
+              data-active={useauthn() ? "true" : "false"}
+              aria-pressed={useauthn() ? "true" : "false"}
+              title={t("users.webauthn")}
+              aria-label={t("users.webauthn")}
+              onClick={AuthnSwitch}
+            >
+              <TbFingerprint size={18} class="ol-ico" />
+            </button>
+          </Show>
+        </div>
+      </div>
+    </div>
   )
 }
 

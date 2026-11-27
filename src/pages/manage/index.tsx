@@ -1,64 +1,77 @@
-import { Box, Center, Flex, HStack, useColorModeValue } from "@hope-ui/solid"
-import { FullLoading, SwitchColorMode, SwitchLanguageWhite } from "~/components"
+import { useColorMode } from "@hope-ui/solid"
+import { Link, Route, Routes } from "@solidjs/router"
+import { createMemo, For, onCleanup, onMount, Suspense } from "solid-js"
+import { FullLoading } from "~/components"
+import { SiteLogo } from "~/components/icons-tb"
 import { useT, useTitle } from "~/hooks"
-import { Header } from "./Header"
-import { SideMenu } from "./SideMenu"
-import { side_menu_items } from "./sidemenu_items"
-import { Route, Routes } from "@solidjs/router"
-import { createMemo, For, Suspense } from "solid-js"
-import { routes } from "./routes"
+import { joinBase } from "~/utils"
 import { getBackendKind } from "~/utils/backend"
+import { AdminSidebarFooter, Header, onClose, useAdminBrand } from "./Header"
+import "./manage.css"
+import { routes } from "./routes"
+import { SideMenu } from "./SideMenu"
+import { side_menu_groups } from "./sidemenu_items"
 
 const Manage = () => {
   const t = useT()
+  const { colorMode } = useColorMode()
+  const { logoUrl, siteTitle } = useAdminBrand()
   useTitle(() => t("manage.title"))
+
+  onMount(() => {
+    document.body.dataset.olAdminPortal = "true"
+    onCleanup(() => {
+      delete document.body.dataset.olAdminPortal
+    })
+  })
+
   const visibleRoutes = createMemo(() =>
     routes.filter((r) => !r.backend || r.backend.includes(getBackendKind())),
   )
+
   return (
-    <Box
-      css={{
-        "--hope-colors-background": "var(--hope-colors-loContrast)",
-      }}
-      bgColor="$background"
-      w="$full"
+    <div
+      class="ol-modern-scope ol-admin"
+      data-modern-theme={colorMode() === "dark" ? "dark" : "light"}
     >
-      <Header />
-      <Flex w="$full" h="calc(100vh - 64px)">
-        <Box
-          display={{ "@initial": "none", "@sm": "block" }}
-          w="$56"
-          h="$full"
-          shadow="$md"
-          bgColor={useColorModeValue("$background", "$neutral2")()}
-          overflowY="auto"
-        >
-          <SideMenu items={side_menu_items} />
-          <Center>
-            <HStack spacing="$4" p="$2" color="$neutral11">
-              <SwitchLanguageWhite />
-              <SwitchColorMode />
-            </HStack>
-          </Center>
-        </Box>
-        <Box
-          w={{
-            "@initial": "$full",
-            "@sm": "calc(100% - 14rem)",
-          }}
-          p="$4"
-          overflowY="auto"
-        >
-          <Routes>
-            <For each={visibleRoutes()}>
-              {(route) => {
-                return <Route path={route.to!} component={route.component} />
-              }}
-            </For>
-          </Routes>
-        </Box>
-      </Flex>
-    </Box>
+      <div class="ol-admin-shell">
+        <aside class="ol-admin-sidebar">
+          <Link
+            class="ol-admin-sidebar__brand"
+            href={joinBase("/@manage")}
+            onClick={onClose}
+          >
+            <SiteLogo src={logoUrl()} title={siteTitle()} size={28} />
+            <span class="ol-admin-sidebar__brand-text">
+              <span class="ol-admin-sidebar__brand-title">{siteTitle()}</span>
+              <span class="ol-admin-sidebar__brand-sub">
+                {t("manage.title")}
+              </span>
+            </span>
+          </Link>
+
+          <div class="ol-admin-sidebar__scroll">
+            <SideMenu groups={side_menu_groups} />
+          </div>
+
+          <AdminSidebarFooter />
+        </aside>
+
+        <Header />
+
+        <main class="ol-admin-main">
+          <Suspense fallback={<FullLoading />}>
+            <Routes>
+              <For each={visibleRoutes()}>
+                {(route) => (
+                  <Route path={route.to} component={route.component} />
+                )}
+              </For>
+            </Routes>
+          </Suspense>
+        </main>
+      </div>
+    </div>
   )
 }
 

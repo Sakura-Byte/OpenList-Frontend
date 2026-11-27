@@ -1,4 +1,9 @@
 {
+  "roles": {
+    "admin": "Admin",
+    "general": "General",
+    "guest": "Guest"
+  },
   "permissions": {
     "see_hides": "Can see hiddens",
     "access_without_password": "Access without password",
