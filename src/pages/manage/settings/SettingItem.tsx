@@ -3,7 +3,6 @@ import {
   FormControl,
   FormHelperText,
   FormLabel,
-  Icon,
   Input,
   Select,
   SelectContent,
@@ -18,10 +17,10 @@ import {
   Switch as HopeSwitch,
   Textarea,
 } from "@hope-ui/solid"
+import { TbTrash } from "solid-icons/tb"
 import { For, Match, Show, Switch } from "solid-js"
 import { useT } from "~/hooks"
 import { Flag, SettingItem, Type } from "~/types"
-import { TiDelete } from "solid-icons/ti"
 
 export type ItemProps = SettingItem & {
   onChange?: (value: string) => void
@@ -36,19 +35,24 @@ const Item = (props: ItemProps) => {
     <FormControl w={props.w ?? "100%"} display="flex" flexDirection="column">
       <Show when={!props.hideLabel}>
         <FormLabel for={props.key} display="flex" alignItems="center">
-          {t(`settings.${props.key}`)}
+          <span>{t(`settings.${props.key}`)}</span>
           <Show when={props.flag === Flag.DEPRECATED}>
-            <Icon
-              ml="$2"
-              as={TiDelete}
-              boxSize="$5"
-              color="$danger9"
-              verticalAlign="middle"
-              cursor="pointer"
-              onClick={() => {
+            <button
+              type="button"
+              class="ol-icon-btn ol-icon-btn--danger"
+              style={{
+                width: "24px",
+                height: "24px",
+                "margin-left": "6px",
+              }}
+              title={t("global.delete")}
+              onClick={(e) => {
+                e.preventDefault()
                 props.onDelete?.()
               }}
-            />
+            >
+              <TbTrash size={14} class="ol-ico" />
+            </button>
           </Show>
         </FormLabel>
       </Show>
@@ -75,8 +79,9 @@ const Item = (props: ItemProps) => {
         <Match when={props.type === Type.Text}>
           <Textarea
             id={props.key}
+            rows={3}
             value={props.value}
-            onChange={(e) => props.onChange?.(e.currentTarget.value)}
+            onInput={(e) => props.onChange?.(e.currentTarget.value)}
             readOnly={props.flag === Flag.READONLY}
           />
         </Match>
@@ -109,9 +114,9 @@ const Item = (props: ItemProps) => {
           </Select>
         </Match>
       </Switch>
-      <FormHelperText>
-        {props.help ? t(`settings.${props.key}-tips`) : ""}
-      </FormHelperText>
+      <Show when={props.help}>
+        <FormHelperText>{t(`settings.${props.key}-tips`)}</FormHelperText>
+      </Show>
     </FormControl>
   )
 }

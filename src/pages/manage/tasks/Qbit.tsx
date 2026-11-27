@@ -1,16 +1,17 @@
-import { VStack } from "@hope-ui/solid"
-import { useManageTitle } from "~/hooks"
-import { TypeTasks } from "./Tasks"
+import { useManageTitle, useT } from "~/hooks"
 import {
   getOfflineDownloadNameAnalyzer,
   getOfflineDownloadTransferNameAnalyzer,
 } from "./helper"
+import { TypeTasks } from "./Tasks"
+import { TasksShell } from "./TasksShell"
 
 // deprecated
 const Qbit = () => {
+  const t = useT()
   useManageTitle("manage.sidemenu.qbit")
   return (
-    <VStack w="$full" alignItems="start" spacing="$4">
+    <TasksShell title={t("manage.sidemenu.tasks")}>
       <TypeTasks
         type="qbit_down"
         canRetry
@@ -20,7 +21,7 @@ const Qbit = () => {
         type="qbit_transfer"
         nameAnalyzer={getOfflineDownloadTransferNameAnalyzer()}
       />
-    </VStack>
+    </TasksShell>
   )
 }
 

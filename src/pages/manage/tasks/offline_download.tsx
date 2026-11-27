@@ -1,15 +1,16 @@
-import { VStack } from "@hope-ui/solid"
-import { useManageTitle } from "~/hooks"
-import { TypeTasks } from "./Tasks"
+import { useManageTitle, useT } from "~/hooks"
 import {
   getOfflineDownloadNameAnalyzer,
   getOfflineDownloadTransferNameAnalyzer,
 } from "./helper"
+import { TypeTasks } from "./Tasks"
+import { TasksShell } from "./TasksShell"
 
 const OfflineDownload = () => {
+  const t = useT()
   useManageTitle("manage.sidemenu.offline_download")
   return (
-    <VStack w="$full" alignItems="start" spacing="$4">
+    <TasksShell title={t("manage.sidemenu.offline_download")}>
       <TypeTasks
         type="offline_download"
         canRetry
@@ -20,7 +21,7 @@ const OfflineDownload = () => {
         canRetry
         nameAnalyzer={getOfflineDownloadTransferNameAnalyzer()}
       />
-    </VStack>
+    </TasksShell>
   )
 }
 

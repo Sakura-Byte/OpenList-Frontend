@@ -1,15 +1,16 @@
-import { useManageTitle } from "~/hooks"
-import { VStack } from "@hope-ui/solid"
-import { TypeTasks } from "~/pages/manage/tasks/Tasks"
+import { useManageTitle, useT } from "~/hooks"
 import {
   getDecompressNameAnalyzer,
   getDecompressUploadNameAnalyzer,
-} from "~/pages/manage/tasks/helper"
+} from "./helper"
+import { TypeTasks } from "./Tasks"
+import { TasksShell } from "./TasksShell"
 
 const Decompress = () => {
+  const t = useT()
   useManageTitle("manage.sidemenu.decompress")
   return (
-    <VStack w="$full" alignItems="start" spacing="$4">
+    <TasksShell title={t("manage.sidemenu.decompress")}>
       <TypeTasks
         type="decompress"
         canRetry
@@ -20,7 +21,7 @@ const Decompress = () => {
         canRetry
         nameAnalyzer={getDecompressUploadNameAnalyzer()}
       />
-    </VStack>
+    </TasksShell>
   )
 }
 

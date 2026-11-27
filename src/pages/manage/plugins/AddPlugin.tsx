@@ -1,31 +1,13 @@
 import {
-  Badge,
-  Box,
   Button,
   FormControl,
   FormHelperText,
   FormLabel,
-  Heading,
-  HStack,
-  Icon,
   Input,
-  Select,
-  SelectContent,
-  SelectIcon,
-  SelectListbox,
-  SelectOption,
-  SelectOptionIndicator,
-  SelectOptionText,
-  SelectTrigger,
-  SelectValue,
   Switch as HopeSwitch,
-  Text,
-  useColorModeValue,
-  VStack,
 } from "@hope-ui/solid"
+import { TbArrowLeft, TbCloudUpload, TbPlus, TbPuzzle } from "solid-icons/tb"
 import { createSignal, Show } from "solid-js"
-import { FiUploadCloud } from "solid-icons/fi"
-import { FaSolidPuzzlePiece } from "solid-icons/fa"
 import { useManageTitle, useRouter, useT } from "~/hooks"
 import { PluginItem, Resp } from "~/types"
 import { handleResp, notify, parsePluginZip, pluginEngine, r } from "~/utils"
@@ -38,20 +20,13 @@ const AddPlugin = () => {
   const [loading, setLoading] = createSignal(false)
   const [installMethod, setInstallMethod] = createSignal<"zip" | "url">("zip")
 
-  // ZIP upload state
   const [zipFile, setZipFile] = createSignal<File | null>(null)
   const [zipParsedManifest, setZipParsedManifest] =
     createSignal<Partial<PluginItem> | null>(null)
   const [isDragging, setIsDragging] = createSignal(false)
 
-  // URL state
   const [manifestUrl, setManifestUrl] = createSignal("")
-
-  // High privilege state
   const [highPrivilege, setHighPrivilege] = createSignal(false)
-
-  const borderColor = useColorModeValue("$neutral4", "$neutral5")
-  const dropBg = useColorModeValue("$neutral1", "$neutral2")
 
   const handleFileChange = async (file: File) => {
     if (!file.name.toLowerCase().endsWith(".zip")) {
@@ -121,234 +96,274 @@ const AddPlugin = () => {
   }
 
   return (
-    <VStack spacing="$5" alignItems="start" w="$full" maxW="$3xl">
-      <Heading mb="$1">{t("plugins.actions.install")}</Heading>
-
-      {/* 1. Install Method Select */}
-      <FormControl
-        w="$full"
-        display="flex"
-        flexDirection="column"
-        alignItems="start"
-        gap="$1_5"
-      >
-        <FormLabel for="install_method">
-          {t("plugins.install_modal.install_type")}
-        </FormLabel>
-        <Select
-          id="install_method"
-          value={installMethod()}
-          onChange={(v: any) => setInstallMethod(v)}
-        >
-          <SelectTrigger w="$full" maxW="$sm">
-            <SelectValue />
-            <SelectIcon />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectListbox>
-              <SelectOption value="zip">
-                <SelectOptionText>
-                  {t("plugins.install_modal.zip_tab")}
-                </SelectOptionText>
-                <SelectOptionIndicator />
-              </SelectOption>
-              <SelectOption value="url">
-                <SelectOptionText>
-                  {t("plugins.install_modal.url_tab")}
-                </SelectOptionText>
-                <SelectOptionIndicator />
-              </SelectOption>
-            </SelectListbox>
-          </SelectContent>
-        </Select>
-      </FormControl>
-
-      {/* 2. ZIP Mode */}
-      <Show
-        when={installMethod() === "zip"}
-        fallback={
-          <FormControl
-            w="$full"
-            display="flex"
-            flexDirection="column"
-            alignItems="start"
-            gap="$1_5"
-            required
-          >
-            <FormLabel for="manifest_url">
-              {t("plugins.install_modal.url_label")}
-            </FormLabel>
-            <Input
-              id="manifest_url"
-              w="$full"
-              maxW="$2xl"
-              placeholder={t("plugins.install_modal.url_placeholder")}
-              value={manifestUrl()}
-              onInput={(e: any) => setManifestUrl(e.target.value)}
+    <div class="ol-admin-page">
+      <div class="ol-admin-head">
+        <div class="ol-admin-head__main">
+          <h1 class="ol-admin-title">{t("plugins.actions.install")}</h1>
+        </div>
+        <div class="ol-admin-head__actions">
+          <Button size="sm" colorScheme="neutral" onClick={() => back()}>
+            <TbArrowLeft
+              size={15}
+              class="ol-ico"
+              style={{ "margin-right": "6px" }}
             />
-            <FormHelperText color="$neutral10" fontSize="$xs" mt="$0_5">
-              {t("plugins.install_modal.url_help")}
+            {t("global.back")}
+          </Button>
+        </div>
+      </div>
+
+      {/* Installation Method Tabs */}
+      <div class="ol-admin-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          class="ol-admin-tab"
+          data-active={installMethod() === "zip" ? "true" : "false"}
+          aria-selected={installMethod() === "zip" ? "true" : "false"}
+          onClick={() => setInstallMethod("zip")}
+        >
+          <span>{t("plugins.install_modal.zip_tab")}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="ol-admin-tab"
+          data-active={installMethod() === "url" ? "true" : "false"}
+          aria-selected={installMethod() === "url" ? "true" : "false"}
+          onClick={() => setInstallMethod("url")}
+        >
+          <span>{t("plugins.install_modal.url_tab")}</span>
+        </button>
+      </div>
+
+      <section class="ol-admin-card">
+        <div class="ol-admin-form-stack">
+          <Show
+            when={installMethod() === "zip"}
+            fallback={
+              <FormControl
+                w="100%"
+                display="flex"
+                flexDirection="column"
+                required
+              >
+                <FormLabel for="manifest_url">
+                  {t("plugins.install_modal.url_label")}
+                </FormLabel>
+                <Input
+                  id="manifest_url"
+                  placeholder={t("plugins.install_modal.url_placeholder")}
+                  value={manifestUrl()}
+                  onInput={(e: any) => setManifestUrl(e.target.value)}
+                />
+                <FormHelperText>
+                  {t("plugins.install_modal.url_help")}
+                </FormHelperText>
+              </FormControl>
+            }
+          >
+            <FormControl
+              w="100%"
+              display="flex"
+              flexDirection="column"
+              required
+            >
+              <FormLabel>{t("plugins.install_modal.zip_file_label")}</FormLabel>
+              <div
+                style={{
+                  width: "100%",
+                  padding: "28px 20px",
+                  "border-radius": "var(--ol-radius-md)",
+                  border: `1.5px dashed ${
+                    isDragging()
+                      ? "var(--ol-accent)"
+                      : "var(--ol-border-strong)"
+                  }`,
+                  background: isDragging()
+                    ? "var(--ol-accent-soft)"
+                    : "var(--ol-surface-2)",
+                  "text-align": "center",
+                  cursor: "pointer",
+                  transition:
+                    "border-color 0.15s ease, background-color 0.15s ease",
+                }}
+                onDragOver={(e: DragEvent) => {
+                  e.preventDefault()
+                  setIsDragging(true)
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e: DragEvent) => {
+                  e.preventDefault()
+                  setIsDragging(false)
+                  if (e.dataTransfer?.files?.[0]) {
+                    handleFileChange(e.dataTransfer.files[0])
+                  }
+                }}
+                onClick={() => {
+                  const input = document.createElement("input")
+                  input.type = "file"
+                  input.accept = ".zip"
+                  input.onchange = (e: any) => {
+                    if (e.target.files?.[0]) {
+                      handleFileChange(e.target.files[0])
+                    }
+                  }
+                  input.click()
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    "flex-direction": "column",
+                    "align-items": "center",
+                    gap: "8px",
+                  }}
+                >
+                  <TbCloudUpload
+                    size={28}
+                    class="ol-ico"
+                    style={{ color: "var(--ol-accent-text)" }}
+                  />
+                  <div
+                    style={{
+                      "font-weight": "560",
+                      "font-size": "13.5px",
+                      color: "var(--ol-text-primary)",
+                    }}
+                  >
+                    {zipFile()
+                      ? zipFile()?.name
+                      : t("plugins.install_modal.zip_drop_title")}
+                  </div>
+                  <div
+                    style={{
+                      "font-size": "12px",
+                      color: "var(--ol-text-muted)",
+                    }}
+                  >
+                    {t("plugins.install_modal.zip_drop_help")}
+                  </div>
+                </div>
+              </div>
+            </FormControl>
+
+            <Show when={zipParsedManifest()}>
+              <div
+                class="ol-admin-card"
+                style={{
+                  background: "var(--ol-surface-2)",
+                  padding: "14px 16px",
+                  display: "flex",
+                  "align-items": "center",
+                  gap: "12px",
+                }}
+              >
+                <span
+                  style={{
+                    display: "inline-grid",
+                    "place-items": "center",
+                    width: "36px",
+                    height: "36px",
+                    "border-radius": "var(--ol-radius-sm)",
+                    background: "var(--ol-surface-card)",
+                    border: "1px solid var(--ol-border)",
+                    color: "var(--ol-accent-text)",
+                    flex: "none",
+                    overflow: "hidden",
+                  }}
+                >
+                  <Show
+                    when={zipParsedManifest()?.icon}
+                    fallback={<TbPuzzle size={18} class="ol-ico" />}
+                  >
+                    <img
+                      src={zipParsedManifest()?.icon}
+                      alt=""
+                      style={{
+                        width: "22px",
+                        height: "22px",
+                        "object-fit": "contain",
+                      }}
+                    />
+                  </Show>
+                </span>
+                <div style={{ flex: "1", "min-width": "0" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      "align-items": "center",
+                      "flex-wrap": "wrap",
+                      gap: "8px",
+                    }}
+                  >
+                    <span style={{ "font-weight": "600", "font-size": "14px" }}>
+                      {zipParsedManifest()?.name}
+                    </span>
+                    <span class="ol-pill ol-tabular" data-tone="accent">
+                      v{zipParsedManifest()?.version}
+                    </span>
+                    <span
+                      class="ol-pill"
+                      style={{ "font-family": "var(--ol-font-mono)" }}
+                    >
+                      {zipParsedManifest()?.id}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      "margin-top": "3px",
+                      "font-size": "12.5px",
+                      color: "var(--ol-text-secondary)",
+                    }}
+                  >
+                    {zipParsedManifest()?.description ||
+                      "ZIP plugin package parsed successfully"}
+                  </div>
+                </div>
+              </div>
+            </Show>
+          </Show>
+
+          <FormControl w="100%" display="flex" flexDirection="column">
+            <FormLabel for="high_privilege">
+              {t("plugins.install_modal.high_privilege_label")}
+            </FormLabel>
+            <div
+              style={{ display: "flex", "align-items": "center", gap: "8px" }}
+            >
+              <HopeSwitch
+                id="high_privilege"
+                checked={highPrivilege()}
+                onChange={(e: any) => setHighPrivilege(e.target.checked)}
+              />
+              <Show when={highPrivilege()}>
+                <span class="ol-pill" data-tone="danger">
+                  Root
+                </span>
+              </Show>
+            </div>
+            <FormHelperText>
+              {t("plugins.install_modal.high_privilege_help")}
             </FormHelperText>
           </FormControl>
-        }
-      >
-        <FormControl
-          w="$full"
-          display="flex"
-          flexDirection="column"
-          alignItems="start"
-          gap="$1_5"
-          required
-        >
-          <FormLabel>{t("plugins.install_modal.zip_file_label")}</FormLabel>
-          <Box
-            w="$full"
-            maxW="$2xl"
-            p="$6"
-            rounded="$md"
-            borderWidth="2px"
-            borderStyle="dashed"
-            borderColor={isDragging() ? "$accent8" : borderColor()}
-            bgColor={isDragging() ? "$accent1" : dropBg()}
-            textAlign="center"
-            cursor="pointer"
-            transition="all 0.2s"
-            _hover={{ borderColor: "$accent8" }}
-            onDragOver={(e: DragEvent) => {
-              e.preventDefault()
-              setIsDragging(true)
-            }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={(e: DragEvent) => {
-              e.preventDefault()
-              setIsDragging(false)
-              if (e.dataTransfer?.files?.[0]) {
-                handleFileChange(e.dataTransfer.files[0])
-              }
-            }}
-            onClick={() => {
-              const input = document.createElement("input")
-              input.type = "file"
-              input.accept = ".zip"
-              input.onchange = (e: any) => {
-                if (e.target.files?.[0]) {
-                  handleFileChange(e.target.files[0])
-                }
-              }
-              input.click()
-            }}
-          >
-            <VStack spacing="$2" alignItems="center">
-              <Icon as={FiUploadCloud} boxSize="$8" color="$accent9" />
-              <Text fontWeight="$medium" fontSize="$sm">
-                {zipFile()
-                  ? zipFile()?.name
-                  : t("plugins.install_modal.zip_drop_title")}
-              </Text>
-              <Text fontSize="$xs" color="$neutral10">
-                {t("plugins.install_modal.zip_drop_help")}
-              </Text>
-            </VStack>
-          </Box>
-        </FormControl>
+        </div>
+      </section>
 
-        {/* Extracted Preview */}
-        <Show when={zipParsedManifest()}>
-          <Box
-            w="$full"
-            maxW="$2xl"
-            p="$3"
-            rounded="$md"
-            borderWidth="1px"
-            borderColor="$accent6"
-            bgColor="$accent1"
-          >
-            <HStack spacing="$3" alignItems="center">
-              <Box
-                w="$9"
-                h="$9"
-                rounded="$md"
-                bgColor="$accent3"
-                color="$accent9"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                flexShrink={0}
-                overflow="hidden"
-              >
-                <Show
-                  when={zipParsedManifest()?.icon}
-                  fallback={<Icon as={FaSolidPuzzlePiece} boxSize="$5" />}
-                >
-                  <img
-                    src={zipParsedManifest()?.icon}
-                    alt="plugin icon"
-                    style={{
-                      width: "22px",
-                      height: "22px",
-                      "object-fit": "contain",
-                    }}
-                  />
-                </Show>
-              </Box>
-              <VStack alignItems="flex-start" spacing="$0_5" flex={1}>
-                <HStack spacing="$2" wrap="wrap">
-                  <Text fontWeight="$bold" fontSize="$sm">
-                    {zipParsedManifest()?.name}
-                  </Text>
-                  <Badge colorScheme="accent" variant="subtle">
-                    v{zipParsedManifest()?.version}
-                  </Badge>
-                  <Badge colorScheme="neutral" variant="outline">
-                    {zipParsedManifest()?.id}
-                  </Badge>
-                </HStack>
-                <Text fontSize="$xs" color="$neutral10" noOfLines={1}>
-                  {zipParsedManifest()?.description ||
-                    "ZIP plugin package parsed successfully"}
-                </Text>
-              </VStack>
-            </HStack>
-          </Box>
-        </Show>
-      </Show>
-
-      {/* 3. High Privilege Option */}
-      <FormControl
-        w="$full"
-        display="flex"
-        flexDirection="column"
-        alignItems="start"
-        gap="$1_5"
-      >
-        <FormLabel for="high_privilege">
-          {t("plugins.install_modal.high_privilege_label")}
-        </FormLabel>
-        <HStack spacing="$2">
-          <HopeSwitch
-            id="high_privilege"
-            checked={highPrivilege()}
-            onChange={(e: any) => setHighPrivilege(e.target.checked)}
-          />
-          <Show when={highPrivilege()}>
-            <Badge colorScheme="danger">Root Access</Badge>
-          </Show>
-        </HStack>
-        <FormHelperText color="$neutral10" fontSize="$xs" mt="$0_5">
-          {t("plugins.install_modal.high_privilege_help")}
-        </FormHelperText>
-      </FormControl>
-
-      {/* 4. Operations */}
-      <HStack spacing="$2" mt="$2">
-        <Button loading={loading()} onClick={handleInstall}>
-          {t("global.add")}
-        </Button>
+      <div class="ol-sticky-actions">
         <Button colorScheme="neutral" onClick={() => back()}>
           {t("global.back")}
         </Button>
-      </HStack>
-    </VStack>
+        <Button
+          colorScheme="primary"
+          loading={loading()}
+          onClick={handleInstall}
+        >
+          <TbPlus size={15} class="ol-ico" style={{ "margin-right": "6px" }} />
+          {t("global.add")}
+        </Button>
+      </div>
+    </div>
   )
 }
 

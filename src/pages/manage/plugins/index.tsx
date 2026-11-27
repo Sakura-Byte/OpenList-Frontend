@@ -1,7 +1,5 @@
 import {
-  Box,
   Button,
-  Grid,
   HStack,
   Modal,
   ModalBody,
@@ -10,27 +8,30 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  Select,
-  SelectContent,
-  SelectIcon,
-  SelectListbox,
-  SelectOption,
-  SelectOptionIndicator,
-  SelectOptionText,
-  SelectTrigger,
-  SelectValue,
-  Table,
-  Tbody,
   Text,
   Textarea,
-  Th,
-  Thead,
-  Tr,
   VStack,
-  Switch as HopeSwitch,
 } from "@hope-ui/solid"
-import { createMemo, createSignal, For, Match, onMount, Switch } from "solid-js"
 import { createStorageSignal } from "@solid-primitives/storage"
+import {
+  TbDownload,
+  TbFileImport,
+  TbLayoutGrid,
+  TbList,
+  TbPlus,
+  TbPuzzle,
+  TbRefresh,
+  TbSearch,
+} from "solid-icons/tb"
+import {
+  createMemo,
+  createSignal,
+  For,
+  Match,
+  onMount,
+  Show,
+  Switch,
+} from "solid-js"
 import { useFetch, useManageTitle, useRouter, useT } from "~/hooks"
 import { EmptyResp, PageResp, PluginItem, Resp } from "~/types"
 import { handleResp, notify, pluginEngine, r } from "~/utils"
@@ -43,8 +44,8 @@ const Plugins = () => {
 
   const [plugins, setPlugins] = createSignal<PluginItem[]>([])
   const [selectedType, setSelectedType] = createSignal<string>("all")
+  const [searchQuery, setSearchQuery] = createSignal("")
 
-  // Modals state
   const [importModalOpen, setImportModalOpen] = createSignal(false)
   const [importJsonText, setImportJsonText] = createSignal("")
 
@@ -70,13 +71,19 @@ const Plugins = () => {
 
   const shownPlugins = createMemo(() => {
     const type = selectedType()
+    const q = searchQuery().trim().toLowerCase()
     return plugins().filter((p) => {
-      if (type === "all") return true
-      return p.type === type
+      if (type !== "all" && p.type !== type) return false
+      if (!q) return true
+      return (
+        p.name.toLowerCase().includes(q) ||
+        p.id.toLowerCase().includes(q) ||
+        (p.description || "").toLowerCase().includes(q) ||
+        (p.author || "").toLowerCase().includes(q)
+      )
     })
   })
 
-  // Actions
   const handleToggle = async (plugin: PluginItem) => {
     const resp: Resp<{ id: string; enabled: boolean }> = await r.post(
       "/admin/plugin/toggle",
@@ -141,7 +148,7 @@ const Plugins = () => {
     }
   }
 
-  const categories = [
+  const categories = createMemo(() => [
     { key: "all", label: t("plugins.types.all") },
     { key: "ui", label: t("plugins.types.ui") },
     { key: "preview", label: t("plugins.types.preview") },
@@ -149,122 +156,185 @@ const Plugins = () => {
     { key: "theme", label: t("plugins.types.theme") },
     { key: "integration", label: t("plugins.types.integration") },
     { key: "system", label: t("plugins.types.system") },
-  ]
+  ])
 
   return (
-    <VStack spacing="$3" alignItems="start" w="$full">
-      {/* Top Operations Bar */}
-      <HStack
-        spacing="$2"
-        gap="$2"
-        w="$full"
-        wrap={{
-          "@initial": "wrap",
-          "@md": "unset",
-        }}
-      >
-        <Button colorScheme="accent" loading={loading()} onClick={refresh}>
-          {t("global.refresh")}
-        </Button>
-        <Button
-          onClick={() => {
-            to("/@manage/plugins/add")
+    <div class="ol-admin-page">
+      <div class="ol-admin-head">
+        <div class="ol-admin-head__main">
+          <h1 class="ol-admin-title">{t("plugins.title")}</h1>
+          <p class="ol-admin-subtitle">{t("plugins.subtitle")}</p>
+        </div>
+        <div class="ol-admin-head__actions">
+          <Button
+            size="sm"
+            colorScheme="neutral"
+            loading={loading()}
+            onClick={refresh}
+          >
+            <TbRefresh
+              size={15}
+              class="ol-ico"
+              style={{ "margin-right": "6px" }}
+            />
+            {t("global.refresh")}
+          </Button>
+          <Button
+            size="sm"
+            colorScheme="neutral"
+            onClick={() => setImportModalOpen(true)}
+          >
+            <TbFileImport
+              size={15}
+              class="ol-ico"
+              style={{ "margin-right": "6px" }}
+            />
+            {t("plugins.actions.import")}
+          </Button>
+          <Button size="sm" colorScheme="neutral" onClick={handleExportJson}>
+            <TbDownload
+              size={15}
+              class="ol-ico"
+              style={{ "margin-right": "6px" }}
+            />
+            {t("plugins.actions.export")}
+          </Button>
+          <Button
+            size="sm"
+            colorScheme="primary"
+            onClick={() => {
+              to("/@manage/plugins/add")
+            }}
+          >
+            <TbPlus
+              size={15}
+              class="ol-ico"
+              style={{ "margin-right": "6px" }}
+            />
+            {t("plugins.actions.install")}
+          </Button>
+        </div>
+      </div>
+
+      {/* Category Tabs */}
+      <div class="ol-admin-tabs" role="tablist">
+        <For each={categories()}>
+          {(cat) => {
+            const active = () => selectedType() === cat.key
+            return (
+              <button
+                type="button"
+                role="tab"
+                class="ol-admin-tab"
+                data-active={active() ? "true" : "false"}
+                aria-selected={active() ? "true" : "false"}
+                onClick={() => setSelectedType(cat.key)}
+              >
+                <span>{cat.label}</span>
+              </button>
+            )
           }}
-        >
-          {t("global.add")}
-        </Button>
-        <Button colorScheme="neutral" onClick={() => setImportModalOpen(true)}>
-          {t("plugins.actions.import")}
-        </Button>
-        <Button colorScheme="neutral" onClick={handleExportJson}>
-          {t("plugins.actions.export")}
-        </Button>
+        </For>
+      </div>
 
-        <HStack spacing="$1">
-          <span>{t("storages.other.layout")}</span>
-          <HopeSwitch
-            checked={layout() === "grid"}
-            onChange={(e: any) =>
-              setLayout(e.target.checked ? "grid" : "table")
-            }
-          />
-        </HStack>
+      {/* Search & Layout Switch Toolbar */}
+      <div class="ol-admin-toolbar">
+        <div class="ol-admin-toolbar__left">
+          <div class="ol-admin-search">
+            <TbSearch size={15} class="ol-ico" />
+            <input
+              type="search"
+              value={searchQuery()}
+              placeholder={t("plugins.search_placeholder")}
+              onInput={(e) => setSearchQuery(e.currentTarget.value)}
+            />
+          </div>
+        </div>
+        <div class="ol-admin-toolbar__right">
+          <span class="ol-pill ol-tabular">{shownPlugins().length}</span>
+          <div class="ol-seg">
+            <button
+              type="button"
+              class="ol-seg__btn"
+              aria-pressed={layout() === "table"}
+              title={t("manage.common.table_view")}
+              onClick={() => setLayout("table")}
+            >
+              <TbList size={15} class="ol-ico" />
+            </button>
+            <button
+              type="button"
+              class="ol-seg__btn"
+              aria-pressed={layout() === "grid"}
+              title={t("manage.common.grid_view")}
+              onClick={() => setLayout("grid")}
+            >
+              <TbLayoutGrid size={15} class="ol-ico" />
+            </button>
+          </div>
+        </div>
+      </div>
 
-        <Select
-          value={selectedType()}
-          onChange={(v: any) => setSelectedType(v)}
-        >
-          <SelectTrigger w="$40">
-            <SelectValue />
-            <SelectIcon />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectListbox>
-              <For each={categories}>
-                {(cat) => (
-                  <SelectOption value={cat.key}>
-                    <SelectOptionText>{cat.label}</SelectOptionText>
-                    <SelectOptionIndicator />
-                  </SelectOption>
+      {/* Main Content */}
+      <Show
+        when={shownPlugins().length > 0}
+        fallback={
+          <div class="ol-admin-card">
+            <div class="ol-admin-empty">
+              <TbPuzzle size={24} class="ol-ico" />
+              <span>
+                {plugins().length === 0
+                  ? t("plugins.empty_installed")
+                  : t("manage.common.no_results")}
+              </span>
+            </div>
+          </div>
+        }
+      >
+        <Switch>
+          <Match when={layout() === "table"}>
+            <div class="ol-admin-table-wrap">
+              <table class="ol-admin-table">
+                <thead>
+                  <tr>
+                    <th>{t("plugins.name")}</th>
+                    <th>{t("plugins.type")}</th>
+                    <th>{t("plugins.version")}</th>
+                    <th>{t("plugins.author")}</th>
+                    <th>{t("plugins.status_col")}</th>
+                    <th>{t("global.operations")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <For each={shownPlugins()}>
+                    {(plugin) => (
+                      <PluginListItem
+                        plugin={plugin}
+                        onToggle={handleToggle}
+                        onDelete={handleDelete}
+                      />
+                    )}
+                  </For>
+                </tbody>
+              </table>
+            </div>
+          </Match>
+
+          <Match when={layout() === "grid"}>
+            <div class="ol-admin-grid">
+              <For each={shownPlugins()}>
+                {(plugin) => (
+                  <PluginGridItem
+                    plugin={plugin}
+                    onToggle={handleToggle}
+                    onDelete={handleDelete}
+                  />
                 )}
               </For>
-            </SelectListbox>
-          </SelectContent>
-        </Select>
-      </HStack>
-
-      {/* Main Content Layout */}
-      <Switch>
-        <Match when={layout() === "table"}>
-          <Box w="$full" overflowX="auto">
-            <Table highlightOnHover dense>
-              <Thead>
-                <Tr>
-                  <Th>{t("plugins.name")}</Th>
-                  <Th>{t("plugins.type")}</Th>
-                  <Th>{t("plugins.version")}</Th>
-                  <Th>{t("plugins.author")}</Th>
-                  <Th>{t("plugins.status")}</Th>
-                  <Th>{t("global.operations")}</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                <For each={shownPlugins()}>
-                  {(plugin) => (
-                    <PluginListItem
-                      plugin={plugin}
-                      onToggle={handleToggle}
-                      onDelete={handleDelete}
-                    />
-                  )}
-                </For>
-              </Tbody>
-            </Table>
-          </Box>
-        </Match>
-
-        <Match when={layout() === "grid"}>
-          <Grid
-            templateColumns={{
-              "@initial": "1fr",
-              "@md": "repeat(2, 1fr)",
-              "@lg": "repeat(3, 1fr)",
-            }}
-            gap="$3"
-            w="$full"
-          >
-            <For each={shownPlugins()}>
-              {(plugin) => (
-                <PluginGridItem
-                  plugin={plugin}
-                  onToggle={handleToggle}
-                  onDelete={handleDelete}
-                />
-              )}
-            </For>
-          </Grid>
-        </Match>
-      </Switch>
+            </div>
+          </Match>
+        </Switch>
+      </Show>
 
       {/* Import JSON Modal */}
       <Modal
@@ -283,6 +353,7 @@ const Plugins = () => {
               </Text>
               <Textarea
                 rows={10}
+                style={{ "font-family": "var(--ol-font-mono)" }}
                 placeholder='[{"id": "plugin-1", "name": "...", "enabled": true}]'
                 value={importJsonText()}
                 onInput={(e: any) => setImportJsonText(e.target.value)}
@@ -292,20 +363,19 @@ const Plugins = () => {
           <ModalFooter>
             <HStack spacing="$2">
               <Button
-                variant="subtle"
                 colorScheme="neutral"
                 onClick={() => setImportModalOpen(false)}
               >
                 {t("global.cancel")}
               </Button>
-              <Button colorScheme="accent" onClick={handleImportJson}>
+              <Button colorScheme="primary" onClick={handleImportJson}>
                 {t("plugins.actions.import")}
               </Button>
             </HStack>
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </VStack>
+    </div>
   )
 }
 

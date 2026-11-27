@@ -1,7 +1,8 @@
-import { createSignal, JSX } from "solid-js"
+import { TbExternalLink, TbFolder } from "solid-icons/tb"
+import { JSX } from "solid-js"
+import { useT } from "~/hooks"
 import { me } from "~/store"
 import { TaskNameAnalyzer } from "./Tasks"
-import { useT } from "~/hooks"
 
 export const getPath = (
   device: string,
@@ -11,40 +12,61 @@ export const getPath = (
   const fullPath = (device === "/" ? "" : device) + path
   const prefix = me().base_path === "/" ? "" : me().base_path
   const accessible = fullPath.startsWith(prefix)
-  const [underline, setUnderline] = createSignal(false)
   return accessible && asLink ? (
     <a
-      style={underline() ? "text-decoration: underline" : ""}
-      onMouseOver={() => setUnderline(true)}
-      onMouseOut={() => setUnderline(false)}
-      href={fullPath.slice(prefix.length)}
+      class="ol-link-btn"
+      style={{
+        display: "inline-flex",
+        "align-items": "center",
+        gap: "4px",
+        "font-family": "var(--ol-font-mono)",
+        "font-size": "12.5px",
+      }}
+      href={fullPath.slice(prefix.length) || "/"}
     >
-      {fullPath}
+      <TbFolder size={13} class="ol-ico" />
+      <span>{fullPath}</span>
     </a>
   ) : (
-    <p>{fullPath}</p>
+    <span
+      style={{
+        "font-family": "var(--ol-font-mono)",
+        "font-size": "12.5px",
+      }}
+    >
+      {fullPath}
+    </span>
   )
 }
 
+const renderExternalUrl = (url: string): JSX.Element => (
+  <a
+    class="ol-link-btn"
+    style={{
+      display: "inline-flex",
+      "align-items": "center",
+      gap: "4px",
+      "font-family": "var(--ol-font-mono)",
+      "font-size": "12.5px",
+    }}
+    href={url}
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <span>{url}</span>
+    <TbExternalLink size={13} class="ol-ico" />
+  </a>
+)
+
 export const getOfflineDownloadNameAnalyzer = (): TaskNameAnalyzer => {
   const t = useT()
-  const [underline, setUnderline] = createSignal(false)
   return {
     regex: /^download (.+) to \((.+)\)$/,
     title: (matches) => matches[1],
     attrs: {
-      [t(`tasks.attr.offline_download.url`)]: (matches) => (
-        <a
-          style={underline() ? "text-decoration: underline" : ""}
-          onMouseOver={() => setUnderline(true)}
-          onMouseOut={() => setUnderline(false)}
-          href={matches[1]}
-          target="_blank"
-        >
-          {matches[1]}
-        </a>
-      ),
-      [t(`tasks.attr.offline_download.path`)]: (matches) =>
+      [t("tasks.attr.offline_download.url")]: (matches) =>
+        renderExternalUrl(matches[1]),
+      [t("tasks.attr.offline_download.path")]: (matches) =>
         getPath("", matches[2]),
     },
   }
@@ -52,33 +74,24 @@ export const getOfflineDownloadNameAnalyzer = (): TaskNameAnalyzer => {
 
 export const getOfflineDownloadTransferNameAnalyzer = (): TaskNameAnalyzer => {
   const t = useT()
-  const [underline, setUnderline] = createSignal(false)
   return {
     regex: /^(transfer|upload) \[(.*)]\((.*\/([^\/]+))\) to \[(.+)]\((.+)\)$/,
     title: (matches) => (matches[1] === "upload" ? matches[2] : matches[4]),
     attrs: {
-      [t(`tasks.attr.offline_download.transfer_src`)]: (matches) => {
+      [t("tasks.attr.offline_download.transfer_src")]: (matches) => {
         return matches[1] !== "transfer" || matches[2] === ""
           ? undefined
           : getPath(matches[2], matches[3])
       },
-      [t(`tasks.attr.offline_download.transfer_src_local`)]: (matches) => {
+      [t("tasks.attr.offline_download.transfer_src_local")]: (matches) => {
         return matches[2] === "" ? matches[3] : undefined
       },
-      [t(`tasks.attr.offline_download.url`)]: (matches) => {
-        return matches[1] === "upload" ? (
-          <a
-            style={underline() ? "text-decoration: underline" : ""}
-            onMouseOver={() => setUnderline(true)}
-            onMouseOut={() => setUnderline(false)}
-            href={matches[3]}
-            target="_blank"
-          >
-            {matches[3]}
-          </a>
-        ) : undefined
+      [t("tasks.attr.offline_download.url")]: (matches) => {
+        return matches[1] === "upload"
+          ? renderExternalUrl(matches[3])
+          : undefined
       },
-      [t(`tasks.attr.offline_download.transfer_dst`)]: (matches) =>
+      [t("tasks.attr.offline_download.transfer_dst")]: (matches) =>
         getPath(matches[5], matches[6]),
     },
   }
@@ -91,12 +104,20 @@ export const getDecompressNameAnalyzer = (): TaskNameAnalyzer => {
       /^decompress \[(.+)]\((.*\/([^\/]+))\)\[(.+)] to \[(.+)]\((.+)\) with password <(.*)>$/,
     title: (matches) => matches[3],
     attrs: {
-      [t(`tasks.attr.decompress.src`)]: (matches) =>
+      [t("tasks.attr.decompress.src")]: (matches) =>
         getPath(matches[1], matches[2]),
-      [t(`tasks.attr.decompress.dst`)]: (matches) =>
+      [t("tasks.attr.decompress.dst")]: (matches) =>
         getPath(matches[5], matches[6]),
-      [t(`tasks.attr.decompress.inner`)]: (matches) => <p>{matches[4]}</p>,
-      [t(`tasks.attr.decompress.password`)]: (matches) => <p>{matches[7]}</p>,
+      [t("tasks.attr.decompress.inner")]: (matches) => (
+        <span style={{ "font-family": "var(--ol-font-mono)" }}>
+          {matches[4]}
+        </span>
+      ),
+      [t("tasks.attr.decompress.password")]: (matches) => (
+        <span style={{ "font-family": "var(--ol-font-mono)" }}>
+          {matches[7]}
+        </span>
+      ),
     },
   }
 }
@@ -107,7 +128,7 @@ export const getDecompressUploadNameAnalyzer = (): TaskNameAnalyzer => {
     regex: /^upload (.+) to \[(.+)]\((.+)\)$/,
     title: (matches) => matches[1],
     attrs: {
-      [t(`tasks.attr.decompress.dst`)]: (matches) =>
+      [t("tasks.attr.decompress.dst")]: (matches) =>
         getPath(matches[2], matches[3]),
     },
   }

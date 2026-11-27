@@ -1,19 +1,9 @@
-import {
-  Badge,
-  Box,
-  Button,
-  HStack,
-  Td,
-  Text,
-  Tr,
-  useColorModeValue,
-  VStack,
-} from "@hope-ui/solid"
+import { Button } from "@hope-ui/solid"
+import { TbPuzzle, TbSettings } from "solid-icons/tb"
 import { Show } from "solid-js"
 import { useRouter, useT } from "~/hooks"
 import { PluginItem } from "~/types"
 import { DeletePopover } from "../common/DeletePopover"
-import { FaSolidPuzzlePiece } from "solid-icons/fa"
 
 export interface PluginItemProps {
   plugin: PluginItem
@@ -26,18 +16,31 @@ export function PluginOp(props: PluginItemProps) {
   const t = useT()
   const { to } = useRouter()
   return (
-    <HStack spacing="$2">
+    <div
+      style={{
+        display: "inline-flex",
+        "align-items": "center",
+        "flex-wrap": "wrap",
+        gap: "6px",
+      }}
+    >
       <Button
         size="sm"
+        colorScheme="neutral"
         onClick={() => {
           to(`/@manage/plugins/config/${encodeURIComponent(props.plugin.id)}`)
         }}
       >
+        <TbSettings
+          size={14}
+          class="ol-ico"
+          style={{ "margin-right": "4px" }}
+        />
         {t("global.edit")}
       </Button>
       <Button
         size="sm"
-        colorScheme={props.plugin.enabled ? "warning" : "success"}
+        colorScheme={props.plugin.enabled ? "neutral" : "primary"}
         onClick={() => {
           props.onToggle(props.plugin)
         }}
@@ -50,161 +53,239 @@ export function PluginOp(props: PluginItemProps) {
           props.onDelete(props.plugin)
         }}
       />
-    </HStack>
+    </div>
+  )
+}
+
+const PluginIconTile = (props: { icon?: string; size?: number }) => {
+  const dim = () => props.size ?? 32
+  return (
+    <span
+      style={{
+        display: "inline-grid",
+        "place-items": "center",
+        width: `${dim()}px`,
+        height: `${dim()}px`,
+        "border-radius": "var(--ol-radius-sm)",
+        background: "var(--ol-surface-2)",
+        border: "1px solid var(--ol-border)",
+        color: "var(--ol-accent-text)",
+        flex: "none",
+        overflow: "hidden",
+      }}
+    >
+      <Show
+        when={props.icon}
+        fallback={<TbPuzzle size={Math.round(dim() * 0.52)} class="ol-ico" />}
+      >
+        <img
+          src={props.icon}
+          alt=""
+          style={{
+            width: `${Math.round(dim() * 0.6)}px`,
+            height: `${Math.round(dim() * 0.6)}px`,
+            "object-fit": "contain",
+          }}
+        />
+      </Show>
+    </span>
   )
 }
 
 export function PluginListItem(props: PluginItemProps) {
   const t = useT()
   return (
-    <Tr>
-      <Td>
-        <HStack spacing="$2">
-          <Box
-            w="$7"
-            h="$7"
-            rounded="$md"
-            bgColor="$neutral3"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            flexShrink={0}
-            overflow="hidden"
-          >
-            <Show
-              when={props.plugin.icon}
-              fallback={<FaSolidPuzzlePiece size={14} />}
+    <tr>
+      <td>
+        <div style={{ display: "flex", "align-items": "center", gap: "10px" }}>
+          <PluginIconTile icon={props.plugin.icon} size={30} />
+          <div style={{ "min-width": "0" }}>
+            <div
+              style={{ "font-weight": "560", color: "var(--ol-text-primary)" }}
             >
-              <img
-                src={props.plugin.icon}
-                alt="icon"
-                style={{
-                  width: "18px",
-                  height: "18px",
-                  "object-fit": "contain",
-                }}
-              />
-            </Show>
-          </Box>
-          <VStack alignItems="start" spacing="0">
-            <Text fontWeight="$medium">{props.plugin.name}</Text>
-            <Text fontSize="$xs" color="$neutral10">
+              {props.plugin.name}
+            </div>
+            <div
+              style={{
+                "font-family": "var(--ol-font-mono)",
+                "font-size": "12px",
+                color: "var(--ol-text-muted)",
+              }}
+            >
               {props.plugin.id}
-            </Text>
-          </VStack>
-        </HStack>
-      </Td>
-      <Td>
-        <Badge colorScheme="neutral">{props.plugin.type || "ui"}</Badge>
-      </Td>
-      <Td>
-        <Text fontSize="$sm">v{props.plugin.version || "1.0.0"}</Text>
-      </Td>
-      <Td>
-        <Text fontSize="$sm" color="$neutral10">
+            </div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <span class="ol-pill">{props.plugin.type || "ui"}</span>
+      </td>
+      <td>
+        <span
+          class="ol-tabular"
+          style={{
+            "font-family": "var(--ol-font-mono)",
+            "font-size": "12.5px",
+            color: "var(--ol-text-secondary)",
+          }}
+        >
+          v{props.plugin.version || "1.0.0"}
+        </span>
+      </td>
+      <td>
+        <span style={{ color: "var(--ol-text-secondary)" }}>
           {props.plugin.author || "Community"}
-        </Text>
-      </Td>
-      <Td>
-        <HStack spacing="$1">
-          <Badge colorScheme={props.plugin.enabled ? "success" : "neutral"}>
-            {t(`global.${props.plugin.enabled ? "enable" : "disable"}`)}
-          </Badge>
+        </span>
+      </td>
+      <td>
+        <div
+          style={{
+            display: "inline-flex",
+            "align-items": "center",
+            gap: "8px",
+          }}
+        >
+          <span class="ol-status">
+            <span
+              class="ol-status-dot"
+              data-status={props.plugin.enabled ? "work" : "disabled"}
+            />
+            <span>
+              {t(`global.${props.plugin.enabled ? "enable" : "disable"}`)}
+            </span>
+          </span>
           <Show when={props.plugin.high_privilege}>
-            <Badge colorScheme="danger">Root</Badge>
+            <span class="ol-pill" data-tone="danger">
+              Root
+            </span>
           </Show>
-        </HStack>
-      </Td>
-      <Td>
+        </div>
+      </td>
+      <td>
         <PluginOp {...props} />
-      </Td>
-    </Tr>
+      </td>
+    </tr>
   )
 }
 
 export function PluginGridItem(props: PluginItemProps) {
   const t = useT()
-  const shadow = useColorModeValue("$sm", "$none")
-  const bg = useColorModeValue("$white", "$neutral3")
-  const borderColor = useColorModeValue("$neutral4", "$neutral5")
 
   return (
-    <VStack
-      w="$full"
-      p="$3"
-      spacing="$3"
-      rounded="$lg"
-      border="1px solid"
-      borderColor={props.plugin.high_privilege ? "$danger6" : borderColor()}
-      bgColor={bg()}
-      shadow={shadow()}
-      alignItems="start"
-      justifyContent="space-between"
+    <div
+      class="ol-admin-card"
+      style={{
+        display: "flex",
+        "flex-direction": "column",
+        "justify-content": "space-between",
+        gap: "12px",
+      }}
     >
-      <VStack alignItems="start" spacing="$1_5" w="$full">
-        <HStack spacing="$2" w="$full" justifyContent="space-between">
-          <HStack spacing="$2">
-            <Box
-              w="$8"
-              h="$8"
-              rounded="$md"
-              bgColor="$neutral3"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              flexShrink={0}
-              overflow="hidden"
-            >
-              <Show
-                when={props.plugin.icon}
-                fallback={<FaSolidPuzzlePiece size={16} />}
+      <div style={{ display: "flex", "flex-direction": "column", gap: "10px" }}>
+        <div
+          style={{
+            display: "flex",
+            "align-items": "flex-start",
+            "justify-content": "space-between",
+            gap: "10px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              "align-items": "center",
+              gap: "10px",
+              "min-width": "0",
+            }}
+          >
+            <PluginIconTile icon={props.plugin.icon} size={34} />
+            <div style={{ "min-width": "0" }}>
+              <div
+                style={{
+                  "font-weight": "600",
+                  "font-size": "14px",
+                  color: "var(--ol-text-primary)",
+                }}
               >
-                <img
-                  src={props.plugin.icon}
-                  alt="icon"
-                  style={{
-                    width: "20px",
-                    height: "20px",
-                    "object-fit": "contain",
-                  }}
-                />
-              </Show>
-            </Box>
-            <VStack alignItems="start" spacing="0">
-              <Text fontWeight="$bold" fontSize="$sm">
                 {props.plugin.name}
-              </Text>
-              <Text fontSize="$xs" color="$neutral10">
+              </div>
+              <div
+                style={{
+                  "font-family": "var(--ol-font-mono)",
+                  "font-size": "12px",
+                  color: "var(--ol-text-muted)",
+                }}
+              >
                 {props.plugin.id}
-              </Text>
-            </VStack>
-          </HStack>
-          <HStack spacing="$1">
-            <Badge colorScheme={props.plugin.enabled ? "success" : "neutral"}>
-              {t(`global.${props.plugin.enabled ? "enable" : "disable"}`)}
-            </Badge>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "inline-flex",
+              "align-items": "center",
+              gap: "6px",
+              flex: "none",
+            }}
+          >
+            <span class="ol-status">
+              <span
+                class="ol-status-dot"
+                data-status={props.plugin.enabled ? "work" : "disabled"}
+              />
+              <span>
+                {t(`global.${props.plugin.enabled ? "enable" : "disable"}`)}
+              </span>
+            </span>
             <Show when={props.plugin.high_privilege}>
-              <Badge colorScheme="danger">Root</Badge>
+              <span class="ol-pill" data-tone="danger">
+                Root
+              </span>
             </Show>
-          </HStack>
-        </HStack>
+          </div>
+        </div>
 
-        <Text fontSize="$xs" color="$neutral10" noOfLines={2} minH="32px">
+        <p
+          style={{
+            margin: "0",
+            "font-size": "13px",
+            color: "var(--ol-text-secondary)",
+            "min-height": "38px",
+          }}
+        >
           {props.plugin.description || t("plugins.empty_desc")}
-        </Text>
+        </p>
 
-        <HStack spacing="$2" fontSize="$xs" color="$neutral9">
-          <span>v{props.plugin.version || "1.0.0"}</span>
-          <span>•</span>
+        <div
+          style={{
+            display: "flex",
+            "align-items": "center",
+            "flex-wrap": "wrap",
+            gap: "8px",
+            "font-size": "12px",
+            color: "var(--ol-text-muted)",
+          }}
+        >
+          <span
+            class="ol-tabular"
+            style={{ "font-family": "var(--ol-font-mono)" }}
+          >
+            v{props.plugin.version || "1.0.0"}
+          </span>
+          <span>·</span>
           <span>{props.plugin.author || "Community"}</span>
-          <span>•</span>
-          <Badge colorScheme="neutral">{props.plugin.type || "ui"}</Badge>
-        </HStack>
-      </VStack>
+          <span>·</span>
+          <span class="ol-pill">{props.plugin.type || "ui"}</span>
+        </div>
+      </div>
 
-      <HStack spacing="$2" w="$full" justifyContent="end">
+      <div
+        class="ol-admin-card__foot"
+        style={{ "justify-content": "flex-end", "margin-top": "4px" }}
+      >
         <PluginOp {...props} />
-      </HStack>
-    </VStack>
+      </div>
+    </div>
   )
 }

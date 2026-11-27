@@ -1,16 +1,17 @@
-import { VStack } from "@hope-ui/solid"
-import { useManageTitle } from "~/hooks"
-import { TypeTasks } from "./Tasks"
+import { useManageTitle, useT } from "~/hooks"
 import {
   getOfflineDownloadNameAnalyzer,
   getOfflineDownloadTransferNameAnalyzer,
 } from "./helper"
+import { TypeTasks } from "./Tasks"
+import { TasksShell } from "./TasksShell"
 
 // deprecated
 const Aria2 = () => {
+  const t = useT()
   useManageTitle("manage.sidemenu.aria2")
   return (
-    <VStack w="$full" alignItems="start" spacing="$4">
+    <TasksShell title={t("manage.sidemenu.tasks")}>
       <TypeTasks
         type="aria2_down"
         canRetry
@@ -20,7 +21,7 @@ const Aria2 = () => {
         type="aria2_transfer"
         nameAnalyzer={getOfflineDownloadTransferNameAnalyzer()}
       />
-    </VStack>
+    </TasksShell>
   )
 }
 

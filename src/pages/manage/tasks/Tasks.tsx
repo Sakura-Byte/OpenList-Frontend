@@ -1,14 +1,18 @@
+import { Button, Checkbox } from "@hope-ui/solid"
 import {
-  Button,
-  Checkbox,
-  Flex,
-  Heading,
-  HStack,
-  Input,
-  Spacer,
-  Text,
-  VStack,
-} from "@hope-ui/solid"
+  TbArrowDown,
+  TbArrowsSort,
+  TbArrowUp,
+  TbCheck,
+  TbChevronDown,
+  TbChevronUp,
+  TbRefresh,
+  TbRotateClockwise,
+  TbSearch,
+  TbSubtask,
+  TbTrash,
+  TbX,
+} from "solid-icons/tb"
 import {
   batch,
   createEffect,
@@ -21,10 +25,10 @@ import {
 } from "solid-js"
 import { Paginator } from "~/components"
 import { useFetch, useT } from "~/hooks"
+import { me } from "~/store"
 import { PEmptyResp, PResp, TaskInfo } from "~/types"
 import { handleResp, notify, r } from "~/utils"
-import { TaskCol, cols, Task, TaskOrderBy, TaskLocal } from "./Task"
-import { me } from "~/store"
+import { Task, TaskLocal, TaskOrderBy } from "./Task"
 
 export interface TaskNameAnalyzer {
   regex: RegExp
@@ -73,6 +77,7 @@ export const Tasks = (props: TasksProps) => {
   const [tasks, setTasks] = createSignal<TaskAttribute[]>([])
   const [orderBy, setOrderBy] = createSignal<TaskOrderBy>("name")
   const [orderReverse, setOrderReverse] = createSignal(false)
+
   const sorter: Record<TaskOrderBy, (a: TaskInfo, b: TaskInfo) => number> = {
     name: (a, b) => (a.name > b.name ? 1 : -1),
     creator: (a, b) =>
@@ -94,6 +99,7 @@ export const Tasks = (props: TasksProps) => {
           ? 1
           : -1,
   }
+
   const curSorter = createMemo(() => {
     return (a: TaskInfo, b: TaskInfo) => {
       if (props.done === "undone" && orderBy() === "name" && !orderReverse()) {
@@ -107,6 +113,7 @@ export const Tasks = (props: TasksProps) => {
       return (orderReverse() ? -1 : 1) * sorter[orderBy()](a, b)
     }
   })
+
   const refresh = async () => {
     const resp = await get()
     handleResp(resp, (data) => {
@@ -129,8 +136,8 @@ export const Tasks = (props: TasksProps) => {
             let prevFetchTime: number | undefined
             let prevProgress: number | undefined
             if (task.progress === curProgressMap[task.id]) {
-              prevFetchTime = prevFetchTimeMap[task.id] // may be undefined
-              prevProgress = prevProgressMap[task.id] // may be undefined
+              prevFetchTime = prevFetchTimeMap[task.id]
+              prevProgress = prevProgressMap[task.id]
             } else {
               prevFetchTime = curFetchTimeMap[task.id]
               prevProgress = curProgressMap[task.id]
@@ -152,10 +159,12 @@ export const Tasks = (props: TasksProps) => {
     })
   }
   refresh()
+
   if (props.done === "undone") {
     const interval = setInterval(refresh, 2000)
     onCleanup(() => clearInterval(interval))
   }
+
   const [clearDoneLoading, clearDone] = useFetch((): PEmptyResp =>
     r.post(`/task/${props.type}/clear_done`),
   )
@@ -165,6 +174,7 @@ export const Tasks = (props: TasksProps) => {
   const [retryFailedLoading, retryFailed] = useFetch((): PEmptyResp =>
     r.post(`/task/${props.type}/retry_failed`),
   )
+
   const [regexFilterValue, setRegexFilterValue] = createSignal("")
   const [regexFilter, setRegexFilter] = createSignal(new RegExp(""))
   const [regexCompileFailed, setRegexCompileFailed] = createSignal(false)
@@ -176,6 +186,7 @@ export const Tasks = (props: TasksProps) => {
       setRegexCompileFailed(true)
     }
   })
+
   const [showOnlyMine, setShowOnlyMine] = createSignal(me().role !== 2)
   const taskFilter = createMemo(() => {
     const regex = regexFilter()
@@ -186,253 +197,373 @@ export const Tasks = (props: TasksProps) => {
   const filteredTask = createMemo(() => {
     return tasks().filter(taskFilter())
   })
-  const allSelected = createMemo(() =>
+
+  const selectedIds = createMemo(() =>
     filteredTask()
-      .map((task) => task.local.selected)
-      .every(Boolean),
+      .filter((task) => task.local.selected)
+      .map((task) => task.id),
+  )
+
+  const allSelected = createMemo(
+    () =>
+      filteredTask().length > 0 &&
+      filteredTask().every((task) => task.local.selected),
   )
   const isIndeterminate = createMemo(
-    () =>
-      filteredTask()
-        .map((task) => task.local.selected)
-        .some(Boolean) && !allSelected(),
+    () => filteredTask().some((task) => task.local.selected) && !allSelected(),
   )
   const selectAll = (v: boolean) =>
     setTasks(
       tasks().map((task) => {
         if (taskFilter()(task)) {
-          task.local.selected = v
+          return { ...task, local: { ...task.local, selected: v } }
         }
         return task
       }),
     )
-  const allExpanded = createMemo(() =>
-    filteredTask()
-      .map((task) => task.local.expanded)
-      .every(Boolean),
+
+  const allExpanded = createMemo(
+    () =>
+      filteredTask().length > 0 &&
+      filteredTask().every((task) => task.local.expanded),
   )
   const expandAll = (v: boolean) =>
     setTasks(
       tasks().map((task) => {
         if (taskFilter()(task)) {
-          task.local.expanded = v
+          return { ...task, local: { ...task.local, expanded: v } }
         }
         return task
       }),
     )
-  const getSelectedId = () =>
-    filteredTask()
-      .filter((task) => task.local.selected)
-      .map((task) => task.id)
+
   const [retrySelectedLoading, retrySelected] = useFetch((): PEmptyResp =>
-    r.post(`/task/${props.type}/retry_some`, getSelectedId()),
+    r.post(`/task/${props.type}/retry_some`, selectedIds()),
   )
+  const operateName = props.done === "undone" ? "cancel" : "delete"
   const [operateSelectedLoading, operateSelected] = useFetch((): PEmptyResp =>
-    r.post(`/task/${props.type}/${operateName}_some`, getSelectedId()),
+    r.post(`/task/${props.type}/${operateName}_some`, selectedIds()),
   )
   const notifyIndividualError = (msg: Record<string, string>) => {
+    if (!msg) return
     Object.entries(msg).forEach(([key, value]) => {
       notify.error(`${key}: ${value}`)
     })
   }
+
   const [page, setPage] = createSignal(1)
   const pageSize = 20
-  const operateName = props.done === "undone" ? "cancel" : "delete"
   const curTasks = createMemo(() => {
     const start = (page() - 1) * pageSize
     const end = start + pageSize
     return filteredTask().slice(start, end)
   })
-  const itemProps = (col: TaskCol) => {
-    return {
-      fontWeight: "bold",
-      fontSize: "$sm",
-      color: "$neutral11",
-      textAlign: col.textAlign as any,
+
+  const toggleSort = (col: TaskOrderBy) => {
+    if (orderBy() === col) {
+      setOrderReverse(!orderReverse())
+    } else {
+      batch(() => {
+        setOrderBy(col)
+        setOrderReverse(false)
+      })
     }
+    refresh()
   }
-  const itemPropsSort = (col: TaskCol) => {
-    return {
-      cursor: "pointer",
-      onClick: () => {
-        if (orderBy() === col.name) {
-          setOrderReverse(!orderReverse())
-        } else {
-          batch(() => {
-            setOrderBy(col.name as TaskOrderBy)
-            setOrderReverse(false)
-          })
-        }
-        refresh()
-      },
-    }
-  }
+
   const getLocalSetter = (id: string) => {
     return (l: TaskLocal) =>
       setTasks(
-        tasks().map((t) => {
-          if (t.id === id) {
-            t.local = l
-          }
-          return t
-        }),
+        tasks().map((item) => (item.id === id ? { ...item, local: l } : item)),
       )
   }
+
+  const sortFields = createMemo((): TaskOrderBy[] =>
+    me().role === 2
+      ? ["name", "creator", "state", "progress"]
+      : ["name", "state", "progress"],
+  )
+
   return (
-    <VStack w="$full" alignItems="start" spacing="$2">
-      <Heading size="lg">{t(`tasks.${props.done}`)}</Heading>
-      <HStack gap="$2" flexWrap="wrap">
-        <Show when={props.done === "done"}>
-          <Button colorScheme="accent" loading={loading()} onClick={refresh}>
-            {t(`global.refresh`)}
-          </Button>
+    <section class="ol-admin-card">
+      <div class="ol-admin-card__head">
+        <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+          <span
+            class="ol-status-dot"
+            data-status={props.done === "undone" ? "info" : "work"}
+          />
+          <h3 class="ol-admin-card__title">{t(`tasks.${props.done}`)}</h3>
+          <span class="ol-pill ol-tabular">{filteredTask().length}</span>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            "align-items": "center",
+            "flex-wrap": "wrap",
+            gap: "10px",
+          }}
+        >
+          <Show when={me().role === 2}>
+            <Checkbox
+              checked={showOnlyMine()}
+              onChange={(e: any) =>
+                setShowOnlyMine(e.target.checked as boolean)
+              }
+            >
+              {t("tasks.show_only_mine")}
+            </Checkbox>
+          </Show>
           <Button
-            loading={retryFailedLoading()}
-            onClick={async () => {
-              const resp = await retryFailed()
-              handleResp(resp, () => refresh())
-            }}
+            size="xs"
+            colorScheme="neutral"
+            onClick={() => expandAll(!allExpanded())}
+            disabled={filteredTask().length === 0}
           >
-            {t(`tasks.retry_failed`)}
+            <Show
+              when={allExpanded()}
+              fallback={
+                <TbChevronDown
+                  size={13}
+                  class="ol-ico"
+                  style={{ "margin-right": "4px" }}
+                />
+              }
+            >
+              <TbChevronUp
+                size={13}
+                class="ol-ico"
+                style={{ "margin-right": "4px" }}
+              />
+            </Show>
+            {allExpanded() ? t("tasks.fold_all") : t("tasks.expand_all")}
           </Button>
+        </div>
+      </div>
+
+      {/* Toolbar */}
+      <div
+        class="ol-admin-toolbar"
+        style={{
+          background: "var(--ol-surface-2)",
+          "margin-bottom": "12px",
+        }}
+      >
+        <div class="ol-admin-toolbar__left">
+          <Checkbox
+            disabled={filteredTask().length === 0}
+            checked={allSelected()}
+            indeterminate={isIndeterminate()}
+            onChange={(e: any) => selectAll(e.target.checked as boolean)}
+          />
+          <div class="ol-admin-search">
+            <TbSearch size={15} class="ol-ico" />
+            <input
+              type="search"
+              placeholder={t("tasks.filter")}
+              value={regexFilterValue()}
+              onInput={(e) => setRegexFilterValue(e.currentTarget.value)}
+              style={
+                regexCompileFailed()
+                  ? { "border-color": "var(--ol-danger)" }
+                  : undefined
+              }
+            />
+          </div>
+
+          <div class="ol-admin-toolbar__group">
+            <For each={sortFields()}>
+              {(col) => {
+                const active = () => orderBy() === col
+                return (
+                  <button
+                    type="button"
+                    class="ol-btn ol-btn--ghost"
+                    style={{
+                      height: "28px",
+                      padding: "0 8px",
+                      "font-size": "12px",
+                      color: active()
+                        ? "var(--ol-accent-text)"
+                        : "var(--ol-text-muted)",
+                    }}
+                    onClick={() => toggleSort(col)}
+                  >
+                    <span>{t(`tasks.attr.${col}`)}</span>
+                    <Show
+                      when={active()}
+                      fallback={<TbArrowsSort size={13} class="ol-ico" />}
+                    >
+                      <Show
+                        when={orderReverse()}
+                        fallback={<TbArrowUp size={13} class="ol-ico" />}
+                      >
+                        <TbArrowDown size={13} class="ol-ico" />
+                      </Show>
+                    </Show>
+                  </button>
+                )
+              }}
+            </For>
+          </div>
+        </div>
+
+        <div class="ol-admin-toolbar__right">
+          <Show when={props.done === "done"}>
+            <Button
+              size="sm"
+              colorScheme="neutral"
+              loading={loading()}
+              onClick={refresh}
+            >
+              <TbRefresh
+                size={14}
+                class="ol-ico"
+                style={{ "margin-right": "5px" }}
+              />
+              {t("global.refresh")}
+            </Button>
+            <Button
+              size="sm"
+              colorScheme="neutral"
+              loading={retryFailedLoading()}
+              onClick={async () => {
+                const resp = await retryFailed()
+                handleResp(resp, () => refresh())
+              }}
+            >
+              <TbRotateClockwise
+                size={14}
+                class="ol-ico"
+                style={{ "margin-right": "5px" }}
+              />
+              {t("tasks.retry_failed")}
+            </Button>
+            <Button
+              size="sm"
+              colorScheme="neutral"
+              loading={clearSucceededLoading()}
+              onClick={async () => {
+                const resp = await clearSucceeded()
+                handleResp(resp, () => refresh())
+              }}
+            >
+              <TbCheck
+                size={14}
+                class="ol-ico"
+                style={{ "margin-right": "5px" }}
+              />
+              {t("tasks.clear_succeeded")}
+            </Button>
+            <Button
+              size="sm"
+              colorScheme="danger"
+              loading={clearDoneLoading()}
+              onClick={async () => {
+                const resp = await clearDone()
+                handleResp(resp, () => refresh())
+              }}
+            >
+              <TbTrash
+                size={14}
+                class="ol-ico"
+                style={{ "margin-right": "5px" }}
+              />
+              {t("global.clear")}
+            </Button>
+          </Show>
+
+          <Show when={props.canRetry}>
+            <Button
+              size="sm"
+              colorScheme="primary"
+              disabled={selectedIds().length === 0}
+              loading={retrySelectedLoading()}
+              onClick={async () => {
+                const resp = await retrySelected()
+                handleResp(resp, (data) => {
+                  notifyIndividualError(data)
+                  refresh()
+                })
+              }}
+            >
+              <TbRotateClockwise
+                size={14}
+                class="ol-ico"
+                style={{ "margin-right": "5px" }}
+              />
+              {t("tasks.retry_selected")}
+            </Button>
+          </Show>
+
           <Button
+            size="sm"
             colorScheme="danger"
-            loading={clearDoneLoading()}
+            disabled={selectedIds().length === 0}
+            loading={operateSelectedLoading()}
             onClick={async () => {
-              const resp = await clearDone()
-              handleResp(resp, () => refresh())
-            }}
-          >
-            {t(`global.clear`)}
-          </Button>
-          <Button
-            colorScheme="success"
-            loading={clearSucceededLoading()}
-            onClick={async () => {
-              const resp = await clearSucceeded()
-              handleResp(resp, () => refresh())
-            }}
-          >
-            {t(`tasks.clear_succeeded`)}
-          </Button>
-        </Show>
-        <Show when={props.canRetry}>
-          <Button
-            colorScheme="primary"
-            loading={retrySelectedLoading()}
-            onClick={async () => {
-              const resp = await retrySelected()
+              const resp = await operateSelected()
               handleResp(resp, (data) => {
                 notifyIndividualError(data)
                 refresh()
               })
             }}
           >
-            {t(`tasks.retry_selected`)}
+            <Show
+              when={operateName === "cancel"}
+              fallback={
+                <TbTrash
+                  size={14}
+                  class="ol-ico"
+                  style={{ "margin-right": "5px" }}
+                />
+              }
+            >
+              <TbX size={14} class="ol-ico" style={{ "margin-right": "5px" }} />
+            </Show>
+            {t(`tasks.${operateName}_selected`)}
           </Button>
-        </Show>
-        <Button
-          colorScheme="warning"
-          loading={operateSelectedLoading()}
-          onClick={async () => {
-            const resp = await operateSelected()
-            handleResp(resp, (data) => {
-              notifyIndividualError(data)
-              refresh()
-            })
-          }}
-        >
-          {t(`tasks.${operateName}_selected`)}
-        </Button>
-        <Input
-          width="auto"
-          placeholder={t(`tasks.filter`)}
-          value={regexFilterValue()}
-          onInput={(e: any) => setRegexFilterValue(e.target.value as string)}
-          invalid={regexCompileFailed()}
-        />
-        <Show when={me().role === 2}>
-          <Checkbox
-            checked={showOnlyMine()}
-            onChange={(e: any) => setShowOnlyMine(e.target.checked as boolean)}
-          >
-            {t(`tasks.show_only_mine`)}
-          </Checkbox>
-        </Show>
-      </HStack>
-      <VStack
-        w={{ "@initial": "1024px", "@lg": "$full" }}
-        overflowX="auto"
-        shadow="$md"
-        rounded="$lg"
-        spacing="$1"
-        p="$1"
+        </div>
+      </div>
+
+      {/* Task Items */}
+      <Show
+        when={curTasks().length > 0}
+        fallback={
+          <div class="ol-admin-empty">
+            <TbSubtask size={22} class="ol-ico" />
+            <span>
+              {tasks().length === 0
+                ? t("manage.common.no_data")
+                : t("manage.common.no_results")}
+            </span>
+          </div>
+        }
       >
-        <HStack class="title" w="$full" p="$2">
-          <HStack w={cols[0].w} spacing="$1">
-            <Checkbox
-              disabled={filteredTask().length === 0}
-              checked={allSelected()}
-              indeterminate={isIndeterminate()}
-              onChange={(e: any) => selectAll(e.target.checked as boolean)}
-            />
-            <Text {...itemProps(cols[0])} {...itemPropsSort(cols[0])}>
-              {t(`tasks.attr.${cols[0].name}`)}
-            </Text>
-          </HStack>
-          <Show when={me().role === 2}>
-            <Text
-              w={cols[1].w}
-              {...itemProps(cols[1])}
-              {...itemPropsSort(cols[1])}
-            >
-              {t(`tasks.attr.${cols[1].name}`)}
-            </Text>
-          </Show>
-          <Text
-            w={cols[2].w}
-            {...itemProps(cols[2])}
-            {...itemPropsSort(cols[2])}
-          >
-            {t(`tasks.attr.${cols[2].name}`)}
-          </Text>
-          <Text
-            w={cols[3].w}
-            {...itemProps(cols[3])}
-            {...itemPropsSort(cols[3])}
-          >
-            {t(`tasks.attr.${cols[3].name}`)}
-          </Text>
-          <Text w={cols[4].w} {...itemProps(cols[4])}>
-            {t(`tasks.attr.${cols[4].name}`)}
-          </Text>
-          <Flex w={cols[5].w} gap="$2">
-            <Spacer />
-            <Text {...itemProps(cols[5])}>
-              {t(`tasks.attr.${cols[5].name}`)}
-            </Text>
-            <Button
-              size="xs"
-              colorScheme="neutral"
-              onClick={() => expandAll(!allExpanded())}
-              disabled={filteredTask().length === 0}
-            >
-              {allExpanded() ? t(`tasks.fold_all`) : t(`tasks.expand_all`)}
-            </Button>
-          </Flex>
-        </HStack>
-        {curTasks().map((task) => (
-          <Task {...task} {...props} setLocal={getLocalSetter(task.id)} />
-        ))}
-      </VStack>
-      <Paginator
-        total={filteredTask().length}
-        defaultPageSize={pageSize}
-        onChange={(p) => {
-          setPage(p)
-        }}
-      />
-    </VStack>
+        <div class="ol-admin-form-stack" style={{ gap: "8px" }}>
+          <For each={curTasks()}>
+            {(task) => (
+              <Task {...task} {...props} setLocal={getLocalSetter(task.id)} />
+            )}
+          </For>
+        </div>
+      </Show>
+
+      <Show when={filteredTask().length > pageSize}>
+        <div
+          class="ol-admin-card__foot"
+          style={{ "justify-content": "center" }}
+        >
+          <Paginator
+            total={filteredTask().length}
+            defaultPageSize={pageSize}
+            onChange={(p) => {
+              setPage(p)
+            }}
+          />
+        </div>
+      </Show>
+    </section>
   )
 }
 
@@ -443,20 +574,27 @@ export const TypeTasks = (props: {
 }) => {
   const t = useT()
   return (
-    <VStack w="$full" alignItems="start" spacing="$4">
-      <Heading size="xl">{t(`tasks.${props.type}`)}</Heading>
-      <VStack w="$full" spacing="$2">
-        <For each={["undone", "done"]}>
-          {(done) => (
-            <Tasks
-              type={props.type}
-              done={done}
-              canRetry={props.canRetry}
-              nameAnalyzer={props.nameAnalyzer}
-            />
-          )}
-        </For>
-      </VStack>
-    </VStack>
+    <div class="ol-admin-form-stack">
+      <h2
+        style={{
+          margin: "2px 0 0",
+          "font-size": "15px",
+          "font-weight": "620",
+          color: "var(--ol-text-primary)",
+        }}
+      >
+        {t(`tasks.${props.type}`)}
+      </h2>
+      <For each={["undone", "done"]}>
+        {(done) => (
+          <Tasks
+            type={props.type}
+            done={done}
+            canRetry={props.canRetry}
+            nameAnalyzer={props.nameAnalyzer}
+          />
+        )}
+      </For>
+    </div>
   )
 }

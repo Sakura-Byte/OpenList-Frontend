@@ -1,4 +1,5 @@
-import { Button, FormControl, FormLabel, Input, Stack } from "@hope-ui/solid"
+import { Button, FormControl, FormLabel, Input } from "@hope-ui/solid"
+import { TbTrash } from "solid-icons/tb"
 import { FolderChooseInput } from "~/components"
 import { useT } from "~/hooks"
 
@@ -7,61 +8,67 @@ export type S3Bucket = {
   path: string
 }
 
-type props = S3Bucket & {
+type S3BucketItemProps = S3Bucket & {
   onChange: (val: S3Bucket) => void
   onDelete: () => void
 }
 
-export const S3BucketItem = (props: props) => {
+export const S3BucketItem = (props: S3BucketItemProps) => {
   const t = useT()
   return (
-    <Stack
-      w="$full"
-      overflowX="auto"
-      shadow="$md"
-      rounded="$lg"
-      p="$2"
-      direction={{ "@initial": "column", "@xl": "row" }}
-      spacing="$2"
+    <div
+      class="ol-admin-card"
+      style={{
+        background: "var(--ol-surface-2)",
+        padding: "14px 16px",
+      }}
     >
-      <FormControl w="$full" display="flex" flexDirection="column" required>
-        <FormLabel for="path" display="flex" alignItems="center">
-          {t(`global.name`)}
-        </FormLabel>
-        <Input
-          id="name"
-          value={props.name}
-          onChange={(e) =>
-            props.onChange({ ...props, name: e.currentTarget.value })
-          }
-        />
-      </FormControl>
+      <div
+        style={{
+          display: "grid",
+          "grid-template-columns":
+            "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
+          gap: "12px 16px",
+          "align-items": "end",
+        }}
+      >
+        <FormControl w="100%" display="flex" flexDirection="column" required>
+          <FormLabel>{t("global.name")}</FormLabel>
+          <Input
+            value={props.name}
+            onInput={(e) =>
+              props.onChange({ name: e.currentTarget.value, path: props.path })
+            }
+          />
+        </FormControl>
 
-      <FormControl w="$full" display="flex" flexDirection="column" required>
-        <FormLabel for="path" display="flex" alignItems="center">
-          {t(`metas.path`)}
-        </FormLabel>
-        <FolderChooseInput
-          id="path"
-          value={props.path}
-          onChange={(e) => props.onChange({ ...props, path: e })}
-        />
-      </FormControl>
+        <FormControl w="100%" display="flex" flexDirection="column" required>
+          <FormLabel>{t("metas.path")}</FormLabel>
+          <FolderChooseInput
+            value={props.path}
+            onChange={(path) => props.onChange({ name: props.name, path })}
+          />
+        </FormControl>
+      </div>
 
-      <Stack
-        direction={{ "@initial": "row", "@xl": "column" }}
-        justifyContent={{ "@xl": "center" }}
-        spacing="$1"
+      <div
+        style={{
+          display: "flex",
+          "justify-content": "flex-end",
+          "margin-top": "10px",
+        }}
       >
         <Button
+          size="sm"
           colorScheme="danger"
-          onClick={async () => {
+          onClick={() => {
             props.onDelete()
           }}
         >
+          <TbTrash size={14} class="ol-ico" style={{ "margin-right": "5px" }} />
           {t("global.delete")}
         </Button>
-      </Stack>
-    </Stack>
+      </div>
+    </div>
   )
 }

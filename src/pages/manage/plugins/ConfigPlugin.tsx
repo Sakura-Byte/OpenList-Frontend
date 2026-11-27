@@ -1,13 +1,8 @@
 import {
-  Badge,
-  Box,
   Button,
   FormControl,
   FormHelperText,
   FormLabel,
-  Heading,
-  HStack,
-  Icon,
   Input,
   Select,
   SelectContent,
@@ -19,16 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
   Switch as HopeSwitch,
-  Text,
   Textarea,
-  VStack,
 } from "@hope-ui/solid"
+import { TbArrowLeft, TbCheck, TbPuzzle } from "solid-icons/tb"
 import { createSignal, For, onMount, Show } from "solid-js"
-import { FaSolidPuzzlePiece } from "solid-icons/fa"
+import { MaybeLoading } from "~/components"
 import { useFetch, useManageTitle, useRouter, useT } from "~/hooks"
 import { PluginConfigField, PluginItem, Resp } from "~/types"
 import { handleResp, notify, pluginEngine, r } from "~/utils"
-import { MaybeLoading } from "~/components"
 
 const ConfigPlugin = () => {
   const t = useT()
@@ -122,8 +115,6 @@ const ConfigPlugin = () => {
         return (
           <Input
             id={field.key}
-            w="$full"
-            maxW="$2xl"
             value={value() || ""}
             onInput={(e: any) => handleFieldChange(field.key, e.target.value)}
           />
@@ -132,8 +123,6 @@ const ConfigPlugin = () => {
         return (
           <Input
             id={field.key}
-            w="$full"
-            maxW="$sm"
             type="number"
             value={value() ?? 0}
             onInput={(e: any) =>
@@ -143,7 +132,7 @@ const ConfigPlugin = () => {
         )
       case "bool":
         return (
-          <HStack spacing="$2" py="$1">
+          <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
             <HopeSwitch
               id={field.key}
               checked={!!value()}
@@ -151,10 +140,14 @@ const ConfigPlugin = () => {
                 handleFieldChange(field.key, e.target.checked)
               }
             />
-            <Badge colorScheme={value() ? "success" : "neutral"}>
-              {t(`global.${value() ? "enable" : "disable"}`)}
-            </Badge>
-          </HStack>
+            <span class="ol-status">
+              <span
+                class="ol-status-dot"
+                data-status={value() ? "work" : "disabled"}
+              />
+              <span>{t(`global.${value() ? "enable" : "disable"}`)}</span>
+            </span>
+          </div>
         )
       case "select":
         return (
@@ -163,7 +156,7 @@ const ConfigPlugin = () => {
             value={value() ?? field.options?.[0]}
             onChange={(val: any) => handleFieldChange(field.key, val)}
           >
-            <SelectTrigger w="$full" maxW="$2xl">
+            <SelectTrigger>
               <SelectValue />
               <SelectIcon />
             </SelectTrigger>
@@ -185,8 +178,6 @@ const ConfigPlugin = () => {
         return (
           <Textarea
             id={field.key}
-            w="$full"
-            maxW="$2xl"
             rows={4}
             value={value() || ""}
             onInput={(e: any) => handleFieldChange(field.key, e.target.value)}
@@ -196,8 +187,6 @@ const ConfigPlugin = () => {
         return (
           <Input
             id={field.key}
-            w="$full"
-            maxW="$2xl"
             value={value() || ""}
             onInput={(e: any) => handleFieldChange(field.key, e.target.value)}
           />
@@ -206,40 +195,50 @@ const ConfigPlugin = () => {
   }
 
   return (
-    <MaybeLoading loading={fetchLoading()}>
-      <VStack spacing="$5" alignItems="start" w="$full" maxW="$3xl">
-        <Heading mb="$1">{t("plugins.config_modal.title")}</Heading>
+    <div class="ol-admin-page">
+      <div class="ol-admin-head">
+        <div class="ol-admin-head__main">
+          <h1 class="ol-admin-title">{t("plugins.config_modal.title")}</h1>
+        </div>
+        <div class="ol-admin-head__actions">
+          <Button size="sm" colorScheme="neutral" onClick={() => back()}>
+            <TbArrowLeft
+              size={15}
+              class="ol-ico"
+              style={{ "margin-right": "6px" }}
+            />
+            {t("global.back")}
+          </Button>
+        </div>
+      </div>
 
-        {/* Plugin Info Banner */}
+      <MaybeLoading loading={fetchLoading()}>
         <Show when={plugin()}>
-          <Box
-            w="$full"
-            maxW="$2xl"
-            p="$4"
-            rounded="$md"
-            borderWidth="1px"
-            borderColor="$neutral4"
-            bgColor="$neutral1"
-          >
-            <HStack spacing="$3" alignItems="center">
-              <Box
-                w="$10"
-                h="$10"
-                rounded="$md"
-                bgColor="$neutral3"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                flexShrink={0}
-                overflow="hidden"
+          <section class="ol-admin-card">
+            <div
+              style={{ display: "flex", "align-items": "center", gap: "12px" }}
+            >
+              <span
+                style={{
+                  display: "inline-grid",
+                  "place-items": "center",
+                  width: "40px",
+                  height: "40px",
+                  "border-radius": "var(--ol-radius-sm)",
+                  background: "var(--ol-surface-2)",
+                  border: "1px solid var(--ol-border)",
+                  color: "var(--ol-accent-text)",
+                  flex: "none",
+                  overflow: "hidden",
+                }}
               >
                 <Show
                   when={plugin()?.icon}
-                  fallback={<Icon as={FaSolidPuzzlePiece} boxSize="$5" />}
+                  fallback={<TbPuzzle size={20} class="ol-ico" />}
                 >
                   <img
                     src={plugin()?.icon}
-                    alt="plugin icon"
+                    alt=""
                     style={{
                       width: "24px",
                       height: "24px",
@@ -247,113 +246,136 @@ const ConfigPlugin = () => {
                     }}
                   />
                 </Show>
-              </Box>
-              <VStack alignItems="flex-start" spacing="$0_5" flex={1}>
-                <HStack spacing="$2" wrap="wrap">
-                  <Text fontWeight="$bold" fontSize="$md">
+              </span>
+
+              <div style={{ flex: "1", "min-width": "0" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    "align-items": "center",
+                    "flex-wrap": "wrap",
+                    gap: "8px",
+                  }}
+                >
+                  <span style={{ "font-weight": "620", "font-size": "15px" }}>
                     {plugin()?.name}
-                  </Text>
-                  <Badge colorScheme="accent">v{plugin()?.version}</Badge>
-                  <Badge colorScheme="neutral">{plugin()?.type || "ui"}</Badge>
-                </HStack>
-                <Text fontSize="$xs" color="$neutral10">
+                  </span>
+                  <span class="ol-pill ol-tabular" data-tone="accent">
+                    v{plugin()?.version}
+                  </span>
+                  <span class="ol-pill">{plugin()?.type || "ui"}</span>
+                </div>
+                <p
+                  style={{
+                    margin: "3px 0 0",
+                    "font-size": "13px",
+                    color: "var(--ol-text-secondary)",
+                  }}
+                >
                   {plugin()?.description || t("plugins.empty_desc")}
-                </Text>
-              </VStack>
-            </HStack>
-          </Box>
+                </p>
+              </div>
+            </div>
+          </section>
         </Show>
 
-        {/* Plugin Enable State */}
-        <FormControl
-          w="$full"
-          display="flex"
-          flexDirection="column"
-          alignItems="start"
-          gap="$1_5"
-        >
-          <FormLabel for="plugin_enable">{t("global.enable")}</FormLabel>
-          <HStack spacing="$2">
-            <HopeSwitch
-              id="plugin_enable"
-              checked={enabled()}
-              onChange={(e: any) => setEnabled(e.target.checked)}
-            />
-            <Badge colorScheme={enabled() ? "success" : "neutral"}>
-              {t(`global.${enabled() ? "enable" : "disable"}`)}
-            </Badge>
-          </HStack>
-        </FormControl>
-
-        {/* High Privilege Switch */}
-        <FormControl
-          w="$full"
-          display="flex"
-          flexDirection="column"
-          alignItems="start"
-          gap="$1_5"
-        >
-          <FormLabel for="plugin_high_privilege">
-            {t("plugins.install_modal.high_privilege_label")}
-          </FormLabel>
-          <HStack spacing="$2">
-            <HopeSwitch
-              id="plugin_high_privilege"
-              checked={highPrivilege()}
-              onChange={(e: any) => setHighPrivilege(e.target.checked)}
-            />
-            <Show when={highPrivilege()}>
-              <Badge colorScheme="danger">Root Access</Badge>
-            </Show>
-          </HStack>
-          <FormHelperText color="$neutral10" fontSize="$xs" mt="$0_5">
-            {t("plugins.install_modal.high_privilege_help")}
-          </FormHelperText>
-        </FormControl>
-
-        {/* Dynamic Config Schema Form */}
-        <Show
-          when={plugin()?.config_schema && plugin()!.config_schema!.length > 0}
-          fallback={
-            <Box py="$2">
-              <Text fontSize="$sm" color="$neutral10">
-                {t("plugins.config_modal.no_config")}
-              </Text>
-            </Box>
-          }
-        >
-          <For each={plugin()?.config_schema}>
-            {(field) => (
-              <FormControl
-                w="$full"
-                display="flex"
-                flexDirection="column"
-                alignItems="start"
-                gap="$1_5"
+        <section class="ol-admin-card">
+          <div class="ol-admin-form-grid">
+            <FormControl w="100%" display="flex" flexDirection="column">
+              <FormLabel for="plugin_enable">{t("global.enable")}</FormLabel>
+              <div
+                style={{ display: "flex", "align-items": "center", gap: "8px" }}
               >
-                <FormLabel for={field.key}>{field.label}</FormLabel>
-                {renderFieldInput(field)}
-                <Show when={field.description}>
-                  <FormHelperText color="$neutral10" fontSize="$xs" mt="$0_5">
-                    {field.description}
-                  </FormHelperText>
-                </Show>
-              </FormControl>
-            )}
-          </For>
-        </Show>
+                <HopeSwitch
+                  id="plugin_enable"
+                  checked={enabled()}
+                  onChange={(e: any) => setEnabled(e.target.checked)}
+                />
+                <span class="ol-status">
+                  <span
+                    class="ol-status-dot"
+                    data-status={enabled() ? "work" : "disabled"}
+                  />
+                  <span>{t(`global.${enabled() ? "enable" : "disable"}`)}</span>
+                </span>
+              </div>
+            </FormControl>
 
-        {/* Operations */}
-        <HStack spacing="$2" mt="$2">
-          <Button loading={saving()} onClick={handleSave}>
-            {t("global.save")}
-          </Button>
+            <FormControl w="100%" display="flex" flexDirection="column">
+              <FormLabel for="plugin_high_privilege">
+                {t("plugins.install_modal.high_privilege_label")}
+              </FormLabel>
+              <div
+                style={{ display: "flex", "align-items": "center", gap: "8px" }}
+              >
+                <HopeSwitch
+                  id="plugin_high_privilege"
+                  checked={highPrivilege()}
+                  onChange={(e: any) => setHighPrivilege(e.target.checked)}
+                />
+                <Show when={highPrivilege()}>
+                  <span class="ol-pill" data-tone="danger">
+                    Root
+                  </span>
+                </Show>
+              </div>
+              <FormHelperText>
+                {t("plugins.install_modal.high_privilege_help")}
+              </FormHelperText>
+            </FormControl>
+          </div>
+        </section>
+
+        <section class="ol-admin-card">
+          <Show
+            when={
+              plugin()?.config_schema && plugin()!.config_schema!.length > 0
+            }
+            fallback={
+              <div class="ol-admin-empty">
+                <span>{t("plugins.config_modal.no_config")}</span>
+              </div>
+            }
+          >
+            <div class="ol-admin-form-grid">
+              <For each={plugin()?.config_schema}>
+                {(field) => (
+                  <div
+                    style={
+                      field.type === "text"
+                        ? { "grid-column": "1 / -1" }
+                        : undefined
+                    }
+                  >
+                    <FormControl w="100%" display="flex" flexDirection="column">
+                      <FormLabel for={field.key}>{field.label}</FormLabel>
+                      {renderFieldInput(field)}
+                      <Show when={field.description}>
+                        <FormHelperText>{field.description}</FormHelperText>
+                      </Show>
+                    </FormControl>
+                  </div>
+                )}
+              </For>
+            </div>
+          </Show>
+        </section>
+
+        <div class="ol-sticky-actions">
           <Button colorScheme="neutral" onClick={() => back()}>
             {t("global.back")}
           </Button>
-        </HStack>
-      </VStack>
-    </MaybeLoading>
+          <Button colorScheme="primary" loading={saving()} onClick={handleSave}>
+            <TbCheck
+              size={15}
+              class="ol-ico"
+              style={{ "margin-right": "6px" }}
+            />
+            {t("global.save")}
+          </Button>
+        </div>
+      </MaybeLoading>
+    </div>
   )
 }
 

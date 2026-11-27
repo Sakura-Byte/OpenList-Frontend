@@ -1,29 +1,36 @@
 import {
-  HStack,
   Button,
-  VStack,
-  Text,
-  Switch as HopeSwitch,
-  Input,
   FormControl,
   FormLabel,
-  Flex,
+  Input,
+  Switch as HopeSwitch,
 } from "@hope-ui/solid"
-import { r, handleRespWithoutNotify, notify } from "~/utils"
+import crypto from "crypto-js"
+import {
+  TbCircleCheck,
+  TbCircleX,
+  TbDatabaseExport,
+  TbDatabaseImport,
+  TbDownload,
+  TbInfoCircle,
+  TbTerminal2,
+  TbTrash,
+  TbUpload,
+} from "solid-icons/tb"
+import { createSignal, For, Match, Show, Switch } from "solid-js"
 import { useFetch, useManageTitle, useT } from "~/hooks"
 import {
   Meta,
-  Storage,
-  SettingItem,
-  User,
-  PResp,
-  Resp,
   PEmptyResp,
   PPageResp,
+  PResp,
+  Resp,
+  SettingItem,
   ShareInfo,
+  Storage,
+  User,
 } from "~/types"
-import { createSignal, For } from "solid-js"
-import crypto from "crypto-js"
+import { handleRespWithoutNotify, notify, r } from "~/utils"
 
 interface Data {
   encrypted: string
@@ -33,27 +40,54 @@ interface Data {
   metas: Meta[]
   shares: ShareInfo[]
 }
+
 type LogType = "success" | "error" | "info"
-const LogMap = {
-  success: {
-    icon: "✅",
-    color: "$success9",
-  },
-  error: {
-    icon: "❌",
-    color: "$danger9",
-  },
-  info: {
-    icon: "ℹ️",
-    color: "$info9",
-  },
-}
+
 const Log = (props: { msg: string; type: LogType }) => {
+  const color = () => {
+    if (props.type === "success") return "var(--ol-type-image)"
+    if (props.type === "error") return "var(--ol-danger)"
+    return "var(--ol-text-secondary)"
+  }
+
   return (
-    <HStack w="$full" spacing="$1">
-      <Text>{LogMap[props.type].icon}</Text>
-      <Text color={LogMap[props.type].color}>{props.msg}</Text>
-    </HStack>
+    <div
+      style={{
+        display: "flex",
+        "align-items": "flex-start",
+        gap: "8px",
+        padding: "4px 0",
+        color: color(),
+        "word-break": "break-word",
+      }}
+    >
+      <span style={{ flex: "none", "margin-top": "2px" }}>
+        <Switch>
+          <Match when={props.type === "success"}>
+            <TbCircleCheck
+              size={15}
+              class="ol-ico"
+              style={{ color: "var(--ol-type-image)" }}
+            />
+          </Match>
+          <Match when={props.type === "error"}>
+            <TbCircleX
+              size={15}
+              class="ol-ico"
+              style={{ color: "var(--ol-danger)" }}
+            />
+          </Match>
+          <Match when={props.type === "info"}>
+            <TbInfoCircle
+              size={15}
+              class="ol-ico"
+              style={{ color: "var(--ol-accent-text)" }}
+            />
+          </Match>
+        </Switch>
+      </span>
+      <span>{props.msg}</span>
+    </div>
   )
 }
 
@@ -69,10 +103,16 @@ const BackupRestore = () => {
       msg: string
     }[]
   >([])
+
   const appendLog = (msg: string, type: LogType) => {
     setLog((prev) => [...prev, { type, msg }])
-    logRef.scrollTop = logRef.scrollHeight
+    queueMicrotask(() => {
+      if (logRef) {
+        logRef.scrollTop = logRef.scrollHeight
+      }
+    })
   }
+
   const [getSettingsLoading, getSettings] = useFetch((): PResp<any> =>
     r.get("/admin/setting/list"),
   )
@@ -88,6 +128,7 @@ const BackupRestore = () => {
   const [getSharesLoading, getShares] = useFetch((): PPageResp<ShareInfo> =>
     r.get("/share/list"),
   )
+
   const backupLoading = () => {
     return (
       getSettingsLoading() ||
@@ -97,6 +138,7 @@ const BackupRestore = () => {
       getSharesLoading()
     )
   }
+
   function encrypt(data: any, key: string): string {
     if (key == "") return data
     const encJson = crypto.AES.encrypt(JSON.stringify(data), key).toString()
@@ -181,6 +223,7 @@ const BackupRestore = () => {
     )
     appendLog(t("br.finish_backup"), "info")
   }
+
   const [addSettingsLoading, addSettings] = useFetch(
     (data: SettingItem[]): PEmptyResp => r.post("/admin/setting/save", data),
   )
@@ -216,6 +259,7 @@ const BackupRestore = () => {
       return r.post(`/share/update`, share)
     },
   )
+
   async function handleOvrData<T>(
     dataArray: T[],
     getDataFunc: { (): PResp<{ content: T[]; total: number }> },
@@ -264,6 +308,7 @@ const BackupRestore = () => {
       )
     }
   }
+
   const restoreLoading = () => {
     return (
       addSettingsLoading() ||
@@ -277,6 +322,7 @@ const BackupRestore = () => {
       updateShareLoading()
     )
   }
+
   const restore = async () => {
     appendLog(t("br.start_restore"), "info")
     const file = document.createElement("input")
@@ -288,7 +334,7 @@ const BackupRestore = () => {
         notify.warning(t("br.no_file"))
         return
       }
-      const file = files[0]
+      const selectedFile = files[0]
       const reader = new FileReader()
       reader.onload = async () => {
         const data: Data = JSON.parse(reader.result as string)
@@ -444,65 +490,195 @@ const BackupRestore = () => {
         }
         appendLog(t("br.finish_restore"), "info")
       }
-      reader.readAsText(file)
+      reader.readAsText(selectedFile)
     }
     file.click()
   }
-  return (
-    <VStack spacing="$2" w="$full">
-      <HStack spacing="$2" w="$full">
-        <Button
-          loading={backupLoading()}
-          onClick={() => {
-            backup()
-          }}
-          colorScheme="accent"
-        >
-          {t("br.backup")}
-        </Button>
-        <Button
-          loading={restoreLoading()}
-          onClick={() => {
-            restore()
-          }}
-        >
-          {t("br.restore")}
-        </Button>
-      </HStack>
-      <FormControl w="$full" display="flex" flexDirection="column">
-        <Flex w="$full" direction="column" gap="$1">
-          <FormLabel>{t(`br.override`)}</FormLabel>
-          <HopeSwitch
-            id="restore-override"
-            checked={override()}
-            onChange={(e: { currentTarget: HTMLInputElement }) =>
-              setOverride(e.currentTarget.checked)
-            }
-          ></HopeSwitch>
 
-          <FormLabel>{t(`br.encrypt_password`)}</FormLabel>
-          <Input
-            id="password"
-            type="password"
-            placeholder={t(`br.encrypt_password_placeholder`)}
-            onInput={(e) => setPassword(e.currentTarget.value)}
-          />
-        </Flex>
-      </FormControl>
-      <VStack
-        p="$2"
-        ref={logRef!}
-        w="$full"
-        alignItems="start"
-        rounded="$md"
-        h="70vh"
-        bg="$neutral3"
-        overflowY="auto"
-        spacing="$1"
-      >
-        <For each={log()}>{(item) => <Log {...item} />}</For>
-      </VStack>
-    </VStack>
+  return (
+    <div class="ol-admin-page">
+      <div class="ol-admin-head">
+        <div class="ol-admin-head__main">
+          <h1 class="ol-admin-title">{t("manage.sidemenu.backup-restore")}</h1>
+        </div>
+      </div>
+
+      <div class="ol-admin-grid">
+        {/* Export / Backup Card */}
+        <section
+          class="ol-admin-card"
+          style={{
+            display: "flex",
+            "flex-direction": "column",
+            "justify-content": "space-between",
+          }}
+        >
+          <div>
+            <div class="ol-admin-card__head">
+              <div
+                style={{ display: "flex", "align-items": "center", gap: "8px" }}
+              >
+                <TbDatabaseExport size={17} class="ol-ico" />
+                <h2 class="ol-admin-card__title">{t("br.backup")}</h2>
+              </div>
+            </div>
+
+            <div class="ol-admin-form-stack">
+              <FormControl w="100%" display="flex" flexDirection="column">
+                <FormLabel for="password">{t("br.encrypt_password")}</FormLabel>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password()}
+                  placeholder={t("br.encrypt_password_placeholder")}
+                  onInput={(e) => setPassword(e.currentTarget.value)}
+                />
+              </FormControl>
+            </div>
+          </div>
+
+          <div
+            class="ol-admin-card__foot"
+            style={{ "justify-content": "flex-end" }}
+          >
+            <Button
+              colorScheme="primary"
+              loading={backupLoading()}
+              onClick={() => {
+                backup()
+              }}
+            >
+              <TbDownload
+                size={15}
+                class="ol-ico"
+                style={{ "margin-right": "6px" }}
+              />
+              {t("br.backup")}
+            </Button>
+          </div>
+        </section>
+
+        {/* Encrypted Import / Restore Card */}
+        <section
+          class="ol-admin-card"
+          style={{
+            display: "flex",
+            "flex-direction": "column",
+            "justify-content": "space-between",
+          }}
+        >
+          <div>
+            <div class="ol-admin-card__head">
+              <div
+                style={{ display: "flex", "align-items": "center", gap: "8px" }}
+              >
+                <TbDatabaseImport size={17} class="ol-ico" />
+                <h2 class="ol-admin-card__title">{t("br.restore")}</h2>
+              </div>
+            </div>
+
+            <div class="ol-admin-form-stack">
+              <FormControl w="100%" display="flex" flexDirection="column">
+                <FormLabel for="restore-password">
+                  {t("br.encrypt_password")}
+                </FormLabel>
+                <Input
+                  id="restore-password"
+                  type="password"
+                  value={password()}
+                  placeholder={t("br.encrypt_password_placeholder")}
+                  onInput={(e) => setPassword(e.currentTarget.value)}
+                />
+              </FormControl>
+
+              <FormControl
+                w="100%"
+                display="flex"
+                alignItems="center"
+                justifyContent="space-between"
+              >
+                <FormLabel for="restore-override" mb="0">
+                  {t("br.override")}
+                </FormLabel>
+                <HopeSwitch
+                  id="restore-override"
+                  checked={override()}
+                  onChange={(e: { currentTarget: HTMLInputElement }) =>
+                    setOverride(e.currentTarget.checked)
+                  }
+                />
+              </FormControl>
+            </div>
+          </div>
+
+          <div
+            class="ol-admin-card__foot"
+            style={{ "justify-content": "flex-end" }}
+          >
+            <Button
+              colorScheme="neutral"
+              loading={restoreLoading()}
+              onClick={() => {
+                restore()
+              }}
+            >
+              <TbUpload
+                size={15}
+                class="ol-ico"
+                style={{ "margin-right": "6px" }}
+              />
+              {t("br.restore")}
+            </Button>
+          </div>
+        </section>
+      </div>
+
+      {/* Monospace Log Stream */}
+      <section class="ol-admin-card ol-admin-card--flush">
+        <div class="ol-admin-card__head">
+          <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+            <TbTerminal2 size={16} class="ol-ico" />
+            <h2 class="ol-admin-card__title">{t("tasks.attr.status")}</h2>
+            <span class="ol-pill ol-tabular">{log().length}</span>
+          </div>
+          <Show when={log().length > 0}>
+            <Button size="xs" colorScheme="neutral" onClick={() => setLog([])}>
+              <TbTrash
+                size={13}
+                class="ol-ico"
+                style={{ "margin-right": "4px" }}
+              />
+              {t("global.clear")}
+            </Button>
+          </Show>
+        </div>
+
+        <div
+          ref={logRef!}
+          style={{
+            "font-family": "var(--ol-font-mono)",
+            "font-size": "12.5px",
+            "line-height": "1.55",
+            "min-height": "220px",
+            "max-height": "50vh",
+            "overflow-y": "auto",
+            padding: "12px 18px",
+            background: "var(--ol-surface-2)",
+          }}
+        >
+          <Show
+            when={log().length > 0}
+            fallback={
+              <div class="ol-admin-empty">
+                <span>{t("manage.common.no_data")}</span>
+              </div>
+            }
+          >
+            <For each={log()}>{(item) => <Log {...item} />}</For>
+          </Show>
+        </div>
+      </section>
+    </div>
   )
 }
 
