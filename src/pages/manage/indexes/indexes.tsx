@@ -1,10 +1,7 @@
 import {
-  Badge,
-  Button,
   createDisclosure,
-  Heading,
-  HStack,
-  Icon,
+  FormControl,
+  FormLabel,
   Input,
   Modal,
   ModalBody,
@@ -13,24 +10,28 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  Text,
   Textarea,
-  useColorModeValue,
-  VStack,
 } from "@hope-ui/solid"
-import { createSignal, Show } from "solid-js"
+import {
+  TbAlertTriangle,
+  TbPlayerPlay,
+  TbPlayerStop,
+  TbRefresh,
+  TbTrash,
+} from "solid-icons/tb"
+import { createSignal, onCleanup, Show } from "solid-js"
 import { useFetch, useT } from "~/hooks"
 import { Group, PEmptyResp, PResp } from "~/types"
 import {
   buildIndex,
-  updateIndex,
   formatDate,
   handleResp,
   handleRespWithNotifySuccess,
   r,
+  updateIndex,
 } from "~/utils"
 import CommonSettings from "../settings/Common"
-import { LineMdConfirmCircleTwotone, LineMdLoadingTwotoneLoop } from "./icons"
+import { IndexDoneIcon, IndexFolderIcon, IndexRunningIcon } from "./icons"
 
 type Progress = {
   obj_count: number
@@ -46,6 +47,7 @@ const Indexes = () => {
     r.get("/admin/index/progress"),
   )
   const [refreshTimeout, setRefreshTimeout] = createSignal<number | undefined>()
+
   const resetRefreshTimeout = (run: boolean) => {
     if (refreshTimeout()) {
       clearTimeout(refreshTimeout())
@@ -56,6 +58,13 @@ const Indexes = () => {
       setRefreshTimeout(undefined)
     }
   }
+
+  onCleanup(() => {
+    if (refreshTimeout()) {
+      clearTimeout(refreshTimeout())
+    }
+  })
+
   const refreshProgress = async () => {
     const resp = await getProgressReq()
     handleResp(
@@ -70,12 +79,14 @@ const Indexes = () => {
     )
   }
   refreshProgress()
+
   const [rebuildLoading, rebuildReq] = useFetch(buildIndex)
   const rebuild = async () => {
     const resp = await rebuildReq()
     handleRespWithNotifySuccess(resp)
     refreshProgress()
   }
+
   const [clearIndexLoading, clearIndexReq] = useFetch((): PEmptyResp =>
     r.post("/admin/index/clear"),
   )
@@ -84,6 +95,7 @@ const Indexes = () => {
     handleRespWithNotifySuccess(resp)
     refreshProgress()
   }
+
   const [stopBuildLoading, stopBuildReq] = useFetch((): PEmptyResp =>
     r.post("/admin/index/stop"),
   )
@@ -106,102 +118,212 @@ const Indexes = () => {
       updateMaxDepth = parseInt(updateMaxDepthRef!.value)
     }
     const resp = await updateReq(updatePaths, updateMaxDepth)
-    handleRespWithNotifySuccess(resp)
+    handleRespWithNotifySuccess(resp, () => onClose())
     refreshProgress()
   }
+
   const { isOpen, onOpen, onClose } = createDisclosure()
+
   return (
     <>
-      <Heading>{t("indexes.index_header")}</Heading>
-      <CommonSettings group={Group.INDEX} />
-      <Heading>{t("indexes.current")}</Heading>
-      <Show when={progress()}>
-        <HStack
-          spacing="$2"
-          // w="$full"
-          w="fit-content"
-          shadow="$md"
-          rounded="$lg"
-          bg={useColorModeValue("", "$neutral3")()}
-        >
-          <Icon
-            boxSize="$28"
-            color="$accent9"
-            p="$2"
-            as={
-              progress()?.is_done
-                ? LineMdConfirmCircleTwotone
-                : LineMdLoadingTwotoneLoop
-            }
-          />
-          <VStack spacing="$2" flex="1" alignItems="start" mr="$2">
-            <Text>
-              {t("indexes.obj_count")}:
-              <Badge colorScheme="info" ml="$2">
-                {progress()?.obj_count}
-              </Badge>
-            </Text>
-            <Text>
-              {t("indexes.last_done_time")}:
-              <Badge colorScheme="accent" ml="$2">
-                {progress()!.last_done_time
-                  ? formatDate(progress()!.last_done_time)
-                  : t("indexes.unknown")}
-              </Badge>
-            </Text>
-            <Show when={progress()?.error}>
-              <Text css={{ wordBreak: "break-all" }}>
-                {t("indexes.error")}:
-                <Badge colorScheme="danger" ml="$2">
-                  {progress()!.error}
-                </Badge>
-              </Text>
+      <section class="ol-admin-card">
+        <div class="ol-admin-card__head">
+          <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+            <Show
+              when={progress()?.is_done !== false}
+              fallback={<IndexRunningIcon size={18} />}
+            >
+              <IndexDoneIcon size={18} />
             </Show>
-          </VStack>
-        </HStack>
-      </Show>
-      <HStack spacing="$2">
-        <Button
-          colorScheme="accent"
-          onClick={[refreshProgress, undefined]}
-          loading={progressLoading()}
-        >
-          {t("global.refresh")}
-        </Button>
-        <Button
-          colorScheme="danger"
-          onClick={[clearIndex, undefined]}
-          loading={clearIndexLoading()}
-        >
-          {t("indexes.clear")}
-        </Button>
-        <Button
-          colorScheme="warning"
-          onClick={[stopBuild, undefined]}
-          loading={stopBuildLoading()}
-        >
-          {t("indexes.stop")}
-        </Button>
-        <Button onClick={[rebuild, undefined]} loading={rebuildLoading()}>
-          {t(`indexes.${progress()?.is_done ? "rebuild" : "build"}`)}
-        </Button>
-      </HStack>
-      <Button onClick={onOpen}>{t(`indexes.update`)}</Button>
+            <h2 class="ol-admin-card__title">{t("indexes.current")}</h2>
+          </div>
+
+          <Show when={progress()}>
+            {(p) => (
+              <span class="ol-status">
+                <span
+                  class="ol-status-dot"
+                  data-status={
+                    p().error ? "error" : p().is_done ? "work" : "info"
+                  }
+                />
+                <span>
+                  {p().is_done ? t("indexes.idle") : t("indexes.running")}
+                </span>
+              </span>
+            )}
+          </Show>
+        </div>
+
+        <div class="ol-admin-form-stack">
+          <Show when={progress()}>
+            {(p) => (
+              <>
+                <div class="ol-admin-stat-grid">
+                  <div class="ol-admin-stat" style={{ padding: "12px 16px" }}>
+                    <div class="ol-admin-stat__head">
+                      <span>{t("indexes.obj_count")}</span>
+                      <IndexFolderIcon size={16} />
+                    </div>
+                    <div
+                      class="ol-admin-stat__value ol-tabular"
+                      style={{ "font-size": "22px" }}
+                    >
+                      {p().obj_count.toLocaleString()}
+                    </div>
+                  </div>
+
+                  <div class="ol-admin-stat" style={{ padding: "12px 16px" }}>
+                    <div class="ol-admin-stat__head">
+                      <span>{t("indexes.last_done_time")}</span>
+                    </div>
+                    <div
+                      class="ol-tabular"
+                      style={{
+                        "font-size": "15px",
+                        "font-weight": "600",
+                        color: "var(--ol-text-primary)",
+                      }}
+                    >
+                      {p().last_done_time
+                        ? formatDate(p().last_done_time)
+                        : t("indexes.unknown")}
+                    </div>
+                  </div>
+                </div>
+
+                <Show when={p().error}>
+                  <div
+                    role="alert"
+                    style={{
+                      display: "flex",
+                      "align-items": "flex-start",
+                      gap: "8px",
+                      padding: "10px 12px",
+                      "border-radius": "var(--ol-radius-sm)",
+                      background: "var(--ol-danger-soft)",
+                      color: "var(--ol-danger)",
+                      "font-size": "13px",
+                      "word-break": "break-word",
+                    }}
+                  >
+                    <TbAlertTriangle
+                      size={16}
+                      class="ol-ico"
+                      style={{ "margin-top": "2px" }}
+                    />
+                    <span>
+                      {t("indexes.error")}: {p().error}
+                    </span>
+                  </div>
+                </Show>
+              </>
+            )}
+          </Show>
+
+          <div
+            style={{
+              display: "flex",
+              "align-items": "center",
+              "flex-wrap": "wrap",
+              gap: "8px",
+            }}
+          >
+            <button
+              type="button"
+              class="ol-btn"
+              disabled={progressLoading()}
+              onClick={() => refreshProgress()}
+            >
+              <TbRefresh size={15} class="ol-ico" />
+              <span>{t("global.refresh")}</span>
+            </button>
+
+            <button
+              type="button"
+              class="ol-btn ol-btn--primary"
+              disabled={rebuildLoading()}
+              onClick={() => rebuild()}
+            >
+              <TbPlayerPlay size={15} class="ol-ico" />
+              <span>
+                {t(`indexes.${progress()?.is_done ? "rebuild" : "build"}`)}
+              </span>
+            </button>
+
+            <button type="button" class="ol-btn" onClick={onOpen}>
+              <IndexFolderIcon size={15} />
+              <span>{t("indexes.update")}</span>
+            </button>
+
+            <button
+              type="button"
+              class="ol-btn"
+              disabled={stopBuildLoading() || progress()?.is_done}
+              onClick={() => stopBuild()}
+            >
+              <TbPlayerStop size={15} class="ol-ico" />
+              <span>{t("indexes.stop")}</span>
+            </button>
+
+            <button
+              type="button"
+              class="ol-btn ol-btn--danger"
+              disabled={clearIndexLoading()}
+              onClick={() => clearIndex()}
+            >
+              <TbTrash size={15} class="ol-ico" />
+              <span>{t("indexes.clear")}</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="ol-admin-card">
+        <div class="ol-admin-card__head">
+          <h2 class="ol-admin-card__title">{t("indexes.index_header")}</h2>
+        </div>
+        <CommonSettings group={Group.INDEX} />
+      </section>
+
       <Modal opened={isOpen()} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
           <ModalCloseButton />
-          <ModalHeader>{t(`indexes.update`)}</ModalHeader>
+          <ModalHeader>{t("indexes.update")}</ModalHeader>
           <ModalBody>
-            <Heading>{t("indexes.paths_to_update")}</Heading>
-            <Textarea ref={updatePathsRef!}></Textarea>
-            <Heading>{t("indexes.max_depth")}</Heading>
-            <Input value={20} type="number" ref={updateMaxDepthRef!} />
+            <div class="ol-admin-form-stack">
+              <FormControl w="$full" display="flex" flexDirection="column">
+                <FormLabel>{t("indexes.paths_to_update")}</FormLabel>
+                <Textarea rows={4} ref={updatePathsRef!} />
+              </FormControl>
+              <FormControl w="$full" display="flex" flexDirection="column">
+                <FormLabel>{t("indexes.max_depth")}</FormLabel>
+                <Input value={20} type="number" ref={updateMaxDepthRef!} />
+              </FormControl>
+            </div>
           </ModalBody>
           <ModalFooter>
-            <Button onClick={[update, undefined]} loading={updateLoading()}>
-              {t(`indexes.update`)}
-            </Button>
+            <div
+              style={{
+                display: "flex",
+                "align-items": "center",
+                gap: "8px",
+              }}
+            >
+              <button type="button" class="ol-btn" onClick={onClose}>
+                <span>{t("global.cancel")}</span>
+              </button>
+              <button
+                type="button"
+                class="ol-btn ol-btn--primary"
+                disabled={updateLoading()}
+                onClick={() => update()}
+              >
+                <TbRefresh size={15} class="ol-ico" />
+                <span>{t("indexes.update")}</span>
+              </button>
+            </div>
           </ModalFooter>
         </ModalContent>
       </Modal>

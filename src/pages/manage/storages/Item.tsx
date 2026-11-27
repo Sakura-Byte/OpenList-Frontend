@@ -8,11 +8,11 @@ import {
   Switch as HopeSwitch,
   Textarea,
 } from "@hope-ui/solid"
-import { Match, Show, Switch } from "solid-js"
 import type { Accessor } from "solid-js"
+import { Match, Show, Switch } from "solid-js"
+import { SelectOptions } from "~/components"
 import { useT } from "~/hooks"
 import { DriverItem, Type } from "~/types"
-import { SelectOptions } from "~/components"
 
 export type ItemProps = DriverItem & {
   label?: string
@@ -54,6 +54,7 @@ const Item = (props: ItemProps) => {
   const t = useT()
   const getVal = <T,>(v: T | Accessor<T>) =>
     (typeof v === "function" ? (v as Accessor<T>)() : v) as T
+
   return (
     <FormControl
       w="$full"
@@ -64,16 +65,17 @@ const Item = (props: ItemProps) => {
       <FormLabel for={props.name} display="flex" alignItems="center">
         {props.label ??
           t(
-            (props.full_name_path ?? props.driver === "common")
-              ? `storages.common.${props.name}`
-              : `drivers.${props.driver}.${props.name}`,
+            props.full_name_path ??
+              (props.driver === "common"
+                ? `storages.common.${props.name}`
+                : `drivers.${props.driver}.${props.name}`),
           )}
       </FormLabel>
       <Switch fallback={<Center>{t("settings.unknown_type")}</Center>}>
         <Match when={props.type === Type.String}>
           <Input
             id={props.name}
-            type={props.name == "password" ? "password" : "text"}
+            type={props.name === "password" ? "password" : "text"}
             readOnly={props.readonly}
             value={getVal(props.value as string | Accessor<string>)}
             onChange={
@@ -110,20 +112,29 @@ const Item = (props: ItemProps) => {
           />
         </Match>
         <Match when={props.type === Type.Bool}>
-          <HopeSwitch
-            id={props.name}
-            readOnly={props.readonly}
-            checked={getVal(props.value as boolean | Accessor<boolean>)}
-            onChange={
-              props.type === Type.Bool
-                ? (e: any) => props.onChange?.(e.currentTarget.checked)
-                : undefined
-            }
-          />
+          <div
+            style={{
+              display: "flex",
+              "align-items": "center",
+              "min-height": "36px",
+            }}
+          >
+            <HopeSwitch
+              id={props.name}
+              readOnly={props.readonly}
+              checked={getVal(props.value as boolean | Accessor<boolean>)}
+              onChange={
+                props.type === Type.Bool
+                  ? (e: any) => props.onChange?.(e.currentTarget.checked)
+                  : undefined
+              }
+            />
+          </div>
         </Match>
         <Match when={props.type === Type.Text}>
           <Textarea
             id={props.name}
+            rows={3}
             readOnly={props.readonly}
             value={getVal(props.value as string | Accessor<string>)}
             onChange={
@@ -147,18 +158,21 @@ const Item = (props: ItemProps) => {
             <SelectOptions
               readonly={props.readonly}
               searchable={props.type === Type.Select && props.searchable}
-              options={props.options.split(",").map((key) => ({
-                key,
-                label:
-                  props.option_labels?.[key] ??
-                  t(
-                    (props.options_prefix ??
-                      (props.driver === "common"
-                        ? `storages.common.${props.name}s`
-                        : `drivers.${props.driver}.${props.name}s`)) +
-                      `.${key}`,
-                  ),
-              }))}
+              options={props.options
+                .split(",")
+                .filter(Boolean)
+                .map((key) => ({
+                  key,
+                  label:
+                    props.option_labels?.[key] ??
+                    t(
+                      (props.options_prefix ??
+                        (props.driver === "common"
+                          ? `storages.common.${props.name}s`
+                          : `drivers.${props.driver}.${props.name}s`)) +
+                        `.${key}`,
+                    ),
+                }))}
             />
           </Select>
         </Match>
