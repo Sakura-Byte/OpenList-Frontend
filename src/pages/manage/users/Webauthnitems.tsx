@@ -1,6 +1,7 @@
-import { Button, Heading, Stack, VStack } from "@hope-ui/solid"
+import { Button } from "@hope-ui/solid"
+import { TbFingerprint, TbTrash } from "solid-icons/tb"
 import { createSignal, Show } from "solid-js"
-import { useT, useFetch } from "~/hooks"
+import { useFetch, useT } from "~/hooks"
 import { PEmptyResp } from "~/types"
 import { handleResp, notify, r } from "~/utils"
 
@@ -17,48 +18,84 @@ export const WebauthnItem = (props: WebauthnItemProps) => {
     }),
   )
   const [deleted, setDeleted] = createSignal(false)
+
   return (
     <Show when={!deleted()}>
-      <Stack
-        w="$full"
-        overflowX="auto"
-        shadow="$md"
-        rounded="$lg"
-        p="$2"
-        direction={{ "@initial": "column", "@xl": "row" }}
-        spacing="$2"
+      <div
+        style={{
+          display: "flex",
+          "align-items": "center",
+          "justify-content": "space-between",
+          "flex-wrap": "wrap",
+          gap: "10px 14px",
+          width: "100%",
+          padding: "10px 14px",
+          "border-radius": "var(--ol-radius-md)",
+          border: "1px solid var(--ol-border)",
+          background: "var(--ol-surface-2)",
+        }}
       >
-        <VStack w="$full" alignItems="start" spacing="$1">
-          <Heading
-            color="$info9"
-            css={{
-              wordBreak: "break-all",
-            }}
-          >
-            {"Fingerprint: " + props.fingerprint + "\tID: " + props.id}
-          </Heading>
-        </VStack>
-
-        <Stack
-          direction={{ "@initial": "row", "@xl": "column" }}
-          justifyContent={{ "@xl": "center" }}
-          spacing="$1"
+        <div
+          style={{
+            display: "flex",
+            "align-items": "center",
+            gap: "10px",
+            "min-width": "0",
+            flex: "1",
+          }}
         >
-          <Button
-            colorScheme="danger"
-            loading={removeLoading()}
-            onClick={async () => {
-              const resp = await remove()
-              handleResp(resp, () => {
-                notify.success(t("global.delete_success"))
-                setDeleted(true)
-              })
+          <TbFingerprint
+            size={18}
+            class="ol-ico"
+            style={{ color: "var(--ol-accent-text)", "flex-shrink": 0 }}
+          />
+          <div
+            style={{
+              display: "flex",
+              "flex-direction": "column",
+              gap: "2px",
+              "min-width": "0",
             }}
           >
-            {t("global.delete")}
-          </Button>
-        </Stack>
-      </Stack>
+            <code
+              style={{
+                "font-family": "var(--ol-font-mono)",
+                "font-size": "12.5px",
+                "font-weight": 550,
+                color: "var(--ol-text-primary)",
+                "word-break": "break-all",
+              }}
+            >
+              {t("users.ssh_keys.fingerprint")}: {props.fingerprint}
+            </code>
+            <code
+              style={{
+                "font-family": "var(--ol-font-mono)",
+                "font-size": "11.5px",
+                color: "var(--ol-text-muted)",
+                "word-break": "break-all",
+              }}
+            >
+              ID: {props.id}
+            </code>
+          </div>
+        </div>
+
+        <Button
+          colorScheme="danger"
+          loading={removeLoading()}
+          onClick={async () => {
+            const resp = await remove()
+            handleResp(resp, () => {
+              notify.success(t("global.delete_success"))
+              setDeleted(true)
+            })
+          }}
+        >
+          <TbTrash size={14} class="ol-ico" style={{ "margin-right": "4px" }} />
+          {t("global.delete")}
+        </Button>
+      </div>
     </Show>
   )
 }

@@ -3,13 +3,11 @@ import {
   FormControl,
   FormHelperText,
   FormLabel,
-  HStack,
-  Heading,
   Input,
   Switch as HopeSwitch,
   Textarea,
-  VStack,
 } from "@hope-ui/solid"
+import { TbArrowLeft, TbDeviceFloppy } from "solid-icons/tb"
 import { Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import { FolderChooseInput, MaybeLoading, SelectWrapper } from "~/components"
@@ -78,115 +76,272 @@ const AddOrEditPromotion = () => {
 
   return (
     <MaybeLoading loading={loading()}>
-      <VStack w="$full" alignItems="start" spacing="$3">
-        <Heading>{t(`global.${id ? "edit" : "add"}`)}</Heading>
+      <div class="ol-admin-page">
+        <div class="ol-admin-head">
+          <div class="ol-admin-head__main">
+            <h1 class="ol-admin-title">{t(`global.${id ? "edit" : "add"}`)}</h1>
+            <p class="ol-admin-subtitle">{t("manage.sidemenu.promotions")}</p>
+          </div>
+          <div class="ol-admin-head__actions">
+            <button
+              type="button"
+              class="ol-btn"
+              onClick={() => to("/@manage/promotions")}
+            >
+              <TbArrowLeft size={15} class="ol-ico" />
+              <span>{t("global.back")}</span>
+            </button>
+          </div>
+        </div>
 
-        <HStack w="$full" spacing="$3" flexWrap="wrap">
-          <FormControl flex="1" minW="220px" required>
-            <FormLabel>{t("promotions.slot")}</FormLabel>
-            <SelectWrapper
-              value={promo.slot}
-              onChange={(v) => setPromo("slot", v as PromotionSlot)}
-              options={slots.map((s) => ({
-                value: s,
-                label: t(`promotions.slots.${s}`),
-              }))}
-            />
-          </FormControl>
+        {/* Section 1: Basic Slot & Copy */}
+        <section class="ol-admin-card">
+          <div class="ol-admin-card__head">
+            <h2 class="ol-admin-card__title">
+              {t("promotions.slot")} · {t("promotions.title")}
+            </h2>
+            <FormControl display="inline-flex" alignItems="center" gap="$2">
+              <FormLabel for="promo-enabled" mb="0">
+                {t("promotions.enabled")}
+              </FormLabel>
+              <HopeSwitch
+                id="promo-enabled"
+                checked={promo.enabled}
+                onChange={(e: any) =>
+                  setPromo("enabled", e.currentTarget.checked)
+                }
+              />
+            </FormControl>
+          </div>
 
-          <FormControl flex="2" minW="240px" required>
-            <FormLabel for="promo-title">{t("promotions.title")}</FormLabel>
-            <Input
-              id="promo-title"
-              value={promo.title}
-              onInput={(e) => setPromo("title", e.currentTarget.value)}
-            />
-          </FormControl>
-        </HStack>
+          <div class="ol-admin-form-stack">
+            <div class="ol-admin-form-grid">
+              <FormControl required>
+                <FormLabel>{t("promotions.slot")}</FormLabel>
+                <SelectWrapper
+                  value={promo.slot}
+                  onChange={(v) => setPromo("slot", v as PromotionSlot)}
+                  options={slots.map((s) => ({
+                    value: s,
+                    label: t(`promotions.slots.${s}`),
+                  }))}
+                />
+              </FormControl>
 
-        <FormControl w="$full">
-          <FormLabel for="promo-subtitle">{t("promotions.subtitle")}</FormLabel>
-          <Input
-            id="promo-subtitle"
-            value={promo.subtitle}
-            onInput={(e) => setPromo("subtitle", e.currentTarget.value)}
-          />
-        </FormControl>
+              <FormControl required>
+                <FormLabel for="promo-title">{t("promotions.title")}</FormLabel>
+                <Input
+                  id="promo-title"
+                  value={promo.title}
+                  onInput={(e) => setPromo("title", e.currentTarget.value)}
+                />
+              </FormControl>
+            </div>
 
-        <FormControl w="$full">
-          <FormLabel for="promo-body">{t("promotions.body")}</FormLabel>
-          <Textarea
-            id="promo-body"
-            rows={3}
-            value={promo.body}
-            onInput={(e) => setPromo("body", e.currentTarget.value)}
-          />
-        </FormControl>
+            <FormControl w="$full">
+              <FormLabel for="promo-subtitle">
+                {t("promotions.subtitle")}
+              </FormLabel>
+              <Input
+                id="promo-subtitle"
+                value={promo.subtitle}
+                onInput={(e) => setPromo("subtitle", e.currentTarget.value)}
+              />
+            </FormControl>
 
-        <HStack w="$full" spacing="$3" flexWrap="wrap">
-          <FormControl flex="1" minW="240px">
-            <FormLabel for="promo-image">{t("promotions.image")}</FormLabel>
-            <Input
-              id="promo-image"
-              value={promo.image}
-              onInput={(e) => setPromo("image", e.currentTarget.value)}
-            />
-          </FormControl>
+            <FormControl w="$full">
+              <FormLabel for="promo-body">{t("promotions.body")}</FormLabel>
+              <Textarea
+                id="promo-body"
+                rows={3}
+                value={promo.body}
+                onInput={(e) => setPromo("body", e.currentTarget.value)}
+              />
+            </FormControl>
 
-          <FormControl flex="1" minW="240px">
-            <FormLabel for="promo-cta-url">{t("promotions.cta_url")}</FormLabel>
-            <Input
-              id="promo-cta-url"
-              value={promo.cta_url}
-              onInput={(e) => setPromo("cta_url", e.currentTarget.value)}
-            />
-          </FormControl>
+            <div class="ol-admin-form-grid">
+              <FormControl>
+                <FormLabel>{t("promotions.path_prefix")}</FormLabel>
+                <FolderChooseInput
+                  value={promo.path_prefix}
+                  onChange={(p) => setPromo("path_prefix", p || "/")}
+                />
+              </FormControl>
 
-          <FormControl flex="1" minW="180px">
-            <FormLabel for="promo-cta-text">
-              {t("promotions.cta_text")}
-            </FormLabel>
-            <Input
-              id="promo-cta-text"
-              value={promo.cta_text}
-              onInput={(e) => setPromo("cta_text", e.currentTarget.value)}
-            />
-          </FormControl>
-        </HStack>
+              <FormControl>
+                <FormLabel for="promo-priority">
+                  {t("promotions.priority")}
+                </FormLabel>
+                <Input
+                  id="promo-priority"
+                  type="number"
+                  class="ol-tabular"
+                  value={promo.priority}
+                  onInput={(e) =>
+                    setPromo("priority", Number(e.currentTarget.value) || 0)
+                  }
+                />
+              </FormControl>
+            </div>
+          </div>
+        </section>
 
-        <HStack w="$full" spacing="$3" flexWrap="wrap">
-          <FormControl flex="1" minW="220px">
-            <FormLabel for="promo-track-name">
-              {t("promotions.track_name")}
-            </FormLabel>
-            <Input
-              id="promo-track-name"
-              value={promo.track_name}
-              onInput={(e) => setPromo("track_name", e.currentTarget.value)}
-            />
-          </FormControl>
+        {/* Section 2: Media & Tracking + Live Aspect-Safe Preview */}
+        <section class="ol-admin-card">
+          <div class="ol-admin-card__head">
+            <h2 class="ol-admin-card__title">
+              {t("promotions.image")} · {t("promotions.cta_url")}
+            </h2>
+          </div>
 
-          <FormControl flex="1" minW="220px">
-            <FormLabel for="promo-track-piece">
-              {t("promotions.track_piece")}
-            </FormLabel>
-            <Input
-              id="promo-track-piece"
-              value={promo.track_piece}
-              onInput={(e) => setPromo("track_piece", e.currentTarget.value)}
-            />
-          </FormControl>
-        </HStack>
+          <div class="ol-admin-form-stack">
+            <div class="ol-admin-form-grid">
+              <FormControl>
+                <FormLabel for="promo-image">{t("promotions.image")}</FormLabel>
+                <Input
+                  id="promo-image"
+                  value={promo.image}
+                  onInput={(e) => setPromo("image", e.currentTarget.value)}
+                />
+              </FormControl>
 
-        <Show when={promo.slot === "popup_ad"}>
-          <HStack w="$full" spacing="$3" flexWrap="wrap">
-            <FormControl flex="1" minW="200px">
+              <FormControl>
+                <FormLabel for="promo-cta-url">
+                  {t("promotions.cta_url")}
+                </FormLabel>
+                <Input
+                  id="promo-cta-url"
+                  value={promo.cta_url}
+                  onInput={(e) => setPromo("cta_url", e.currentTarget.value)}
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel for="promo-cta-text">
+                  {t("promotions.cta_text")}
+                </FormLabel>
+                <Input
+                  id="promo-cta-text"
+                  value={promo.cta_text}
+                  onInput={(e) => setPromo("cta_text", e.currentTarget.value)}
+                />
+              </FormControl>
+            </div>
+
+            <Show when={promo.image?.trim()}>
+              <div
+                style={{
+                  display: "flex",
+                  "flex-direction": "column",
+                  "align-items": "center",
+                  "justify-content": "center",
+                  gap: "10px",
+                  padding: "14px",
+                  background: "var(--ol-surface-2)",
+                  border: "1px solid var(--ol-border)",
+                  "border-radius": "var(--ol-radius-md)",
+                }}
+              >
+                <img
+                  src={promo.image}
+                  alt={promo.title || ""}
+                  style={{
+                    "max-width": "100%",
+                    "max-height": "220px",
+                    width: "auto",
+                    height: "auto",
+                    "object-fit": "contain",
+                    display: "block",
+                    "border-radius": "var(--ol-radius-xs)",
+                  }}
+                />
+                <Show when={promo.title || promo.cta_text}>
+                  <div
+                    style={{
+                      display: "flex",
+                      "align-items": "center",
+                      gap: "10px",
+                      "flex-wrap": "wrap",
+                      "font-size": "12.5px",
+                      color: "var(--ol-text-secondary)",
+                    }}
+                  >
+                    <Show when={promo.title}>
+                      <span style={{ "font-weight": 550 }}>{promo.title}</span>
+                    </Show>
+                    <Show when={promo.cta_text}>
+                      <span class="ol-pill" data-tone="accent">
+                        {promo.cta_text}
+                      </span>
+                    </Show>
+                  </div>
+                </Show>
+              </div>
+            </Show>
+
+            <div class="ol-admin-form-grid">
+              <FormControl>
+                <FormLabel for="promo-track-name">
+                  {t("promotions.track_name")}
+                </FormLabel>
+                <Input
+                  id="promo-track-name"
+                  value={promo.track_name}
+                  onInput={(e) => setPromo("track_name", e.currentTarget.value)}
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel for="promo-track-piece">
+                  {t("promotions.track_piece")}
+                </FormLabel>
+                <Input
+                  id="promo-track-piece"
+                  value={promo.track_piece}
+                  onInput={(e) =>
+                    setPromo("track_piece", e.currentTarget.value)
+                  }
+                />
+              </FormControl>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 3: Popup Policy */}
+        <section class="ol-admin-card">
+          <div class="ol-admin-card__head">
+            <h2 class="ol-admin-card__title">
+              {t("promotions.slots.popup_ad")} · {t("promotions.freq_cap")}
+            </h2>
+            <span
+              class="ol-pill"
+              data-tone={promo.slot === "popup_ad" ? "accent" : undefined}
+            >
+              {t(`promotions.slots.${promo.slot}`)}
+            </span>
+          </div>
+
+          <div class="ol-admin-form-grid">
+            <FormControl>
+              <FormLabel>{t("promotions.freq_cap")}</FormLabel>
+              <SelectWrapper
+                value={promo.freq_cap}
+                onChange={(v) => setPromo("freq_cap", v as PromotionFreqCap)}
+                options={freqCaps.map((c) => ({
+                  value: c,
+                  label: t(`promotions.freq_caps.${c}`),
+                }))}
+              />
+            </FormControl>
+
+            <FormControl>
               <FormLabel for="promo-delay">
                 {t("promotions.close_delay_sec")}
               </FormLabel>
               <Input
                 id="promo-delay"
                 type="number"
+                class="ol-tabular"
                 min={0}
                 max={10}
                 value={promo.close_delay_sec}
@@ -202,19 +357,12 @@ const AddOrEditPromotion = () => {
               </FormHelperText>
             </FormControl>
 
-            <FormControl flex="1" minW="200px">
-              <FormLabel>{t("promotions.freq_cap")}</FormLabel>
-              <SelectWrapper
-                value={promo.freq_cap}
-                onChange={(v) => setPromo("freq_cap", v as PromotionFreqCap)}
-                options={freqCaps.map((c) => ({
-                  value: c,
-                  label: t(`promotions.freq_caps.${c}`),
-                }))}
-              />
-            </FormControl>
-
-            <FormControl display="flex" alignItems="center" gap="$2" pt="$5">
+            <FormControl
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+              pt="$4"
+            >
               <FormLabel for="promo-snooze" mb="0">
                 {t("promotions.allow_snooze")}
               </FormLabel>
@@ -226,48 +374,17 @@ const AddOrEditPromotion = () => {
                 }
               />
             </FormControl>
-          </HStack>
-        </Show>
+          </div>
+        </section>
 
-        <HStack w="$full" spacing="$3" flexWrap="wrap">
-          <FormControl flex="2" minW="240px">
-            <FormLabel>{t("promotions.path_prefix")}</FormLabel>
-            <FolderChooseInput
-              value={promo.path_prefix}
-              onChange={(p) => setPromo("path_prefix", p || "/")}
-            />
-          </FormControl>
-
-          <FormControl flex="1" minW="140px">
-            <FormLabel for="promo-priority">
-              {t("promotions.priority")}
-            </FormLabel>
-            <Input
-              id="promo-priority"
-              type="number"
-              value={promo.priority}
-              onInput={(e) =>
-                setPromo("priority", Number(e.currentTarget.value) || 0)
-              }
-            />
-          </FormControl>
-        </HStack>
-
-        <FormControl display="flex" alignItems="center" gap="$2">
-          <FormLabel for="promo-enabled" mb="0">
-            {t("promotions.enabled")}
-          </FormLabel>
-          <HopeSwitch
-            id="promo-enabled"
-            checked={promo.enabled}
-            onChange={(e: any) => setPromo("enabled", e.currentTarget.checked)}
-          />
-        </FormControl>
-
-        <HStack spacing="$2">
-          <Button onClick={() => to("/@manage/promotions")}>
-            {t("global.cancel")}
-          </Button>
+        <div class="ol-sticky-actions">
+          <button
+            type="button"
+            class="ol-btn"
+            onClick={() => to("/@manage/promotions")}
+          >
+            <span>{t("global.cancel")}</span>
+          </button>
           <Button
             colorScheme="accent"
             loading={saving()}
@@ -280,10 +397,15 @@ const AddOrEditPromotion = () => {
               })
             }}
           >
+            <TbDeviceFloppy
+              size={15}
+              class="ol-ico"
+              style={{ "margin-right": "5px" }}
+            />
             {t(`global.${id ? "save" : "add"}`)}
           </Button>
-        </HStack>
-      </VStack>
+        </div>
+      </div>
     </MaybeLoading>
   )
 }

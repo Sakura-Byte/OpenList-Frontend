@@ -1,11 +1,8 @@
 import {
   Button,
   createDisclosure,
-  Flex,
   FormControl,
   FormLabel,
-  Heading,
-  HStack,
   Input,
   Modal,
   ModalBody,
@@ -14,18 +11,16 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  Spacer,
-  Text,
   Textarea,
-  VStack,
 } from "@hope-ui/solid"
-import { createSignal, Show } from "solid-js"
-import { useFetch, useT } from "~/hooks"
-import { SSHPublicKey } from "~/types/sshkey"
-import { PEmptyResp, PPageResp } from "~/types"
-import { handleResp, r } from "~/utils"
-import { cols, PublicKey, PublicKeyCol } from "./PublicKey"
+import { TbKey, TbPlus } from "solid-icons/tb"
+import { createSignal, For, Show } from "solid-js"
 import { createStore } from "solid-js/store"
+import { useFetch, useT } from "~/hooks"
+import { PEmptyResp, PPageResp } from "~/types"
+import { SSHPublicKey } from "~/types/sshkey"
+import { handleResp, r } from "~/utils"
+import { cols, PublicKey } from "./PublicKey"
 
 export interface PublicKeysProps {
   isMine: boolean
@@ -56,98 +51,126 @@ export const PublicKeys = (props: PublicKeysProps) => {
   const refresh = async () => {
     const resp = await get()
     handleResp(resp, (data) => {
-      setKeys(data.content)
+      setKeys(data.content ?? [])
     })
   }
   refresh()
-  const itemProps = (col: PublicKeyCol) => {
-    return {
-      fontWeight: "bold",
-      fontSize: "$sm",
-      color: "$neutral11",
-      textAlign: col.textAlign as any,
-    }
-  }
+
   return (
-    <VStack w="$full" alignItems="start" spacing="$2">
-      <Flex w="$full">
-        <Heading>{t(`users.ssh_keys.heading`)}</Heading>
+    <section class="ol-admin-card ol-admin-card--flush">
+      <div class="ol-admin-card__head">
+        <h2
+          class="ol-admin-card__title"
+          style={{
+            display: "inline-flex",
+            "align-items": "center",
+            gap: "8px",
+          }}
+        >
+          <TbKey size={17} class="ol-ico" />
+          <span>{t("users.ssh_keys.heading")}</span>
+        </h2>
+
         <Show when={props.isMine}>
-          <Spacer />
           <Button loading={loading()} onClick={onOpen}>
-            {t(`global.add`)}
+            <TbPlus
+              size={14}
+              class="ol-ico"
+              style={{ "margin-right": "4px" }}
+            />
+            {t("global.add")}
           </Button>
+
           <Modal opened={isOpen()} onClose={onClose} scrollBehavior="inside">
             <ModalOverlay />
             <ModalContent>
               <ModalCloseButton />
-              <ModalHeader>{t(`users.ssh_keys.add_heading`)}</ModalHeader>
+              <ModalHeader>{t("users.ssh_keys.add_heading")}</ModalHeader>
               <ModalBody>
-                <FormControl mb="$4">
-                  <FormLabel for="add_title">
-                    {t(`users.ssh_keys.title`)}
-                  </FormLabel>
-                  <Input
-                    id="add_title"
-                    value={addReq.title}
-                    onInput={(e) => setAddReq("title", e.currentTarget.value)}
-                  />
-                </FormControl>
-                <FormControl>
-                  <FormLabel for="add_key">{t(`users.ssh_keys.key`)}</FormLabel>
-                  <Textarea
-                    id="add_key"
-                    value={addReq.key}
-                    onInput={(e) => setAddReq("key", e.currentTarget.value)}
-                  />
-                </FormControl>
+                <div class="ol-admin-form-stack">
+                  <FormControl>
+                    <FormLabel for="add_title">
+                      {t("users.ssh_keys.title")}
+                    </FormLabel>
+                    <Input
+                      id="add_title"
+                      value={addReq.title}
+                      onInput={(e) => setAddReq("title", e.currentTarget.value)}
+                    />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel for="add_key">
+                      {t("users.ssh_keys.key")}
+                    </FormLabel>
+                    <Textarea
+                      id="add_key"
+                      rows={5}
+                      value={addReq.key}
+                      onInput={(e) => setAddReq("key", e.currentTarget.value)}
+                    />
+                  </FormControl>
+                </div>
               </ModalBody>
               <ModalFooter>
-                <Button
-                  loading={addLoading()}
-                  onClick={async () => {
-                    const resp = await add()
-                    handleResp(resp, () => {
-                      setAddReq("title", "")
-                      setAddReq("key", "")
-                      refresh()
-                      onClose()
-                    })
+                <div
+                  style={{
+                    display: "flex",
+                    "align-items": "center",
+                    gap: "8px",
                   }}
                 >
-                  {t(`global.add`)}
-                </Button>
+                  <Button colorScheme="neutral" onClick={onClose}>
+                    {t("global.cancel")}
+                  </Button>
+                  <Button
+                    colorScheme="accent"
+                    loading={addLoading()}
+                    onClick={async () => {
+                      const resp = await add()
+                      handleResp(resp, () => {
+                        setAddReq("title", "")
+                        setAddReq("key", "")
+                        refresh()
+                        onClose()
+                      })
+                    }}
+                  >
+                    {t("global.add")}
+                  </Button>
+                </div>
               </ModalFooter>
             </ModalContent>
           </Modal>
         </Show>
-      </Flex>
-      <VStack
-        w="$full"
-        overflowX="auto"
-        shadow="$md"
-        rounded="$lg"
-        spacing="$1"
-        p="$1"
+      </div>
+
+      <Show
+        when={keys().length > 0}
+        fallback={
+          <div class="ol-admin-empty">{t("manage.common.no_data")}</div>
+        }
       >
-        <HStack class="title" w="$full" p="$2">
-          <Text w={cols[0].w} {...itemProps(cols[0])}>
-            {t(`users.ssh_keys.${cols[0].name}`)}
-          </Text>
-          <Text w={cols[1].w} {...itemProps(cols[1])}>
-            {t(`users.ssh_keys.${cols[1].name}`)}
-          </Text>
-          <Text w={cols[2].w} {...itemProps(cols[2])}>
-            {t(`users.ssh_keys.${cols[2].name}`)}
-          </Text>
-          <Text w={cols[3].w} {...itemProps(cols[3])}>
-            {t(`users.ssh_keys.${cols[3].name}`)}
-          </Text>
-        </HStack>
-        {keys().map((key) => (
-          <PublicKey {...props} {...key} />
-        ))}
-      </VStack>
-    </VStack>
+        <div style={{ width: "100%", "overflow-x": "auto" }}>
+          <table class="ol-admin-table">
+            <thead>
+              <tr>
+                <For each={cols}>
+                  {(col) => (
+                    <th style={{ "text-align": col.textAlign }}>
+                      {t(`users.ssh_keys.${col.name}`)}
+                    </th>
+                  )}
+                </For>
+              </tr>
+            </thead>
+            <tbody>
+              <For each={keys()}>
+                {(key) => <PublicKey {...props} {...key} />}
+              </For>
+            </tbody>
+          </table>
+        </div>
+      </Show>
+    </section>
   )
 }

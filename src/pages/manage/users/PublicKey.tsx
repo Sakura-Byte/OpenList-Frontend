@@ -1,12 +1,13 @@
-import { PublicKeysProps } from "./PublicKeys"
-import { SSHPublicKey } from "~/types/sshkey"
-import { useFetch, useT } from "~/hooks"
 import { createSignal, Show } from "solid-js"
-import { Button, Flex, Heading, HStack, Spacer, Text } from "@hope-ui/solid"
+import { useFetch, useT } from "~/hooks"
 import { PResp } from "~/types"
+import { SSHPublicKey } from "~/types/sshkey"
 import { handleResp, notify, r } from "~/utils"
+import { DeletePopover } from "../common/DeletePopover"
+import { PublicKeysProps } from "./PublicKeys"
 
 const formatDate = (date: Date) => {
+  if (Number.isNaN(date.getTime())) return "—"
   const year = date.getFullYear().toString()
   const month = (date.getMonth() + 1).toString().padStart(2, "0")
   const day = date.getDate().toString().padStart(2, "0")
@@ -19,14 +20,14 @@ const formatDate = (date: Date) => {
 export interface PublicKeyCol {
   name: "title" | "fingerprint" | "last_used" | "operation"
   textAlign: "left" | "right" | "center"
-  w: any
+  w: string
 }
 
 export const cols: PublicKeyCol[] = [
-  { name: "title", textAlign: "left", w: "calc(35% - 110px)" },
-  { name: "fingerprint", textAlign: "left", w: "calc(65% - 110px)" },
-  { name: "last_used", textAlign: "right", w: "140px" },
-  { name: "operation", textAlign: "right", w: "80px" },
+  { name: "title", textAlign: "left", w: "25%" },
+  { name: "fingerprint", textAlign: "left", w: "45%" },
+  { name: "last_used", textAlign: "right", w: "20%" },
+  { name: "operation", textAlign: "right", w: "10%" },
 ]
 
 export const PublicKey = (props: PublicKeysProps & SSHPublicKey) => {
@@ -39,43 +40,38 @@ export const PublicKey = (props: PublicKeysProps & SSHPublicKey) => {
     : useFetch((): PResp<SSHPublicKey[]> =>
         r.post(`/admin/user/sshkey/delete?uid=${props.userId}&id=${props.id}`),
       )
-  const textEllipsisCss = {
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-  }
+
   return (
     <Show when={!deleted()}>
-      <HStack w="$full" p="$2">
-        <Heading
-          w={cols[0].w}
-          size="sm"
-          textAlign={cols[0].textAlign}
-          css={textEllipsisCss}
-        >
+      <tr>
+        <td style={{ "font-weight": 550, "white-space": "nowrap" }}>
           {props.title}
-        </Heading>
-        <Text
-          w={cols[1].w}
-          size="sm"
-          textAlign={cols[1].textAlign}
-          css={textEllipsisCss}
-        >
-          {props.fingerprint}
-        </Text>
-        <Text
-          w={cols[2].w}
-          size="sm"
-          textAlign={cols[2].textAlign}
-          css={textEllipsisCss}
+        </td>
+        <td>
+          <code
+            style={{
+              "font-family": "var(--ol-font-mono)",
+              "font-size": "12.5px",
+              color: "var(--ol-text-secondary)",
+              "word-break": "break-all",
+            }}
+          >
+            {props.fingerprint}
+          </code>
+        </td>
+        <td
+          class="ol-tabular"
+          style={{
+            "text-align": "right",
+            "white-space": "nowrap",
+            color: "var(--ol-text-muted)",
+          }}
         >
           {formatDate(new Date(props.last_used_time))}
-        </Text>
-        <Flex w={cols[3].w} gap="$1">
-          <Spacer />
-          <Button
-            size="sm"
-            colorScheme="danger"
+        </td>
+        <td style={{ "text-align": "right", "white-space": "nowrap" }}>
+          <DeletePopover
+            name={props.title}
             loading={delLoading()}
             onClick={async () => {
               const resp = await del()
@@ -84,11 +80,9 @@ export const PublicKey = (props: PublicKeysProps & SSHPublicKey) => {
                 setDeleted(true)
               })
             }}
-          >
-            {t(`global.delete`)}
-          </Button>
-        </Flex>
-      </HStack>
+          />
+        </td>
+      </tr>
     </Show>
   )
 }
